@@ -1,0 +1,33 @@
+.cond {
+  float: left;
+  margin-bottom: 10px;
+}
+
+#idols {
+  clear: both;
+  text-align: left;
+  border-collapse:collapse;
+}
+
+#idols th {
+  text-align: center;
+}
+
+#idols td {
+  border: 1px solid black;
+  padding: 2px 5px;
+}
+
+.idol_icon {
+  height: 40px;
+}
+
+a {
+  font-weight: normal;
+  color: blue;
+}
+
+a.active {
+  font-weight: bold;
+  color: black;
+}

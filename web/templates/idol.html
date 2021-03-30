@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="{[ url_for('static', filename='css/idol.css') ]}">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<script src="{[ url_for('static', filename='js/idol.js') ]}"></script>
+<title>{[ title ]}</title>
+</head>
+<body>
+<div id="app">
+  <a href="/">←所有偶像</a>
+  <h3>基本資料</h3><button v-on:click="changeLanguage()">{{ panelWord }}</button>
+  <table id="info">
+    <tr><td rowspan="5"><img :src="info.url"/></td>
+    <td>姓名</td></td><td v-if="japanese">{{ info.name }}</td><td v-else>{{ info.cnname }}</td></tr>
+    <tr><td>陣營</td><td>{{ info.itype }}</td></tr>
+    <tr><td>年齡</td><td v-if="info.age">{{ info.age }}</td><td v-else>不明</td></tr>
+    <tr><td>身高</td><td>{{ info.height }}</td></tr>
+    <tr><td>體重</td><td>{{ info.weight }}</td></tr>
+  </table>
+  <h3>卡片</h3>
+  <table id="cards">
+    <tr>
+      <th v-for="infoTitle in cardInfo">{{ infoTitle }}
+      </th>
+    </tr>
+    <tr v-for="card in fltCards">
+      <td><img class="card_icon" :src="card.url"/></td>
+      <td v-if="japanese">{{ card.name }}</td><td v-else>{{ card.cnname }}</td>
+      <td>{{ card.rare }}</td>
+      <td v-if="japanese">{{ card.time }}</td><td v-else>{{ card.astime }}</td>
+    </tr>
+  </table>
+</div>
+<script type="application/json" id="info_json">{[info|safe]}</script>
+<script type="application/json" id="cards_json">{[cards|safe]}</script>
+</body>
+</html>

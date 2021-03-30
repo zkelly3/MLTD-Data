@@ -1,0 +1,11 @@
+#cards {
+  border-collapse:collapse;
+}
+#cards td{
+  text-align: left;
+  border:1px black solid;
+  padding: 2px 5px;
+}
+.card_icon {
+  height: 50px;
+}

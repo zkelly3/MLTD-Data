@@ -1,0 +1,8 @@
+# .gitignore
+
+config.py
+web/uwsgi.ini
+
+*.csv
+*.json
+web/static/images/*

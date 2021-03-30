@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>MLTD</title>
+<link rel="stylesheet" href="{[ url_for('static', filename='css/mltd.css') ]}">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<script src="{[ url_for('static', filename='js/mltd.js') ]}"></script>
+</head>
+<body>
+<div id="app">
+  <h3>偶像</h3>
+  <div class="cond">
+    <b>篩選</b><br/>
+    <label><input type="checkbox" v-model="filters.chkage"/> 年齡</label>
+    <input type="number" v-model.number="filters.askage" min="0" step="1" max="100"/>
+    <select v-model="filters.agedir">
+      <option v-for="opt in diroptions" :value="opt.val">{{ opt.text }}</option>
+    </select><br/>
+    <label><input type="checkbox" v-model="filters.chkheight"> 身高</label>
+    <input type="number" v-model.number="filters.askheight"min="0" max="200"/>
+    <select v-model="filters.heightdir">
+      <option v-for="opt in diroptions" :value="opt.val">{{ opt.text }}</option>
+    </select><br/>
+    <label><input type="checkbox" v-model="filters.chkweight"> 體重</label>
+    <input type="number" v-model.number="filters.askweight" min="0" max="100"/>
+    <select v-model="filters.weightdir">
+      <option v-for="opt in diroptions" :value="opt.val">{{ opt.text }}</option>
+    </select><br/>
+  </div>
+  
+  <table id="idols">
+    <tr>
+      <th v-for="info in idolinfo">
+      <a href="#" v-on:click="sortKey(info.val)" v-bind:class="{ active: sorts.key == info.val }">{{ info.text }}</a>
+      </th>
+    </tr>
+    <tr v-for="idol in sortedIdols">
+      <td><img class="idol_icon" :src="idol.url"/></td>
+      <td><a v-bind:href="makeLink(idol.id)">{{ idol.name }}</a></td>
+      <td>{{ idol.itype }}</td>
+      <td v-if="idol.age">{{ idol.age }}</td><td v-else>不明</td>
+      <td v-if="idol.height">{{ idol.height }}</td><td v-else>不明</td>
+      <td v-if="idol.weight">{{ idol.weight }}</td><td v-else>不明</td>
+    </tr>
+  </table>
+</div>
+<script type="application/json" id="idols_json">{[idols|safe]}</script>
+</body>
+</html>
