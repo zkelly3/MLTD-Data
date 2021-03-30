@@ -1,7 +1,12 @@
 # .gitignore
 
 config.py
+
 web/uwsgi.ini
+web/log/*
+web/*.sock
+web/*.status
+web/*.pid
 
 *.csv
 *.json
