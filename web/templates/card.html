@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="{[ url_for('static', filename='css/card.css') ]}">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<script src="{[ url_for('static', filename='js/card.js') ]}"></script>
+<title>{[ title ]}</title>
+</head>
+<body>
+<div id="app">
+  <h3>卡片資訊</h3><button v-on:click="changeLanguage()" :disabled="notBoth">{{ panelWord }}</button>
+  <table id="card">
+    <tr><td rowspan="6"><img class="card_image" :src="card.url"/></td>
+    <td>名稱</td></td><td>{{ shown.name }}</td></tr>
+    <td>所屬偶像</td></td><td><a :href="shown.idolUrl"> {{ shown.idol }}</a></td></tr>
+    <tr><td rowspan="2">取得方式</td><td>{{ shown.aquireType }}</td></tr>
+    <tr><td><a v-if="hasFrom">{{ shown.aquireTitle }}</a></td></tr>
+    <tr><td>{{ shown.awakenWord }}</td><td v-if="hasAwaken"><a :href="card.awaken.url"><img class="card_icon" :src="card.awaken.img_url"/>{{ shown.awakenName }}</a></td><td v-else>尚未更新</td></tr>
+    <tr><td>實裝時間<td>{{ shown.time }}</td></tr>
+  </table>
+</div>
+<script type="application/json" id="card_json">{[card|safe]}</script>
+</body>
+</html>

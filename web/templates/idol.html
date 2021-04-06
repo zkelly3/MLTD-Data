@@ -27,7 +27,7 @@
       </th>
     </tr>
     <tr v-for="card in fltCards">
-      <td><img class="card_icon" :src="card.url"/></td>
+      <td><a :href="card.url"><img class="card_icon" :src="card.img_url"/></a></td>
       <td v-if="japanese">{{ card.name }}</td><td v-else>{{ card.cnname }}</td>
       <td>{{ card.rare }}</td>
       <td v-if="japanese">{{ card.time }}</td><td v-else>{{ card.astime }}</td>

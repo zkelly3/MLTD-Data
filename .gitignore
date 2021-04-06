@@ -1,5 +1,7 @@
 # .gitignore
 
+__pycache__/*
+web/__pycache__/*
 config.py
 
 web/uwsgi.ini
@@ -10,4 +12,5 @@ web/*.pid
 
 *.csv
 *.json
+*.txt
 web/static/images/*

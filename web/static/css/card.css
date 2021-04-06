@@ -1,0 +1,27 @@
+#card {
+  margin: 10px;
+  text-align: left;
+  border-collapse:collapse;
+}
+
+#card td {
+  border: 1px solid black;
+  padding: 2px 5px;
+}
+
+.card_image {
+  height: 250px;
+}
+.card_icon {
+  height: 40px;
+}
+
+a {
+  font-weight: normal;
+  color: blue;
+}
+
+a.active {
+  font-weight: bold;
+  color: black;
+}
