@@ -38,8 +38,8 @@
     </tr>
     <tr v-for="idol in sortedIdols">
       <td><img class="idol_icon" :src="idol.url"/></td>
-      <td><a v-bind:href="makeLink(idol.id)">{{ idol.name }}</a></td>
-      <td>{{ idol.itype }}</td>
+      <td><a v-bind:href="makeLink(idol.id)">{{ idol.jp_name }}</a></td>
+      <td>{{ idol.i_type }}</td>
       <td v-if="idol.age">{{ idol.age }}</td><td v-else>不明</td>
       <td v-if="idol.height">{{ idol.height }}</td><td v-else>不明</td>
       <td v-if="idol.weight">{{ idol.weight }}</td><td v-else>不明</td>

@@ -13,9 +13,9 @@
   <a href="/">←所有偶像</a>
   <h3>基本資料</h3><button v-on:click="changeLanguage()">{{ panelWord }}</button>
   <table id="info">
-    <tr><td rowspan="5"><img :src="info.url"/></td>
-    <td>姓名</td></td><td v-if="japanese">{{ info.name }}</td><td v-else>{{ info.cnname }}</td></tr>
-    <tr><td>陣營</td><td>{{ info.itype }}</td></tr>
+    <tr><td rowspan="5"><img :src="info.img_url"/></td>
+    <td>姓名</td></td><td v-if="japanese">{{ info.jp_name }}</td><td v-else>{{ info.as_name }}</td></tr>
+    <tr><td>陣營</td><td>{{ info.i_type }}</td></tr>
     <tr><td>年齡</td><td v-if="info.age">{{ info.age }}</td><td v-else>不明</td></tr>
     <tr><td>身高</td><td>{{ info.height }}</td></tr>
     <tr><td>體重</td><td>{{ info.weight }}</td></tr>
@@ -28,9 +28,9 @@
     </tr>
     <tr v-for="card in fltCards">
       <td><a :href="card.url"><img class="card_icon" :src="card.img_url"/></a></td>
-      <td v-if="japanese">{{ card.name }}</td><td v-else>{{ card.cnname }}</td>
+      <td v-if="japanese">{{ card.jp_name }}</td><td v-else>{{ card.as_name }}</td>
       <td>{{ card.rare }}</td>
-      <td v-if="japanese">{{ card.time }}</td><td v-else>{{ card.astime }}</td>
+      <td v-if="japanese">{{ card.jp_time }}</td><td v-else>{{ card.as_time }}</td>
     </tr>
   </table>
 </div>

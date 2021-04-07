@@ -6,46 +6,54 @@ $(function() {
         },
         data: {
             card: card_json,
-            shown: {},
             japanese: true,
             notBoth: false,
             hasFrom: true,
             hasAwaken: true,
+            gashaTitles: ['類型', '名稱', '開始', '結束'],
             panelWord: '中文版'
         },
         created: function() {
             this.initialize();
-            this.updateData();
         },
         methods: {
             initialize: function() {
-                var timestamp = this.card.time;
-                this.card.time = timestamp ? new Date(timestamp * 1000) : null;
-                var as_timestamp = this.card.astime;
-                this.card.astime = as_timestamp ? new Date(as_timestamp * 1000) : null;
-                this.shown.idolUrl = this.card.idol ? this.card.idol.url : '#'
-                this.shown.awakenWord = this.card.is_awaken ? '覺醒前' : '覺醒後'
-                this.hasAwaken = this.card.awaken ? true : false;
-                
-                if (!this.card.name || !this.card.cnname) this.notBoth = true;
-                if (!this.card.name) japanese = false;
-                
+                if (!this.card[0] || !this.card[1]) this.notBoth = true;
+                if (!this.card[0]) {
+                    this.japanese = false;
+                    this.panelWord = this.japanese ? '中文版' : '日文版'
+                }
+                for (let i = 0; i < this.card.length; ++i) {
+                    this.fixData(this.card[i]);
+                }
             },
-            updateData: function() {
-                this.shown.name = this.japanese ? this.card.name : this.card.cnname;
-                this.shown.idol = (!this.card.idol) ? '未知' : this.japanese ? this.card.idol.name : this.card.idol.cnname;
-                this.shown.aquireType = (!this.card.aquire) ? '未知' : this.japanese ? this.card.aquire.type.jp : this.card.aquire.type.cn;
-                this.shown.aquireTitle = (!this.card.aquire) ? '未知' : this.japanese && this.card.aquire.name ? this.card.aquire.name : this.japanese ? '尚未更新' : this.card.aquire.cnname ? this.card.aquire.cnname : '尚未更新'
-                this.shown.awakenName = !this.card.awaken ? '尚未更新' : this.japanese && this.card.awaken.name ? this.card.awaken.name : this.japanese ? '尚未更新' : this.card.awaken.cnname ? this.card.awaken.cnname : '尚未更新'
-                this.shown.time = this.japanese && this.card.time ? this.card.time.toLocaleString('jp-JP', { timeZone: 'Japan' }) : this.japanese ? '尚未更新' : this.card.astime ? this.card.astime.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未更新'
+            fixData: function(card) {
+                if (!card) return;
+                card.name = card.name ? card.name : '未知'
+                card.idolName = (!card.idol) ? '未知' : card.idol.name;
+                card.idolUrl = (!card.idol) ? '#' : '/idol/' + card.idol.id;
+                card.aquireType = (!card.aquire) ? '未知' : card.aquire.type;
+                card.aquireTitle = (!card.aquire) ? '未知' : card.aquire.title ? card.aquire.title : '尚未更新';
+                card.awakenWord = card.is_awaken ? '覺醒前' : '覺醒後';
+                this.hasAwaken = card.awaken ? true : false;
+                card.awakenName = (!this.hasAwaken || !card.awaken.name) ? '尚未更新' : card.awaken.name;
+                card.time = (!card.time) ? '尚未更新' : this.japanese ? new Date(card.time * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(card.time * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false});
+                
+                for (let i in card.gashas) {
+                    let g = card.gashas[i];
+                    g.start = (!g.start) ? '尚未更新' : this.japanese ? new Date(g.start * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(g.start * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false});
+                    g.over = (!g.over) ? '尚未更新' : this.japanese ? new Date(g.over * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(g.over * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false});
+                }
             },
             changeLanguage: function() {
                 this.japanese = !this.japanese;
                 this.panelWord = this.japanese ? '中文版' : '日文版'
-                this.updateData();
             }
         },
         computed: {
+            shown: function() {
+                return this.japanese ? this.card[0] : this.card[1];
+            }
         },
         watch: {
         }

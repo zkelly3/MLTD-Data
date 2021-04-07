@@ -12,14 +12,26 @@
 <div id="app">
   <h3>卡片資訊</h3><button v-on:click="changeLanguage()" :disabled="notBoth">{{ panelWord }}</button>
   <table id="card">
-    <tr><td rowspan="6"><img class="card_image" :src="card.url"/></td>
+    <tr><td rowspan="6"><img class="card_image" :src="shown.img_url"/></td>
     <td>名稱</td></td><td>{{ shown.name }}</td></tr>
-    <td>所屬偶像</td></td><td><a :href="shown.idolUrl"> {{ shown.idol }}</a></td></tr>
+    <td>所屬偶像</td></td><td><a :href="shown.idolUrl"> {{ shown.idolName }}</a></td></tr>
     <tr><td rowspan="2">取得方式</td><td>{{ shown.aquireType }}</td></tr>
     <tr><td><a v-if="hasFrom">{{ shown.aquireTitle }}</a></td></tr>
-    <tr><td>{{ shown.awakenWord }}</td><td v-if="hasAwaken"><a :href="card.awaken.url"><img class="card_icon" :src="card.awaken.img_url"/>{{ shown.awakenName }}</a></td><td v-else>尚未更新</td></tr>
+    <tr><td>{{ shown.awakenWord }}</td><td v-if="hasAwaken"><a :href="shown.awaken.url"><img class="card_icon" :src="shown.awaken.img_url"/>{{ shown.awakenName }}</a></td><td v-else>尚未更新</td></tr>
     <tr><td>實裝時間<td>{{ shown.time }}</td></tr>
   </table>
+  <div v-if="shown.from_gasha">
+    <h3>實裝或 Pick Up 的卡池</h3>
+    <table id="gashas">
+      <th v-for="gashaTitle in gashaTitles">{{ gashaTitle }}</th>
+      <tr v-for="gasha in shown.gashas">
+        <td>{{ gasha.gasha_type }}</td>
+        <td>{{ gasha.name }}</td>
+        <td>{{ gasha.start }}</td>
+        <td>{{ gasha.over }}</td>
+      </tr>
+    </table>
+  </div>
 </div>
 <script type="application/json" id="card_json">{[card|safe]}</script>
 </body>

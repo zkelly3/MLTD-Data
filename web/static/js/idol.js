@@ -36,10 +36,10 @@ $(function() {
                 var res = self.cards.slice();
                 res = res.filter(card => {
                     if (self.japanese) {
-                        return card['time'];
+                        return card['jp_time'];
                     }
                     else {
-                        return card['astime'];
+                        return card['as_time'];
                     }
                 });
                 return res;

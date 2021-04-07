@@ -24,7 +24,16 @@ def get_iid(name, cursor, is_jp):
     cursor.execute(get_card_iid if is_jp else get_card_iid_as, (idol))
     return cursor.fetchall()[0]['id']
 
-def check_aquire(url):
+def edit_name(name):
+    guess = ['　', ' ']
+    res = name
+    for i in range(len(name)-1, -1, -1):
+        if name[i] in guess:
+            res = name[:i] + '　' + name[i+1:]
+            break
+    return res
+
+def craw_aquire(url):
     # aquire = [卡池, PST, 百萬收藏, 初始, 周年, 覺醒, 其他]
     # gashatype = [不限制, 期間限定, FES]
     # ingasha = [一直能抽, 有時能抽, 不能抽]
@@ -34,7 +43,7 @@ def check_aquire(url):
     span = bs4_data(url, string=re.compile('.*イベント:.*'))
     if span:
         words = span[0].parent.text
-        limit = 0
+        gashatype = 0
         ingasha = 2
         if re.search('プラチナスター', words):
             # PST
@@ -78,6 +87,51 @@ def check_aquire(url):
     gashatype = 0
     ingasha = 2
     return aquire, gashatype, ingasha
+
+def craw_values(url, name, is_jp):
+    global errors
+    res_0 = {}
+    res_1 = {}
+    if is_jp:
+        todos = [{'key': 'visual', 'target': 'ビジュアル'},
+            {'key': 'vocal', 'target': 'ボーカル'},
+            {'key': 'dance', 'target': 'ダンス'}]
+    else:
+        todos = [{'key': 'visual', 'target': 'Visual'},
+            {'key': 'vocal', 'target': 'Vocal'},
+            {'key': 'dance', 'target': 'Dance'}]
+    
+    for todo in todos:
+        spans = bs4_data(url, 'span', string=todo['target'])
+        if len(spans) < 2:
+            errors.append('Value ' + todo['target'] + ' for ' + name + ' not found')
+            return None, None
+        else:
+            has_value, value = consume(spans[0].parent.text, todo['target'])
+            if has_value:
+                res_0[todo['key']] = int(value.split('(')[0].strip())
+            else:
+                res_0[todo['key']] = None
+            has_value, value = consume(spans[1].parent.text, todo['target'])
+            if has_value:
+                res_1[todo['key']] = int(value.split('(')[0].strip())
+            else:
+                res_1[todo['key']] = None
+    return res_0, res_1
+
+def craw_flavor(url, name, is_jp):
+    global errors
+    target = 'フレーバーテキスト' if is_jp else 'Flavor text'
+    spans = bs4_data(url, 'span', string=target)
+    if len(spans) < 2:
+        errors.append('Flavor Text for ' + name + ' not found')
+        return None, None
+    else:
+        has_value, value = consume(spans[0].parent.text, target)
+        res_0 = value if has_value else None
+        has_value, value = consume(spans[1].parent.text, target)
+        res_1 = value if has_value else None
+    return res_0, res_1
     
 def handle_card(d, cursor, connection, is_jp):
     global data, cn_data, errors
@@ -88,16 +142,12 @@ def handle_card(d, cursor, connection, is_jp):
     
     # 在資料庫找到這張卡
     guess = ['　', ' ']
-    name = d['name']
+    name = edit_name(d['name'])
     
     res = []
     if is_jp:
-        for g in guess:
-            name = d['name'].replace(g, '　')
-            cursor.execute(get_card_info, (name))
-            res = cursor.fetchall()
-            if res:
-                break
+        cursor.execute(get_card_info, (name))
+        res = cursor.fetchall()
     else:
         if d['id'] < 9000:
             jp_name = ''
@@ -105,13 +155,9 @@ def handle_card(d, cursor, connection, is_jp):
                 if d['id'] == jd['id']:
                     jp_name = jd['name']
                     break
-            for g in guess:
-                jp_name = jp_name.replace(g, '　')
-                name = name.replace(g, '　')
-                cursor.execute(get_card_info, (jp_name))
-                res = cursor.fetchall()
-                if res:
-                    break
+            jp_name = edit_name(jp_name)
+            cursor.execute(get_card_info, (jp_name))
+            res = cursor.fetchall()
         else:
             cursor.execute(get_card_info_as, (name))
             res = cursor.fetchall()
@@ -144,7 +190,7 @@ def handle_card(d, cursor, connection, is_jp):
     id_1 = -1
     
     # 設定未覺醒和覺醒的配對
-    if not r['awaken']:
+    if r['awaken'] is None:
         cursor.execute(get_card_info if is_jp else get_card_info_as, (name_1))
         res = cursor.fetchall()
         
@@ -163,8 +209,16 @@ def handle_card(d, cursor, connection, is_jp):
     else:
         id_1 = r['awaken']
     
+    # 處理中文卡片名稱
+    if not is_jp and r['cn_name'] is None:
+        print('Update cn_name for', name)
+        cursor.execute(set_card_cn_name, (name, id_0))
+        print('Update cn_name for', name_1)
+        cursor.execute(set_card_cn_name, (name_1, id_1))
+        connection.commit()
+    
     # 處理沒有輸入偶像的情況
-    if not r['IID']:
+    if r['IID'] is None:
         idol_id = get_iid(name, cursor, is_jp)
         print('Set idol for', name)
         cursor.execute(set_card_iid, (idol_id, id_0))
@@ -174,8 +228,8 @@ def handle_card(d, cursor, connection, is_jp):
         connection.commit()
     
     # 抓卡片實裝時間
-    old_time = r['time'] if is_jp else r['astime']
-    if not old_time:
+    old_time = r['jp_time'] if is_jp else r['as_time']
+    if old_time is None:
         url = os.path.join(card_info_root_url if is_jp else as_card_info_root_url, str(d['id']))
         span = bs4_data(url, 'span', class_='intl-date-dyts')
         if span:
@@ -193,7 +247,7 @@ def handle_card(d, cursor, connection, is_jp):
         
     
     # 處理 Center 效果
-    if rare_0 != 0 and r['leaderskill'] is None:
+    if rare_0 != 0 and r['leader_skill'] is None:
         url = os.path.join(card_info_root_url if is_jp else as_card_info_root_url, str(d['id']))
         span = bs4_data(url, 'span', string='センター効果' if is_jp else 'Leader Skill')
         if span:
@@ -224,7 +278,7 @@ def handle_card(d, cursor, connection, is_jp):
     
     # 處理技能
     if rare_0 != 0:
-        if r['skilltype'] is None:
+        if r['skill_type'] is None:
             skill = d['skills'][0]
             s_val = {
                 'cd': skill['interval'],
@@ -286,11 +340,10 @@ def handle_card(d, cursor, connection, is_jp):
             
             print('Set skill for', name)    
             cursor.execute(set_card_skill if is_jp else set_card_skill_as, (s_type, s_name, json.dumps(s_val), id_0))
-            connection.commit()
             print('Set skill for', name_1)
             cursor.execute(set_card_skill if is_jp else set_card_skill_as, (s_type, s_name, json.dumps(s_val), id_1))
             connection.commit()
-        elif not is_jp and not r['skillcnname']:
+        elif not is_jp and not r['skill_cn_name']:
             s_name = ''
             url = os.path.join(as_card_info_root_url, str(d['id']))
             span = bs4_data(url, 'span', string='Skill')
@@ -306,23 +359,86 @@ def handle_card(d, cursor, connection, is_jp):
                 errors.append(err)
             
             print('Set skill cnname for', name)    
-            cursor.execute(set_card_skillname_as, (s_name, id_0))
-            connection.commit()
+            cursor.execute(set_card_skill_name_as, (s_name, id_0))
             print('Set skill cnname for', name_1)
-            cursor.execute(set_card_skillname_as, (s_name, id_1))
+            cursor.execute(set_card_skill_name_as, (s_name, id_1))
             connection.commit()        
     
     # 處理取得方式等等
     if r['aquire'] is None:
-        url = os.path.join(card_info_root_url, str(d['id']))
-        aquire, gashatype, ingasha = check_aquire(url)
+        url = os.path.join(card_info_root_url if is_jp else as_card_info_root_url, str(d['id']))
+        aquire, gashatype, ingasha = craw_aquire(url)
         print('Update aquire, gashatype, ingasha for', name)
         cursor.execute(set_card_aquire, (aquire, gashatype, ingasha, id_0))
-        connection.commit()
         print('Update aquire, gashatype, ingasha for', name_1)
         cursor.execute(set_card_aquire, (5, gashatype, 2, id_1))
         connection.commit()
-        
+    
+    # 處理卡片數值
+    if r['visual_max'] is None:
+        url = os.path.join(card_info_root_url if is_jp else as_card_info_root_url, str(d['id']))
+        vals_0, vals_1 = craw_values(url, name, is_jp)
+        if vals_0 is not None and vals_1 is not None:
+            print('Update visual_max, vocal_max, dance_max for', name)
+            cursor.execute(set_card_values, (vals_0['visual'], vals_0['vocal'], vals_0['dance'], id_0))
+            print('Update visual_max, vocal_max, dance_max for', name_1)
+            cursor.execute(set_card_values, (vals_1['visual'], vals_1['vocal'], vals_1['dance'], id_1))
+            connection.commit()
+    
+    # 處理突破數值
+    if r['visual_bonus'] is None or str(d['masterRankMax']) not in json.loads(r['visual_bonus']):
+        master_rank = str(d['masterRankMax'])
+        vi_bonus = {} if r['visual_bonus'] is None else json.loads(r['visual_bonus'])
+        vo_bonus = {} if r['vocal_bonus'] is None else json.loads(r['vocal_bonus'])
+        da_bonus = {} if r['dance_bonus'] is None else json.loads(r['dance_bonus'])
+        vi_bonus[master_rank] = d['visualMasterBonus']
+        vo_bonus[master_rank] = d['vocalMasterBonus']
+        da_bonus[master_rank] = d['danceMasterBonus']
+        print('Update value bonus for', name)
+        cursor.execute(set_card_bonus, (json.dumps(vi_bonus), json.dumps(vo_bonus), json.dumps(da_bonus), id_0))
+        print('Update value bonus for', name_1)
+        cursor.execute(set_card_bonus, (json.dumps(vi_bonus), json.dumps(vo_bonus), json.dumps(da_bonus), id_1))
+        connection.commit()
+    
+    # 處理最大突破
+    if is_jp and r['jp_master_rank'] is None:
+        print('Update max master rank for', name)
+        cursor.execute(set_card_master, (d['masterRankMax'], id_0))
+        print('Update max master rank for', name_1)
+        cursor.execute(set_card_master, (d['masterRankMax'], id_1))
+        connection.commit()
+    elif not is_jp and r['as_master_rank'] is None:
+        print('Update max master rank for', name)
+        cursor.execute(set_card_master_as, (d['masterRankMax'], id_0))
+        print('Update max master rank for', name_1)
+        cursor.execute(set_card_master_as, (d['masterRankMax'], id_1))
+        connection.commit()
+    
+    # 處理卡面文字
+    if is_jp and r['jp_flavor'] is None:
+        url = os.path.join(card_info_root_url, str(d['id']))
+        flavor_0, flavor_1 = craw_flavor(url, name, is_jp)
+        if flavor_0 is not None and flavor_1 is not None:
+            print('Update flavor text for', name)
+            cursor.execute(set_card_flavor, (flavor_0, id_0))
+            print('Update flavor text for', name_1)
+            cursor.execute(set_card_flavor, (flavor_1, id_1))
+            connection.commit()
+    elif not is_jp and r['cn_flavor'] is None:
+        url = os.path.join(as_card_info_root_url, str(d['id']))
+        flavor_0, flavor_1 = craw_flavor(url, name, is_jp)
+        if flavor_0 is not None and flavor_1 is not None:
+            print('Update flavor text for', name)
+            cursor.execute(set_card_flavor_as, (flavor_0, id_0))
+            print('Update flavor text for', name_1)
+            cursor.execute(set_card_flavor_as, (flavor_1, id_1))
+            connection.commit()
+    
+    # 處理假 id
+    if is_jp and r['card_id'] is None:
+        cursor.execute(set_card_fake_id, (id_0-6, id_0))
+        cursor.execute(set_card_fake_id, (id_1-6, id_1))
+        connection.commit()
     
     # 爬 icon 圖
     icon_url_0 = os.path.join(icon_root_url, d['resourceId'] + '_0.png') if is_jp else os.path.join(as_icon_root_url, d['resourceId'] + '_0.png')

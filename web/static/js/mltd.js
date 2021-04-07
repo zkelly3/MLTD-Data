@@ -17,8 +17,8 @@ $(function() {
         data: {
             idols: idols_info,
             idolinfo: [{'text': '', 'val': ''},
-                {'text': '姓名', 'val': 'name'},
-                {'text': '陣營', 'val': 'itype'},
+                {'text': '姓名', 'val': 'jp_name'},
+                {'text': '陣營', 'val': 'i_type'},
                 {'text': '年齡', 'val': 'age'},
                 {'text': '身高', 'val': 'height'},
                 {'text': '體重', 'val': 'weight'}],

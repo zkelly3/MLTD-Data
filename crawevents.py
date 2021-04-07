@@ -11,7 +11,7 @@ def handle_event(begin, end, name, type, get_sql, set_sql, ins_sql, cursor, conn
     if res:
         r = res[0]
         id = r['id']
-        if r['start'] is None or r['over'] is None:
+        if r['jp_start'] is None or r['jp_over'] is None:
             print('Edit', name)
             cursor.execute(set_sql, (begin, end, id))
             connection.commit()
@@ -37,10 +37,10 @@ def handle_event(begin, end, name, type, get_sql, set_sql, ins_sql, cursor, conn
 
 def update_astime(events, sql, cursor, connection):
     for e in events:
-        if e['asstart'] is None:
-            new_start = e['start'].replace(year=e['start'].year + 2)
-            new_over = e['over'].replace(year=e['over'].year + 2)
-            print('Set asstart, asover for', e['name'])
+        if e['as_start'] is None:
+            new_start = e['jp_start'].replace(year=e['jp_start'].year + 2)
+            new_over = e['jp_over'].replace(year=e['jp_over'].year + 2)
+            print('Set as_start, as_over for', e['jp_name'])
             cursor.execute(sql, (new_start, new_over, e['id']))
             connection.commit()
 
@@ -89,6 +89,9 @@ def main():
             elif type in [7]:
                 # その他
                 handle_event(begin, end, name, 'その他', get_event_oth, set_event_oth, ins_event_oth, cursor, connection)
+            elif type in [14]:
+                # TALK SHOW
+                handle_event(begin, end, name, 'TALKSHOW', get_event_tlk, set_event_tlk, ins_event_tlk, cursor, connection)
         
         cursor.execute(get_event_all_col)
         update_astime(cursor.fetchall(), set_event_col_as, cursor, connection)

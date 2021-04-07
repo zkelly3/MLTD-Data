@@ -2,9 +2,9 @@ import json
 import requests
 import re
 from bs4 import BeautifulSoup
-import pymysql.cursors
+#import pymysql.cursors
 from datetime import datetime
-from config import *
+#from config import *
 
 def bs4_data(url, *args, **kwargs):
     rq = requests.get(url)
@@ -51,12 +51,20 @@ def consume(s, prefix):
         return True, s[len(prefix):].strip()
 
 def main():
+    '''
     connection = connect()
     with connection.cursor() as cursor:
         cursor.execute(get_event_all_col)
         res = cursor.fetchall()
         for e in res:
-            print(e['start'], e['start'].replace(year=e['start'].year +2))
+            print(e['jp_start'], e['jp_start'].replace(year=e['jp_start'].year +2))
+    '''
+    res = bs4_data('https://mltd.matsurihi.me/cards/1108', 'span', string='ダンス')
+    for r in res:
+        has_value, value = consume(r.parent.text, 'ダンス')
+        if has_value:    
+            print(int(value.split('(')[0].strip()))
+    
     
 
 if __name__ == '__main__':

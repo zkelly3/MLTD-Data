@@ -1,10 +1,10 @@
-#card {
+table {
   margin: 10px;
   text-align: left;
   border-collapse:collapse;
 }
 
-#card td {
+td {
   border: 1px solid black;
   padding: 2px 5px;
 }
