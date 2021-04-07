@@ -14,9 +14,9 @@ app.jinja_env.variable_start_string = '{['
 app.jinja_env.variable_end_string = ']}'
 
 idol_types = ['All', 'Princess', 'Fairy', 'Angel', 'Guest']
-aquire_types = [{'jp': 'プラチナガシャ', 'as': '白金轉蛋'}, 
-    {'jp': 'PSTイベント', 'as': 'PST活動'}, 
-    {'jp': 'ミリコレ', 'as': '百萬收藏'}, 
+aquire_types = [{'jp': 'プラチナガシャ', 'as': '白金轉蛋'},
+    {'jp': 'PSTイベント', 'as': 'PST活動'},
+    {'jp': 'ミリコレ', 'as': '百萬收藏'},
     {'jp': '初始', 'as': '初始'},
     {'jp': '周年イベント', 'as': '週年活動'},
     {'jp': '覚醒', 'as': '覺醒'},
@@ -83,7 +83,7 @@ def get_idol_info(id):
             cursor.execute(sql_cards, (info['id']))
             cards = cursor.fetchall()
     connection.close()
-    
+
     for card in cards:
         card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
         if card['jp_time']:
@@ -99,7 +99,7 @@ def get_card_info_local(id, local):
     sql_e_pst = ""
     sql_e_ann = ""
     sql_e_oth = ""
-    
+
     sql_card = "SELECT id, {name} AS name, IID, rare, {time} AS time, aquire, gasha_type, in_gasha, {master_rank} AS master_rank, visual_max, vocal_max, dance_max, visual_bonus, vocal_bonus, dance_bonus, leader_skill, skill_type, {skill_name} AS skill_name, skill_val, {flavor} AS flavor, awaken FROM `Card` WHERE (id = %s)"
     sql_idol = "SELECT {name} AS name FROM `Idol` WHERE (id = %s)"
     sql_awaken = "SELECT id, {name} AS name FROM `Card` WHERE (id = %s)"
@@ -111,7 +111,7 @@ def get_card_info_local(id, local):
     sql_skill = """SELECT SkillType.id AS id, SkillType.{name} AS name, SkillSubType.{description} AS description
     FROM `SkillSubType` INNER JOIN `SkillType` ON SkillSubType.SID = SkillType.id
     WHERE (SkillSubType.id = %s)"""
-    
+
     n_sql_card = sql_card.format(**local)
     n_sql_idol = sql_idol.format(**local)
     n_sql_awaken = sql_awaken.format(**local)
@@ -119,7 +119,7 @@ def get_card_info_local(id, local):
     n_sql_not_up = sql_not_up.format(**local)
     n_sql_ls = sql_ls.format(**local)
     n_sql_skill = sql_skill.format(**local)
-    
+
     connection = connect()
     with connection.cursor() as cursor:
         cursor.execute(n_sql_card, (id));
@@ -128,7 +128,7 @@ def get_card_info_local(id, local):
             raise NotFoundError
         else:
             card = card[0]
-            
+
             # 這張卡在這一版不存在或還沒實裝
             if card['time'] is None:
                 return None
@@ -141,11 +141,11 @@ def get_card_info_local(id, local):
                 if idol:
                     idol = idol[0]
                     card['idol'] = {'id': idol_id, 'name': idol['name']}
-            
+
             # 稀有度
             rare_id = card['rare']
             card['rare'] = rarity[rare_id]
-            
+
             # 取得方式
             aquire_id = card.pop('aquire', None)
             card['aquire'] = {'type': aquire_types[aquire_id][local['ver']]} if aquire_id is not None else None
@@ -164,10 +164,10 @@ def get_card_info_local(id, local):
                 card['aquire']['title'] = gashas[0]['name'] if gashas else None
             elif aquire_id in [3, 5]:
                 card['aquire']['title'] = '/'
-            
+
             # 是否覺醒
             card['is_awaken'] = True if aquire_id == 5 else False
-            
+
             # 覺醒前 / 後
             awaken_id = card.pop('awaken', None)
             card['awaken'] = {} if awaken_id is not None else None
@@ -176,12 +176,12 @@ def get_card_info_local(id, local):
                 awaken = cursor.fetchall()
                 if awaken:
                     awaken = awaken[0]
-                    
+
                     card['awaken']['id'] = awaken['id']
                     card['awaken']['name'] = awaken['name']
                     card['awaken']['img_url'] = image_path('images/card_icons', str(awaken['id']) + '.png')
                     card['awaken']['url'] = '/card/' + str(awaken['id'])
-            
+
             # Center 效果
             if rare_id >= 2 and card['leader_skill'] is not None:
                 cursor.execute(n_sql_ls, (card['leader_skill']))
@@ -189,7 +189,7 @@ def get_card_info_local(id, local):
                 if ls:
                     ls = ls[0]
                     card['leader_skill'] = {'name': ls['name']}
-                    
+
                     if rare_id >= 6:
                         ls_val = loads(ls['ssr']) if ls['ssr'] is not None else None
                     elif rare_id >= 4:
@@ -198,11 +198,11 @@ def get_card_info_local(id, local):
                         ls_val = loads(ls['sr']) if ls['r'] is not None else None
                     else:
                         ls_val = None
-                    
-                    card['leader_skill']['description'] = ls['description'].format(**ls_val) if ls['description'] is not None and ls_val is not None else ''   
+
+                    card['leader_skill']['description'] = ls['description'].format(**ls_val) if ls['description'] is not None and ls_val is not None else ''
                 else:
                     card['leader_skill'] = None
-            
+
             # 技能
             skill_type_id = card.pop('skill_type', None)
             if rare_id >= 2 and skill_type_id is not None:
@@ -211,12 +211,12 @@ def get_card_info_local(id, local):
                 if skill:
                     skill = skill[0]
                     card['skill'] = {'name': card['skill_name'], 'type': {'id': skill['id'], 'name': skill['name']}}
-                    
+
                     skill_val = card.pop('skill_val', None)
                     skill_val = loads(skill_val) if skill_val is not None else None
                     card['skill']['description'] = skill['description'].format(**skill_val) if skill['description'] is not None and skill_val is not None else ''
 
-            
+
             card['time'] = card['time'].replace(tzinfo=timezone(timedelta(hours=local['ver_time']))).timestamp() if card['time'] is not None else None
             card['img_url'] = image_path('images/card_images', str(card['id']) + '.png')
     connection.close()
@@ -245,13 +245,13 @@ def get_card_info(id):
         'ver': 'as',
         'ver_time': 8
     }
-    
+
     card = []
     card.append(get_card_info_local(id, jp_local))
     card.append(get_card_info_local(id, as_local))
     return card
-    
-    
+
+
 @app.route("/")
 def home_page():
     idols = get_idols()
@@ -271,13 +271,13 @@ def card_page(id):
         card = get_card_info(id)
     except NotFoundError as e:
         abort(404)
-    
+
     if card[0] is not None:
         page_title = card[0]['rare'] + ' ' + card[0]['name']
     else:
         page_title = card[1]['rare'] + ' ' + card[1]['name']
     return render_template('card.html', title=page_title, card=dumps(card, ensure_ascii=False))
-    
+
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template('page_not_found.html'), 404
