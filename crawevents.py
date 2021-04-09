@@ -1,30 +1,31 @@
-from datetime import datetime, date, timezone, timedelta
+from datetime import datetime, timezone, timedelta
 import json
 import re
 from config import connect
+from dry_cursor import DryCursor
 
-def handle_event(begin, end, name, type, local, cursor, connection):
+def handle_event(begin, end, name, event_type, local, cursor, connection):
     pre_sql_get_event = "SELECT id, {start} AS start, {over} AS over FROM `{event}` WHERE ({start} = %s)"
     pre_sql_set_event = "UPDATE `{event}` SET {start} = %s, {over} = %s WHERE (id = %s)"
     pre_sql_ins_event = "INSERT INTO `{event}`(`{name}`, `{start}`, `{over}`{other_params}) VALUES(%s, %s, %s{other_vals})"
-    
+
     sql_get_event = pre_sql_get_event.format(**local)
     sql_set_event = pre_sql_set_event.format(**local)
     sql_ins_event = pre_sql_ins_event.format(**local)
-    
+
     print('Start', name)
     cursor.execute(sql_get_event, (begin))
     res = cursor.fetchall()
     if res:
-        r = res[0]
-        id = r['id']
-        if r['start'] is None or r['over'] is None:
+        row = res[0]
+        event_id = row['id']
+        if row['start'] is None or row['over'] is None:
             print('Edit', name)
-            cursor.execute(sql_set_event, (begin, end, id))
+            cursor.execute(sql_set_event, (begin, end, event_id))
             connection.commit()
     else:
         print('Insert', name)
-        if type == 'PST':
+        if event_type == 'PST':
             t_id = -1
             if re.search('シアター', name):
                 t_id = 0
@@ -47,21 +48,22 @@ def main():
         line = f.readline()
         res = re.sub(r'new Date\((\d+)\)', r'\1', line)
         data = json.loads(res)
-    
+
     connection = connect()
     with connection.cursor() as cursor:
+        cursor = DryCursor(cursor)
         for i in range(len(data)-1, -1, -1):
-            d = data[i]
-            
+            event = data[i]
+
             local = {
                 'name': 'jp_name',
                 'start': 'jp_start',
                 'over': 'jp_over',
                 'ver_time': 9
             }
-            
+
             # 處理活動名稱
-            name = d['name'].replace(' ～', '～')
+            name = event['name'].replace(' ～', '～')
             if name == 'プラチナスターシアタースペシャル～アイドルヒーローズジェネシス～':
                 name = 'プラチナスターシアタースペシャル～アイドルヒーローズジェネシス Justice OR Voice～'
             elif name[0:8] == 'エイプリルフール':
@@ -70,13 +72,13 @@ def main():
                     name = '出撃！アイドルヒーローズ'
                 elif name == '2021(仮)':
                     name = 'ミリ女ファイト！'
-            
-            # 處理活動開始、結束時間
-            begin = datetime.fromtimestamp(d['beginDate'] / 1000, timezone(timedelta(hours=local['ver_time'])))
-            end = datetime.fromtimestamp(d['endDate'] / 1000, timezone(timedelta(hours=local['ver_time'])))
 
-            
-            event_type = d['type']
+            # 處理活動開始、結束時間
+            begin = datetime.fromtimestamp(event['beginDate'] / 1000, timezone(timedelta(hours=local['ver_time'])))
+            end = datetime.fromtimestamp(event['endDate'] / 1000, timezone(timedelta(hours=local['ver_time'])))
+
+
+            event_type = event['type']
             event_type_name = ''
             local['other_params'] = ''
             local['other_vals'] = ''
@@ -110,11 +112,11 @@ def main():
                 # TALK PARTY
                 event_type_name = 'TALKPARTY'
                 local['event'] = 'TalkPartyEvent'
-            
+
             if len(event_type_name) > 0:
                 handle_event(begin, end, name, event_type_name, local, cursor, connection)
             else:
-                print('Event type for', name, 'not found'
+                print('Event type for', name, 'not found')
 
 if __name__ == '__main__':
     main()
