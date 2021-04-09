@@ -96,50 +96,142 @@ def get_idol_info(idol_id):
         card['rare'] = rarity[card['rare']]
     return info, cards
 
+def get_card_aquire_local(card, card_id, aquire_id, local, cursor):
+    sql_gasha = """SELECT Gasha.id AS id, Gasha.{name} AS name,
+                   Gasha.{start} AS start, Gasha.{over} AS over, Gasha.type AS gasha_type
+                   FROM `GashaToCard` INNER JOIN `Gasha` ON GashaToCard.GID = Gasha.id
+                   WHERE (GashaToCard.CID = %s AND Gasha.{start} IS NOT NULL)
+                   ORDER BY Gasha.{start}""".format(**local)
+    sql_not_up = """SELECT id, {name} AS name, {start} AS start, {over} AS over, type AS gasha_type
+                    FROM `Gasha` WHERE ({start} = %s AND NOT type = 5)""".format(**local)
+    pre_sql_event = """SELECT `{event}`.id AS id, {event}.{name} AS name, {event}.{start} AS start, {event}.{over} AS over{other_params}
+                   FROM `{event_to_card}` INNER JOIN `{event}` ON {event_to_card}.EID = {event}.id
+                   WHERE ({event_to_card}.CID = %s AND {event}.{start} IS NOT NULL)
+                   ORDER BY {event}.{start}"""
+    
+    card['aquire'] = {'type': aquire_types[aquire_id][local['ver']]} if aquire_id is not None else None
+    
+    guest_commu = {'jp': 'ゲストコミュ', 'as':'ゲストコミュ'}
+    if card_id == 1455: # 世界に冠たる絶対女王　玲音
+        card['from'] = 'Else'
+        card['aquire']['title'] = guest_commu[local['ver']]
+        return
+    
+    tz_info = timezone(timedelta(hours=local['ver_time']))
+    if aquire_id == 0:
+        card['from'] = 'Gasha'
+        cursor.execute(sql_gasha, (card_id))
+        gashas = cursor.fetchall()
+        if not gashas:
+            cursor.execute(sql_not_up, (card['time']))
+            gashas = cursor.fetchall()
+        for gasha in gashas:
+            gasha['start'] = gasha['start'].replace(tzinfo=tz_info).timestamp()
+            gasha['over'] = gasha['over'].replace(tzinfo=tz_info).timestamp()
+            gasha['gasha_type'] = gasha_types[gasha['gasha_type']][local['ver']]
+        card['gashas'] = gashas
+        card['aquire']['title'] = gashas[0]['name'] if gashas else None
+    elif aquire_id in [3, 5]:
+        card['from'] = 'Else'
+        card['aquire']['title'] = '--'
+    else:
+        card['from'] = 'Event'
+        e_local = loads(dumps(local))
+        if aquire_id == 1:
+            e_local['event'] = 'PSTEvent'
+            e_local['event_to_card'] = 'PSTEventToCard'
+            e_local['other_params'] = ', PSTEvent.type AS event_type'
+        elif aquire_id == 2:
+            e_local['event'] = 'CollectEvent'
+            e_local['event_to_card'] = 'CollectEventToCard'
+            e_local['other_params'] = ''
+        elif aquire_id == 4:
+            e_local['event'] = 'Anniversary'
+            e_local['event_to_card'] = 'AnniversaryToCard'
+            e_local['other_params'] = ''
+        else:
+            e_local['event'] = 'OtherEvent'
+            e_local['event_to_card'] = 'OtherEventToCard'
+            e_local['other_params'] = ''
+        
+        sql_event = pre_sql_event.format(**e_local)
+        cursor.execute(sql_event, (card_id))
+        event = cursor.fetchall()
+        event = event[0] if event else None
+        card['aquire']['title'] = event['name'] if event else None
+        card['event'] = event
+        if card['event']:
+            card['event']['start'] = card['event']['start'].replace(tzinfo=tz_info).timestamp()
+            card['event']['over'] = card['event']['over'].replace(tzinfo=tz_info).timestamp()
+            card['event']['event_type'] = pst_types[event['event_type']][local['ver']] if aquire_id == 1 else aquire_types[aquire_id][local['ver']]
+        
+
+def get_card_l_skill_local(card, card_id, rare_id, local, cursor):
+    sql_l_skill = """SELECT id, {name} AS name, {description} AS description, ssr, sr, r
+                FROM `LeaderSkill` WHERE (id = %s)""".format(**local)
+    
+    l_skill_id = card.pop('leader_skill', None)
+    if rare_id >= 2 and l_skill_id is not None:
+        cursor.execute(sql_l_skill, (l_skill_id))
+        l_skill = cursor.fetchall()
+        if l_skill:
+            l_skill = l_skill[0]
+            card['leader_skill'] = {'name': l_skill['name']}
+
+            if rare_id >= 6:
+                ls_val = loads(l_skill['ssr']) if l_skill['ssr'] is not None else None
+            elif rare_id >= 4:
+                ls_val = loads(l_skill['sr']) if l_skill['sr'] is not None else None
+            elif rare_id >= 2:
+                ls_val = loads(l_skill['sr']) if l_skill['r'] is not None else None
+            else:
+                ls_val = None
+
+            card['leader_skill']['description'] = l_skill['description'].format(**ls_val) if l_skill['description'] is not None and ls_val is not None else ''
+
+def get_card_skill_local(card, card_id, rare_id, local, cursor):
+    sql_skill = """SELECT SkillType.id AS id, SkillType.{name} AS name,
+                   SkillSubType.{description} AS description FROM `SkillSubType`
+                   INNER JOIN `SkillType` ON SkillSubType.SID = SkillType.id
+                   WHERE (SkillSubType.id = %s)""".format(**local)
+    
+    skill_type_id = card.pop('skill_type', None)
+    if rare_id >= 2 and skill_type_id is not None:
+        cursor.execute(sql_skill, (skill_type_id))
+        skill = cursor.fetchall()
+        if skill:
+            skill = skill[0]
+            card['skill'] = {'name': card.pop('skill_name', None), 'type': {'id': skill['id'], 'name': skill['name']}}
+
+            skill_val = card.pop('skill_val', None)
+            skill_val = loads(skill_val) if skill_val is not None else None
+            card['skill']['description'] = skill['description'].format(**skill_val) if skill['description'] is not None and skill_val is not None else ''
+
 def get_card_info_local(card_id, local):
     # sql_e_col = ""
     # ssql_e_pst = ""
     # ssql_e_ann = ""
     # ssql_e_oth = ""
 
-    sql_card = """SELECT id, {name} AS name, IID, rare, {time} AS time, aquire, gasha_type,
-                  in_gasha, {master_rank} AS master_rank, visual_max, vocal_max, dance_max,
-                  visual_bonus, vocal_bonus, dance_bonus, leader_skill, skill_type,
-                  {skill_name} AS skill_name, skill_val, {flavor} AS flavor, awaken FROM `Card`
-                  WHERE (id = %s)"""
-    sql_idol = "SELECT {name} AS name FROM `Idol` WHERE (id = %s)"
-    sql_awaken = "SELECT id, {name} AS name FROM `Card` WHERE (id = %s)"
-    sql_gasha = """SELECT Gasha.id AS id, Gasha.{name} AS name, Gasha.{start} AS start,
-                   Gasha.{over} AS over, Gasha.type AS gasha_type FROM `GashaToCard`
-                   INNER JOIN `Gasha` ON GashaToCard.GID = Gasha.id
-                   WHERE (GashaToCard.CID = %s AND Gasha.{start} IS NOT NULL)
-                   ORDER BY Gasha.{start}"""
-    sql_not_up = """SELECT id, {name} AS name, {start} AS start, {over} AS over,
-                    type AS gasha_type FROM `Gasha` WHERE ({start} = %s AND NOT type = 5)"""
-    sql_ls = """SELECT id, {name} AS name, {description} AS description, ssr, sr, r
-                FROM `LeaderSkill` WHERE (id = %s)"""
-    sql_skill = """SELECT SkillType.id AS id, SkillType.{name} AS name,
-                   SkillSubType.{description} AS description FROM `SkillSubType`
-                   INNER JOIN `SkillType` ON SkillSubType.SID = SkillType.id
-                   WHERE (SkillSubType.id = %s)"""
-
-    n_sql_card = sql_card.format(**local)
-    n_sql_idol = sql_idol.format(**local)
-    n_sql_awaken = sql_awaken.format(**local)
-    n_sql_gasha = sql_gasha.format(**local)
-    n_sql_not_up = sql_not_up.format(**local)
-    n_sql_ls = sql_ls.format(**local)
-    n_sql_skill = sql_skill.format(**local)
-
+    sql_card = """SELECT id, {name} AS name, IID, rare, {time} AS time, aquire, gasha_type, in_gasha,
+                  {master_rank} AS master_rank, visual_max, vocal_max, dance_max,
+                  visual_bonus, vocal_bonus, dance_bonus, leader_skill, 
+                  skill_type, {skill_name} AS skill_name, skill_val,
+                  {flavor} AS flavor, awaken
+                  FROM `Card` WHERE (id = %s)""".format(**local)
+    sql_idol = "SELECT {name} AS name, color FROM `Idol` WHERE (id = %s)".format(**local)
+    sql_awaken = "SELECT id, {name} AS name FROM `Card` WHERE (id = %s)".format(**local)
+    
     connection = connect()
     with connection.cursor() as cursor:
-        cursor.execute(n_sql_card, (card_id))
+        cursor.execute(sql_card, (card_id))
         card = cursor.fetchall()
         if not card:
             raise NotFoundError
 
         card = card[0]
-
+        card['is_jp'] = local['ver'] == 'jp'
+        
         # 這張卡在這一版不存在或還沒實裝
         if card['time'] is None:
             return None
@@ -147,11 +239,11 @@ def get_card_info_local(card_id, local):
         # 所屬偶像
         idol_id = card.pop('IID', None)
         if idol_id is not None:
-            cursor.execute(n_sql_idol, (idol_id))
+            cursor.execute(sql_idol, (idol_id))
             idol = cursor.fetchall()
             if idol:
                 idol = idol[0]
-                card['idol'] = {'id': idol_id, 'name': idol['name']}
+                card['idol'] = {'url': '/idol/%d' % idol_id, 'name': idol['name'], 'color': idol['color']}
 
         # 稀有度
         rare_id = card['rare']
@@ -159,23 +251,7 @@ def get_card_info_local(card_id, local):
 
         # 取得方式
         aquire_id = card.pop('aquire', None)
-        card['aquire'] = {'type': aquire_types[aquire_id][local['ver']]} if aquire_id is not None else None
-        if aquire_id == 0:
-            card['from_gasha'] = True
-            cursor.execute(n_sql_gasha, (card_id))
-            gashas = cursor.fetchall()
-            if not gashas:
-                cursor.execute(n_sql_not_up, (card['time']))
-                gashas = cursor.fetchall()
-            for gasha in gashas:
-                tzinfo = timezone(timedelta(hours=local['ver_time']))
-                gasha['start'] = gasha['start'].replace(tzinfo=tzinfo).timestamp()
-                gasha['over'] = gasha['over'].replace(tzinfo=tzinfo).timestamp()
-                gasha['gasha_type'] = gasha_types[gasha['gasha_type']][local['ver']]
-            card['gashas'] = gashas
-            card['aquire']['title'] = gashas[0]['name'] if gashas else None
-        elif aquire_id in [3, 5]:
-            card['aquire']['title'] = '/'
+        get_card_aquire_local(card, card_id, aquire_id, local, cursor)
 
         # 是否覺醒
         card['is_awaken'] = aquire_id == 5
@@ -184,52 +260,28 @@ def get_card_info_local(card_id, local):
         awaken_id = card.pop('awaken', None)
         card['awaken'] = {} if awaken_id is not None else None
         if awaken_id is not None:
-            cursor.execute(n_sql_awaken, (awaken_id))
+            cursor.execute(sql_awaken, (awaken_id))
             awaken = cursor.fetchall()
             if awaken:
                 awaken = awaken[0]
-
                 card['awaken']['id'] = awaken['id']
                 card['awaken']['name'] = awaken['name']
                 card['awaken']['img_url'] = image_path('images/card_icons', '%d.png' % awaken['id'])
                 card['awaken']['url'] = '/card/%d' % awaken['id']
 
         # Center 效果
-        if rare_id >= 2 and card['leader_skill'] is not None:
-            cursor.execute(n_sql_ls, (card['leader_skill']))
-            ls = cursor.fetchall()
-            if ls:
-                ls = ls[0]
-                card['leader_skill'] = {'name': ls['name']}
-
-                if rare_id >= 6:
-                    ls_val = loads(ls['ssr']) if ls['ssr'] is not None else None
-                elif rare_id >= 4:
-                    ls_val = loads(ls['sr']) if ls['sr'] is not None else None
-                elif rare_id >= 2:
-                    ls_val = loads(ls['sr']) if ls['r'] is not None else None
-                else:
-                    ls_val = None
-
-                card['leader_skill']['description'] = ls['description'].format(**ls_val) if ls['description'] is not None and ls_val is not None else ''
-            else:
-                card['leader_skill'] = None
+        get_card_l_skill_local(card, card_id, rare_id, local, cursor)
 
         # 技能
-        skill_type_id = card.pop('skill_type', None)
-        if rare_id >= 2 and skill_type_id is not None:
-            cursor.execute(n_sql_skill, (skill_type_id))
-            skill = cursor.fetchall()
-            if skill:
-                skill = skill[0]
-                card['skill'] = {'name': card['skill_name'], 'type': {'id': skill['id'], 'name': skill['name']}}
-
-                skill_val = card.pop('skill_val', None)
-                skill_val = loads(skill_val) if skill_val is not None else None
-                card['skill']['description'] = skill['description'].format(**skill_val) if skill['description'] is not None and skill_val is not None else ''
-
-
-        card['time'] = card['time'].replace(tzinfo=timezone(timedelta(hours=local['ver_time']))).timestamp() if card['time'] is not None else None
+        get_card_skill_local(card, card_id, rare_id, local, cursor)
+        
+        # 數值 Bonus
+        card['visual_bonus'] = loads(card['visual_bonus']) if card['visual_bonus'] is not None else None
+        card['vocal_bonus'] = loads(card['vocal_bonus']) if card['vocal_bonus'] is not None else None
+        card['dance_bonus'] = loads(card['dance_bonus']) if card['dance_bonus'] is not None else None
+        
+        tz_info = timezone(timedelta(hours=local['ver_time']))
+        card['time'] = card['time'].replace(tzinfo=tz_info).timestamp() if card['time'] is not None else None
         card['img_url'] = image_path('images/card_images', str(card['id']) + '.png')
     connection.close()
     return card

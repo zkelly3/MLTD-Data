@@ -12,16 +12,18 @@
 <div id="app">
   <h3>卡片資訊</h3><button v-on:click="changeLanguage()" :disabled="notBoth">{{ panelWord }}</button>
   <table id="card">
-    <tr><td rowspan="6"><img class="card_image" :src="shown.img_url"/></td>
-    <td>名稱</td></td><td>{{ shown.name }}</td></tr>
-    <td>所屬偶像</td></td><td><a :href="shown.idolUrl"> {{ shown.idolName }}</a></td></tr>
-    <tr><td rowspan="2">取得方式</td><td>{{ shown.aquireType }}</td></tr>
-    <tr><td><a v-if="hasFrom">{{ shown.aquireTitle }}</a></td></tr>
-    <tr><td>{{ shown.awakenWord }}</td><td v-if="hasAwaken"><a :href="shown.awaken.url"><img class="card_icon" :src="shown.awaken.img_url"/>{{ shown.awakenName }}</a></td><td v-else>尚未更新</td></tr>
-    <tr><td>實裝時間<td>{{ shown.time }}</td></tr>
+    <tr><td rowspan="5"><img class="card_image" :src="shown.img_url"/></td>
+    <th :style="styleList">名稱</td></td><td>{{ shown.name }}</td></tr>
+    <th :style="styleList">所屬偶像</td></td><td><a :href="shown.idolUrl"> {{ shown.idolName }}</a></td></tr>
+    <tr><th :style="styleList">取得方式</td><td>{{ shown.aquireType }}<br><a v-if="hasFrom">{{ shown.aquireTitle }}</a></td></tr>
+    <tr><th :style="styleList">{{ shown.awakenWord }}</td><td v-if="hasAwaken"><a :href="shown.awaken.url"><img class="card_icon" :src="shown.awaken.img_url"/>{{ shown.awakenName }}</a></td><td v-else>尚未更新</td></tr>
+    <tr><th :style="styleList">實裝時間<td>{{ shown.time }}</td></tr>
+    <tr>
+    <tr><th :style="styleList">技能</th><td>{{ shown.skillType }}</td><td><b>{{ shown.skillName }}</b><br>{{ shown.skillDesc }}</td></tr>
+    <tr><th :style="styleList">背景敘述</td><td colspan="2">{{ shown.flavor }}</td></tr>
   </table>
-  <div v-if="shown.from_gasha">
-    <h3>實裝或 Pick Up 的卡池</h3>
+  <div v-if="shown.from == 'Gasha' && shown.gashas.length != 0">
+    <h3>實裝 / Pick Up 的卡池</h3>
     <table id="gashas">
       <th v-for="gashaTitle in gashaTitles">{{ gashaTitle }}</th>
       <tr v-for="gasha in shown.gashas">
@@ -29,6 +31,16 @@
         <td>{{ gasha.name }}</td>
         <td>{{ gasha.start }}</td>
         <td>{{ gasha.over }}</td>
+      </tr>
+    </table>
+  </div>
+  <div v-if="shown.from == 'Event' && shown.event != null">
+    <h3>實裝的活動</h3>
+    <table id="event">
+        <td>{{ shown.event.event_type }}</td>
+        <td>{{ shown.event.name }}</td>
+        <td>{{ shown.event.start }}</td>
+        <td>{{ shown.event.over }}</td>
       </tr>
     </table>
   </div>

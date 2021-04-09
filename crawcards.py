@@ -8,6 +8,19 @@ data = []
 cn_data = []
 errors = []
 
+class FakeCursor:
+    def __init__(self, cursor):
+        self.cursor = cursor
+
+    def execute(self, command, *args, **kwargs):
+        if command.startswith("SELECT"):
+            self.cursor.execute(command, *args, **kwargs)
+        else:
+            print (command, args, kwargs)
+
+    def fetchall(self, *args, **kwargs):
+        return self.cursor.fetchall(*args, **kwargs)
+
 def craw_card(write_type, name, img_url, img_path):
     if not os.path.isfile(img_path):
         img_data = requests.get(img_url).content
@@ -210,10 +223,10 @@ def handle_card(d, cursor, connection, is_jp):
         id_1 = r['awaken']
     
     # 處理中文卡片名稱
-    if not is_jp and r['cn_name'] is None:
-        print('Update cn_name for', name)
+    if not is_jp and r['as_name'] is None:
+        print('Update as_name for', name)
         cursor.execute(set_card_cn_name, (name, id_0))
-        print('Update cn_name for', name_1)
+        print('Update as_name for', name_1)
         cursor.execute(set_card_cn_name, (name_1, id_1))
         connection.commit()
     
@@ -343,7 +356,7 @@ def handle_card(d, cursor, connection, is_jp):
             print('Set skill for', name_1)
             cursor.execute(set_card_skill if is_jp else set_card_skill_as, (s_type, s_name, json.dumps(s_val), id_1))
             connection.commit()
-        elif not is_jp and not r['skill_cn_name']:
+        elif not is_jp and not r['as_skill_name']:
             s_name = ''
             url = os.path.join(as_card_info_root_url, str(d['id']))
             span = bs4_data(url, 'span', string='Skill')
@@ -424,7 +437,7 @@ def handle_card(d, cursor, connection, is_jp):
             print('Update flavor text for', name_1)
             cursor.execute(set_card_flavor, (flavor_1, id_1))
             connection.commit()
-    elif not is_jp and r['cn_flavor'] is None:
+    elif not is_jp and r['as_flavor'] is None:
         url = os.path.join(as_card_info_root_url, str(d['id']))
         flavor_0, flavor_1 = craw_flavor(url, name, is_jp)
         if flavor_0 is not None and flavor_1 is not None:
@@ -481,6 +494,8 @@ def main():
     connection = connect()
     
     with connection.cursor() as cursor:
+        cursor = FakeCursor(cursor)
+
         # 更新 (日版) 卡片資訊
         for d in data:
             if d['extraType'] in [5, 7, 10] and d['rarity'] == 4:

@@ -1,12 +1,23 @@
 table {
   margin: 10px;
   text-align: left;
-  border-collapse:collapse;
+  border-collapse: collapse;
+}
+#gashas th {
+  text-align: center;
+}
+#card tr {
+  border: 1px solid black;
+}
+th, td {
+  padding: 2px 5px;
 }
 
-td {
+#gashas th, td {
   border: 1px solid black;
-  padding: 2px 5px;
+}
+#event th, td {
+  border: 1px solid black;
 }
 
 .card_image {

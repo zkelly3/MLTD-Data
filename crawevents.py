@@ -1,19 +1,26 @@
-import pymysql.cursors
 from datetime import datetime, date, timezone, timedelta
 import json
 import re
-from config import *
+from config import connect
 
-def handle_event(begin, end, name, type, get_sql, set_sql, ins_sql, cursor, connection):
+def handle_event(begin, end, name, type, local, cursor, connection):
+    pre_sql_get_event = "SELECT id, {start} AS start, {over} AS over FROM `{event}` WHERE ({start} = %s)"
+    pre_sql_set_event = "UPDATE `{event}` SET {start} = %s, {over} = %s WHERE (id = %s)"
+    pre_sql_ins_event = "INSERT INTO `{event}`(`{name}`, `{start}`, `{over}`{other_params}) VALUES(%s, %s, %s{other_vals})"
+    
+    sql_get_event = pre_sql_get_event.format(**local)
+    sql_set_event = pre_sql_set_event.format(**local)
+    sql_ins_event = pre_sql_ins_event.format(**local)
+    
     print('Start', name)
-    cursor.execute(get_sql, (begin))
+    cursor.execute(sql_get_event, (begin))
     res = cursor.fetchall()
     if res:
         r = res[0]
         id = r['id']
-        if r['jp_start'] is None or r['jp_over'] is None:
+        if r['start'] is None or r['over'] is None:
             print('Edit', name)
-            cursor.execute(set_sql, (begin, end, id))
+            cursor.execute(sql_set_event, (begin, end, id))
             connection.commit()
     else:
         print('Insert', name)
@@ -29,20 +36,10 @@ def handle_event(begin, end, name, type, get_sql, set_sql, ins_sql, cursor, conn
                 t_id = 3
             elif re.search('テール', name):
                 t_id = 4
-            cursor.execute(ins_sql, (name, t_id, begin, end))
+            cursor.execute(sql_ins_event, (name, begin, end, t_id))
         else:
-            cursor.execute(ins_sql, (name, begin, end))
+            cursor.execute(sql_ins_event, (name, begin, end))
         connection.commit()
-
-
-def update_astime(events, sql, cursor, connection):
-    for e in events:
-        if e['as_start'] is None:
-            new_start = e['jp_start'].replace(year=e['jp_start'].year + 2)
-            new_over = e['jp_over'].replace(year=e['jp_over'].year + 2)
-            print('Set as_start, as_over for', e['jp_name'])
-            cursor.execute(sql, (new_start, new_over, e['id']))
-            connection.commit()
 
 def main():
     data = []
@@ -56,6 +53,13 @@ def main():
         for i in range(len(data)-1, -1, -1):
             d = data[i]
             
+            local = {
+                'name': 'jp_name',
+                'start': 'jp_start',
+                'over': 'jp_over',
+                'ver_time': 9
+            }
+            
             # 處理活動名稱
             name = d['name'].replace(' ～', '～')
             if name == 'プラチナスターシアタースペシャル～アイドルヒーローズジェネシス～':
@@ -64,48 +68,53 @@ def main():
                 name = name[8:].strip()
                 if name == '～アイドルヒーローズ～':
                     name = '出撃！アイドルヒーローズ'
+                elif name == '2021(仮)':
+                    name = 'ミリ女ファイト！'
             
             # 處理活動開始、結束時間
-            begin = datetime.fromtimestamp(d['beginDate'] / 1000, timezone(timedelta(hours=9)))
-            end = datetime.fromtimestamp(d['endDate'] / 1000, timezone(timedelta(hours=9)))
+            begin = datetime.fromtimestamp(d['beginDate'] / 1000, timezone(timedelta(hours=local['ver_time'])))
+            end = datetime.fromtimestamp(d['endDate'] / 1000, timezone(timedelta(hours=local['ver_time'])))
 
             
-            type = d['type']
-            if type in [2, 9]:
+            event_type = d['type']
+            event_type_name = ''
+            local['other_params'] = ''
+            local['other_vals'] = ''
+            if event_type in [2, 9]:
                 # ミリコレ
-                handle_event(begin, end, name, 'ミリコレ', get_event_col, set_event_col, ins_event_col, cursor, connection)
-            elif type in [3, 4, 10, 11, 12, 13]:
+                event_type_name = 'ミリコレ'
+                local['event'] = 'CollectEvent'
+            elif event_type in [3, 4, 10, 11, 12, 13]:
                 # PSTイベント
-                handle_event(begin, end, name, 'PST', get_event_pst, set_event_pst, ins_event_pst, cursor, connection)
-            elif type in [6]:
+                event_type_name = 'PST'
+                local['event'] = 'PSTEvent'
+                local['other_params'] = ', `type`'
+                local['other_vals'] = ', %s'
+            elif event_type in [6]:
                 # WORKING
-                handle_event(begin, end, name, 'WORKING', get_event_wkg, set_event_wkg, ins_event_wkg, cursor, connection)
-            elif type in [1]:
+                event_type_name = 'WORKING'
+                local['event'] = 'WorkingEvent'
+            elif event_type in [1]:
                 # THEATER SHOW TIME
-                handle_event(begin, end, name, 'SHOWTIME', get_event_sht, set_event_sht, ins_event_sht, cursor, connection)
-            elif type in [5]:
+                event_type_name = 'SHOWTIME'
+                local['event'] = 'ShowTimeEvent'
+            elif event_type in [5]:
                 # 周年イベント
-                handle_event(begin, end, name, '周年', get_event_ann, set_event_ann, ins_event_ann, cursor, connection)
-            elif type in [7]:
+                event_type_name = '周年'
+                local['event'] = 'Anniversary'
+            elif event_type in [7]:
                 # その他
-                handle_event(begin, end, name, 'その他', get_event_oth, set_event_oth, ins_event_oth, cursor, connection)
-            elif type in [14]:
-                # TALK SHOW
-                handle_event(begin, end, name, 'TALKSHOW', get_event_tlk, set_event_tlk, ins_event_tlk, cursor, connection)
-        
-        cursor.execute(get_event_all_col)
-        update_astime(cursor.fetchall(), set_event_col_as, cursor, connection)
-        cursor.execute(get_event_all_pst)
-        update_astime(cursor.fetchall(), set_event_pst_as, cursor, connection)
-        cursor.execute(get_event_all_wkg)
-        update_astime(cursor.fetchall(), set_event_wkg_as, cursor, connection)
-        cursor.execute(get_event_all_sht)
-        update_astime(cursor.fetchall(), set_event_sht_as, cursor, connection)
-        cursor.execute(get_event_all_ann)
-        update_astime(cursor.fetchall(), set_event_ann_as, cursor, connection)
-        cursor.execute(get_event_all_oth)
-        update_astime(cursor.fetchall(), set_event_oth_as, cursor, connection)
+                event_type_name = 'その他'
+                local['event'] = 'OtherEvent'
+            elif event_type in [14]:
+                # TALK PARTY
+                event_type_name = 'TALKPARTY'
+                local['event'] = 'TalkPartyEvent'
             
+            if len(event_type_name) > 0:
+                handle_event(begin, end, name, event_type_name, local, cursor, connection)
+            else:
+                print('Event type for', name, 'not found'
 
 if __name__ == '__main__':
     main()
