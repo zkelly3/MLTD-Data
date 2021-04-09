@@ -3,23 +3,11 @@ import json
 import re
 import os.path
 from config import *
+from dry_cursor import DryCursor
 
 data = []
 cn_data = []
 errors = []
-
-class FakeCursor:
-    def __init__(self, cursor):
-        self.cursor = cursor
-
-    def execute(self, command, *args, **kwargs):
-        if command.startswith("SELECT"):
-            self.cursor.execute(command, *args, **kwargs)
-        else:
-            print (command, args, kwargs)
-
-    def fetchall(self, *args, **kwargs):
-        return self.cursor.fetchall(*args, **kwargs)
 
 def craw_card(write_type, name, img_url, img_path):
     if not os.path.isfile(img_path):
@@ -491,7 +479,7 @@ def main():
     connection = connect()
 
     with connection.cursor() as cursor:
-        cursor = FakeCursor(cursor)
+        cursor = DryCursor(cursor)
 
         # 更新 (日版) 卡片資訊
         for card in data:
