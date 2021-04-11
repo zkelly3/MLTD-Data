@@ -342,11 +342,11 @@ def handle_card(card, cursor, data, is_jp):
 
 
     # 處理 Center 效果
-    if info_0.rarity != 0 and row['leader_skill'] is None:
+    if info_0.rarity != Rarity.N and row['leader_skill'] is None:
         handle_l_skill(card['id'], info_0.id, info_1.id, info_0.name, info_1.name, is_jp, cursor)
 
     # 處理技能
-    if info_0.rarity != 0:
+    if info_0.rarity != Rarity.N:
         if row['skill_type'] is None:
             skill = card['skills'][0]
             s_val = {
@@ -500,7 +500,7 @@ def handle_card(card, cursor, data, is_jp):
     craw_card('card', info_1.name, card_url_1, card_path_1)
 
     # 爬 SSR 大圖
-    if info_0.rarity == 6:
+    if info_0.rarity == Rarity.SSR:
         bg_url_0 = os.path.join(config.bg_root_url, card['resourceId'] + '_0.png') if is_jp else os.path.join(config.as_bg_root_url, card['resourceId'] + '_0.png')
         bg_path_0 = os.path.join(config.bg_dir, str(info_0.id) + '.png')
         bg_url_1 = os.path.join(config.bg_root_url, card['resourceId'] + '_1.png') if is_jp else os.path.join(config.as_bg_root_url, card['resourceId'] + '_1.png')
