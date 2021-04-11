@@ -11,3 +11,7 @@ class DryCursor:
     def fetchall(self, *args, **kwargs):
         return self.cursor.fetchall(*args, **kwargs)
 
+    @property
+    def connection(self):
+        return self.cursor.connection
+

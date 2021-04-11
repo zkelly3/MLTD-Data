@@ -1,4 +1,5 @@
 from datetime import datetime, timezone, timedelta
+from enum import IntEnum
 import json
 import re
 import os.path
@@ -167,6 +168,54 @@ def craw_flavor(url, name, is_jp):
     res_1 = value if has_value else None
     return res_0, res_1
 
+    
+class EffectId(IntEnum):
+    SCORE_UP = 1
+    COMBO_BONUS = 2
+    LIFE_RECOVER = 3
+    LIFE_GUARD = 4
+    COMBO_CONTINUE = 5
+    PERFECTLIZE = 6
+    SCORE_UP_COMBO_BONUS = 7
+    MULTI_UP = 8
+    DAMAGE_SCORE_UP = 10
+    DAMAGE_COMBO_BONUS = 11
+
+class SubType(IntEnum):
+    SCORE_UP_PG = 1
+    SCORE_UP_P = 2
+    COMBO_BONUS = 3
+    LIFE_RECOVER = 4
+    LIFE_GUARD = 5
+    COMBO_CONTINUE = 6
+    PERFECTLIZE_GGFS = 7
+    PERFECTLIZE_GG = 8
+    PERFECTLIZE_G = 9
+    SCORE_UP_COMBO_BONUS = 10
+    MULTI_UP = 11
+    DAMAGE_SCORE_UP = 12
+    DAMAGE_COMBO_BONUS = 13
+    
+def get_sub_type(eff_id, rare_0):
+    eff_id = EffectId(eff_id)
+    if eff_id == EffectId.SCORE_UP:
+        if rare_0 == 6:
+            return SubType.SCORE_UP_PG
+        else:
+            return SubType.SCORE_UP_P
+    elif eff_id == EffectId.PERFECTLIZE:
+        if rare_0 == 6:
+            return SubType.PERFECTLIZE_GGFS
+        elif rare_0 == 4:
+            return SubType.PERFECTLIZE_GG
+        elif rare_0 == 2:
+            return SubType.PERFECTLIZE_G
+    else:
+        try:
+            return SubType[eff_id.name]
+        except KeyError:
+            return None
+
 def handle_card(card, cursor, is_jp):
     global data, cn_data, errors
 
@@ -296,40 +345,14 @@ def handle_card(card, cursor, is_jp):
             for val in skill['value']:
                 s_val['val'].append(val)
 
-            eff_id = skill['effectId']
-            s_type = -1
-            if eff_id == 1:
-                if rare_0 == 6:
-                    s_type = 1
-                else:
-                    s_type = 2
-            elif eff_id == 2:
-                s_type = 3
-            elif eff_id == 3:
-                s_type = 4
-            elif eff_id == 4:
-                s_type = 5
-            elif eff_id == 5:
-                s_type = 6
-            elif eff_id == 6:
-                if rare_0 == 6:
-                    s_type = 7
-                elif rare_0 == 4:
-                    s_type = 8
-                elif rare_0 == 2:
-                    s_type = 9
-            elif eff_id == 7:
-                s_type = 10
-            elif eff_id == 8:
-                s_type = 11
-            elif eff_id == 10:
-                s_type = 12
-            elif eff_id == 11:
-                s_type = 13
+            s_type = get_sub_type(skill['effectId'], rare_0)
 
-            if s_type == -1:
+            if s_type is None:
                 err = 'Error transposing skill type for ' + name
                 errors.append(err)
+                s_type = -1
+            else:
+                s_type = int(s_type)
 
             s_name = ''
             url = os.path.join(config.card_info_root_url if is_jp else config.as_card_info_root_url, str(card['id']))
