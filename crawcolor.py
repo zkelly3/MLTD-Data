@@ -10,7 +10,7 @@ def bs4_data(url, *args, **kwargs):
     rq.encoding = 'utf-8'
     soup = BeautifulSoup(rq.text,"html.parser")
     res = soup.find_all(*args, **kwargs)
-    
+
     return res
 
 def consume(s, prefix):

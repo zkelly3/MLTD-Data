@@ -11,7 +11,7 @@ def bs4_data(url, *args, **kwargs):
     rq.encoding = 'utf-8'
     soup = BeautifulSoup(rq.text,"html.parser")
     res = soup.find_all(*args, **kwargs)
-    
+
     return res
 
 def handle(url):
@@ -20,15 +20,15 @@ def handle(url):
         words = span[0].parent.text
         if re.search('プラチナスター', words):
             print('PST')
-        elif re.search('ミリコレ', words):    
+        elif re.search('ミリコレ', words):
             print('百萬收藏')
         elif re.search('エイプリルフール', words):
             print('其他')
         else:
             print('周年')
         return
-        
-    
+
+
     span = bs4_data(url, string=re.compile('.*ガシャ種別:.*'))
     if span:
         words = span[0].parent.text
@@ -41,7 +41,7 @@ def handle(url):
         else:
             print('特殊抽卡')
         return
-    
+
     print('其他')
 
 def consume(s, prefix):
@@ -62,10 +62,10 @@ def main():
     res = bs4_data('https://mltd.matsurihi.me/cards/1108', 'span', string='ダンス')
     for r in res:
         has_value, value = consume(r.parent.text, 'ダンス')
-        if has_value:    
+        if has_value:
             print(int(value.split('(')[0].strip()))
-    
-    
+
+
 
 if __name__ == '__main__':
     main()

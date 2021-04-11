@@ -169,7 +169,7 @@ def craw_flavor(url, name, is_jp):
     has_value, value = config.consume(spans[1].parent.text, target)
     res_1 = value if has_value else None
     return res_0, res_1
-    
+
 class Rarity(IntEnum):
     N = 0
     NP = 1
@@ -179,13 +179,13 @@ class Rarity(IntEnum):
     SRP = 5
     SSR = 6
     SSRP = 7
-    
+
 @dataclass
 class CardInfo:
     name: str
     rarity: Rarity
     id: int = -1
-    
+
 class EffectId(IntEnum):
     SCORE_UP = 1
     COMBO_BONUS = 2
@@ -212,7 +212,7 @@ class SubType(IntEnum):
     MULTI_UP = 11
     DAMAGE_SCORE_UP = 12
     DAMAGE_COMBO_BONUS = 13
-    
+
 def get_sub_type(eff_id, rarity):
     eff_id = EffectId(eff_id)
     try:
@@ -275,13 +275,13 @@ def handle_card(card, cursor, data, is_jp):
     info_1 = CardInfo(name = info_0.name + '＋', rarity = info_0.rarity + 1)
 
     print('Start', info_0.name)
-    
+
     # 在資料庫找到這張卡
     try:
         row = get_or_insert_card_entry(card, cursor, data, is_jp, info_0, info_1)
     except NotFoundError:
         return
-    
+
     info_0.id = row['id']
 
     # 設定未覺醒和覺醒的配對

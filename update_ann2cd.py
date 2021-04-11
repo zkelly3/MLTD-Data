@@ -7,11 +7,11 @@ def main():
         while line:
             data.append(line.strip().split(' '))
             line = f.readline()
-    
+
     sel_card = "SELECT id FROM `Card` WHERE (jp_name = %s)"
     ins_ann2cd = "INSERT INTO `AnniversaryToCard` (`EID`, `CID`, `type`) VALUES(%s, %s, %s)"
     name_list = ['BRAND NEW PERFORMANCE', 'UNI-ONAIR', 'CHALLENGE FOR GLOW-RY DAYS']
-    
+
     connection = connect()
     with connection.cursor() as cursor:
         cur = 0
@@ -35,6 +35,6 @@ def main():
                     cursor.execute(ins_ann2cd, (cur, card_id, cnt))
                     connection.commit()
     connection.close()
-    
+
 if __name__ == '__main__':
     main()

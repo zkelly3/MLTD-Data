@@ -7,7 +7,7 @@ def main():
     pre_get_all_targets = """SELECT id, jp_name AS name, jp_start, jp_over, as_start, as_over FROM `{target}`
                              WHERE jp_name IS NOT NULL AND as_name IS NOT NULL AND jp_start IS NOT NULL AND as_start IS NULL"""
     pre_set_as_time = "UPDATE `{target}` SET as_start = %s, as_over = %s WHERE (id = %s)"
-    
+
     todos = [{'name': '白金轉蛋', 'target': 'Gasha'},
         {'name': '百萬收藏', 'target': 'CollectEvent'},
         {'name': 'PST活動', 'target': 'PSTEvent'},
@@ -16,14 +16,14 @@ def main():
         {'name': '週年活動', 'target': 'Anniversary'},
         {'name': '其他', 'target': 'OtherEvent'},
         {'name': 'TALK PARTY', 'target': 'TalkPartyEvent'}]
-    
+
     connection = connect()
     with connection.cursor() as cursor:
         for todo in todos:
             print('開始處理' + todo['name'])
             get_all_targets = pre_get_all_targets.format(target=todo['target'])
             set_as_time = pre_set_as_time.format(target=todo['target'])
-            
+
             cursor.execute(get_all_targets)
             targets = cursor.fetchall()
             for tgt in targets:

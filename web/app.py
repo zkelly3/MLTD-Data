@@ -108,15 +108,15 @@ def get_card_aquire_local(card, card_id, aquire_id, local, cursor):
                    FROM `{event_to_card}` INNER JOIN `{event}` ON {event_to_card}.EID = {event}.id
                    WHERE ({event_to_card}.CID = %s AND {event}.{start} IS NOT NULL)
                    ORDER BY {event}.{start}"""
-    
+
     card['aquire'] = {'type': aquire_types[aquire_id][local['ver']]} if aquire_id is not None else None
-    
+
     guest_commu = {'jp': 'ゲストコミュ', 'as':'ゲストコミュ'}
     if card_id == 1455: # 世界に冠たる絶対女王　玲音
         card['from'] = 'Else'
         card['aquire']['title'] = guest_commu[local['ver']]
         return
-    
+
     tz_info = timezone(timedelta(hours=local['ver_time']))
     if aquire_id == 0:
         card['from'] = 'Gasha'
@@ -153,7 +153,7 @@ def get_card_aquire_local(card, card_id, aquire_id, local, cursor):
             e_local['event'] = 'OtherEvent'
             e_local['event_to_card'] = 'OtherEventToCard'
             e_local['other_params'] = ''
-        
+
         sql_event = pre_sql_event.format(**e_local)
         cursor.execute(sql_event, (card_id))
         event = cursor.fetchall()
@@ -164,12 +164,12 @@ def get_card_aquire_local(card, card_id, aquire_id, local, cursor):
             card['event']['start'] = card['event']['start'].replace(tzinfo=tz_info).timestamp()
             card['event']['over'] = card['event']['over'].replace(tzinfo=tz_info).timestamp()
             card['event']['event_type'] = pst_types[event['event_type']][local['ver']] if aquire_id == 1 else aquire_types[aquire_id][local['ver']]
-        
+
 
 def get_card_l_skill_local(card, card_id, rare_id, local, cursor):
     sql_l_skill = """SELECT id, {name} AS name, {description} AS description, ssr, sr, r
                 FROM `LeaderSkill` WHERE (id = %s)""".format(**local)
-    
+
     l_skill_id = card.pop('leader_skill', None)
     if rare_id >= 2 and l_skill_id is not None:
         cursor.execute(sql_l_skill, (l_skill_id))
@@ -194,7 +194,7 @@ def get_card_skill_local(card, card_id, rare_id, local, cursor):
                    SkillSubType.{description} AS description FROM `SkillSubType`
                    INNER JOIN `SkillType` ON SkillSubType.SID = SkillType.id
                    WHERE (SkillSubType.id = %s)""".format(**local)
-    
+
     skill_type_id = card.pop('skill_type', None)
     if rare_id >= 2 and skill_type_id is not None:
         cursor.execute(sql_skill, (skill_type_id))
@@ -215,13 +215,13 @@ def get_card_info_local(card_id, local):
 
     sql_card = """SELECT id, {name} AS name, IID, rare, {time} AS time, aquire, gasha_type, in_gasha,
                   {master_rank} AS master_rank, visual_max, vocal_max, dance_max,
-                  visual_bonus, vocal_bonus, dance_bonus, leader_skill, 
+                  visual_bonus, vocal_bonus, dance_bonus, leader_skill,
                   skill_type, {skill_name} AS skill_name, skill_val,
                   {flavor} AS flavor, awaken
                   FROM `Card` WHERE (id = %s)""".format(**local)
     sql_idol = "SELECT {name} AS name, color FROM `Idol` WHERE (id = %s)".format(**local)
     sql_awaken = "SELECT id, {name} AS name FROM `Card` WHERE (id = %s)".format(**local)
-    
+
     connection = connect()
     with connection.cursor() as cursor:
         cursor.execute(sql_card, (card_id))
@@ -231,7 +231,7 @@ def get_card_info_local(card_id, local):
 
         card = card[0]
         card['is_jp'] = local['ver'] == 'jp'
-        
+
         # 這張卡在這一版不存在或還沒實裝
         if card['time'] is None:
             return None
@@ -274,12 +274,12 @@ def get_card_info_local(card_id, local):
 
         # 技能
         get_card_skill_local(card, card_id, rare_id, local, cursor)
-        
+
         # 數值 Bonus
         card['visual_bonus'] = loads(card['visual_bonus']) if card['visual_bonus'] is not None else None
         card['vocal_bonus'] = loads(card['vocal_bonus']) if card['vocal_bonus'] is not None else None
         card['dance_bonus'] = loads(card['dance_bonus']) if card['dance_bonus'] is not None else None
-        
+
         tz_info = timezone(timedelta(hours=local['ver_time']))
         card['time'] = card['time'].replace(tzinfo=tz_info).timestamp() if card['time'] is not None else None
         card['img_url'] = image_path('images/card_images', str(card['id']) + '.png')
