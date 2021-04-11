@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from enum import IntEnum
 import json
@@ -97,7 +98,7 @@ def craw_aquire(url):
     ingasha = 2
     return aquire, gashatype, ingasha
 
-def handle_l_skill(card_id, id_0, id_1, name, name_1, is_jp, cursor):
+def handle_l_skill(card_id, info_0, info_1, is_jp, cursor):
     url = os.path.join(config.card_info_root_url if is_jp else config.as_card_info_root_url, str(card_id))
     span = config.bs4_data(url, 'span', string='センター効果' if is_jp else 'Leader Skill')
     if span:
@@ -110,20 +111,20 @@ def handle_l_skill(card_id, id_0, id_1, name, name_1, is_jp, cursor):
             res = cursor.fetchall()
             if res:
                 ls_id = res[0]['id']
-                print('Set leader skill for', name)
-                cursor.execute(config.set_card_lsid, (ls_id, id_0))
+                print('Set leader skill for', info_0.name)
+                cursor.execute(config.set_card_lsid, (ls_id, info_0.id))
                 cursor.connection.commit()
-                print('Set leader skill for', name_1)
-                cursor.execute(config.set_card_lsid, (ls_id, id_1))
+                print('Set leader skill for', info_1.name)
+                cursor.execute(config.set_card_lsid, (ls_id, info_1.id))
                 cursor.connection.commit()
             else:
-                err = 'Something wrong in leader skill string for ' + name
+                err = 'Something wrong in leader skill string for ' + info_0.name
                 errors.append(err)
         else:
-            err = 'Fail to extract leader skill for ' + name
+            err = 'Fail to extract leader skill for ' + info_0.name
             errors.append(err)
     else:
-        err = 'No leader skill for ' + name
+        err = 'No leader skill for ' + info_0.name
         errors.append(err)
 
 def craw_values(url, name, is_jp):
@@ -168,7 +169,7 @@ def craw_flavor(url, name, is_jp):
     has_value, value = config.consume(spans[1].parent.text, target)
     res_1 = value if has_value else None
     return res_0, res_1
-
+    
 class Rarity(IntEnum):
     N = 0
     NP = 1
@@ -178,6 +179,12 @@ class Rarity(IntEnum):
     SRP = 5
     SSR = 6
     SSRP = 7
+    
+@dataclass
+class CardInfo:
+    name: str
+    rarity: Rarity
+    id: int = -1
     
 class EffectId(IntEnum):
     SCORE_UP = 1
@@ -206,25 +213,25 @@ class SubType(IntEnum):
     DAMAGE_SCORE_UP = 12
     DAMAGE_COMBO_BONUS = 13
     
-def get_sub_type(eff_id, rare_0):
+def get_sub_type(eff_id, rarity):
     eff_id = EffectId(eff_id)
     try:
         if eff_id == EffectId.SCORE_UP:
-            return SubType.SCORE_UP_PG if rare_0 == Rarity.SSR else SubType.SCORE_UP_P
+            return SubType.SCORE_UP_PG if rarity == Rarity.SSR else SubType.SCORE_UP_P
         if eff_id == EffectId.PERFECTLIZE:
             return {
                 Rarity.SSR: SubType.PERFECTLIZE_GGFS,
                 Rarity.SR: SubType.PERFECTLIZE_GG,
                 Rarity.R: SubType.PERFECTLIZE_G,
-            }[rare_0]
+            }[rarity]
         return SubType[eff_id.name]
     except KeyError as e:
         raise NotFoundError from e
 
-def get_or_insert_card_entry(card, cursor, data, is_jp, name, name_1, rare_0, rare_1):
+def get_or_insert_card_entry(card, cursor, data, is_jp, info_0, info_1):
     res = []
     if is_jp:
-        cursor.execute(get_card_info, (name))
+        cursor.execute(get_card_info, (info_0.name))
         res = cursor.fetchall()
     else:
         if card['id'] < 9000:
@@ -237,25 +244,25 @@ def get_or_insert_card_entry(card, cursor, data, is_jp, name, name_1, rare_0, ra
             cursor.execute(get_card_info, (jp_name))
             res = cursor.fetchall()
         else:
-            cursor.execute(get_card_info_as, (name))
+            cursor.execute(get_card_info_as, (info_0.name))
             res = cursor.fetchall()
 
     # 新增卡片到資料庫
     if not res:
-        idol_id = get_iid(name, cursor, is_jp)
+        idol_id = get_iid(info_0.name, cursor, is_jp)
 
-        print('Inserting card', name)
-        cursor.execute(config.ins_card if is_jp else config.ins_card_as, (name, idol_id, rare_0))
+        print('Inserting card', info_0.name)
+        cursor.execute(config.ins_card if is_jp else config.ins_card_as, (info_0.name, idol_id, (info_0.rarity)))
         cursor.connection.commit()
-        print('Inserting card', name_1)
-        cursor.execute(config.ins_card if is_jp else config.ins_card_as, (name_1, idol_id, rare_1))
+        print('Inserting card', info_1.name)
+        cursor.execute(config.ins_card if is_jp else config.ins_card_as, (info_1.name, idol_id, int(info_1.rarity)))
         cursor.connection.commit()
 
-        cursor.execute(get_card_info if is_jp else get_card_info_as, (name))
+        cursor.execute(get_card_info if is_jp else get_card_info_as, (info_0.name))
         res = cursor.fetchall()
 
     if not res:
-        err = name + ' not found'
+        err = info_0.name + ' not found'
         errors.append(err)
         raise NotFoundError
 
@@ -264,58 +271,55 @@ def get_or_insert_card_entry(card, cursor, data, is_jp, name, name_1, rare_0, ra
 def handle_card(card, cursor, data, is_jp):
     global errors
 
-    # 處理稀有度
-    rare_0 = (card['rarity'] - 1) * 2
-    rare_1 = rare_0 + 1
+    info_0 = CardInfo(name = edit_name(card['name']), rarity = Rarity((card['rarity'] - 1) * 2))
+    info_1 = CardInfo(name = info_0.name + '＋', rarity = info_0.rarity + 1)
 
+    print('Start', info_0.name)
+    
     # 在資料庫找到這張卡
-    name = edit_name(card['name'])
-    name_1 = name + '＋'
-    print('Start', name)
-
     try:
-        row = get_or_insert_card_entry(card, cursor, data, is_jp, name, name_1, rare_0, rare_1)
+        row = get_or_insert_card_entry(card, cursor, data, is_jp, info_0, info_1)
     except NotFoundError:
         return
-    id_0 = row['id']
-    id_1 = -1
+    
+    info_0.id = row['id']
 
     # 設定未覺醒和覺醒的配對
     if row['awaken'] is None:
-        cursor.execute(get_card_info if is_jp else get_card_info_as, (name_1))
+        cursor.execute(get_card_info if is_jp else get_card_info_as, (info_1.name))
         res = cursor.fetchall()
 
         if not res:
-            err = 'Awaken ' + name_1 + ' not found'
+            err = 'Awaken ' + info_1.name + ' not found'
             errors.append(err)
             return
 
-        id_1 = res[0]['id']
-        print('Update awaken for', name)
-        cursor.execute(config.set_card_awaken, (id_1, id_0))
+        info_1.id = res[0]['id']
+        print('Update awaken for', info_0.name)
+        cursor.execute(config.set_card_awaken, (info_1.id , info_0.id))
         cursor.connection.commit()
-        print('Update awaken for', name_1)
-        cursor.execute(config.set_card_awaken, (id_0, id_1))
+        print('Update awaken for', info_1.name)
+        cursor.execute(config.set_card_awaken, (info_0.id , info_1.id))
         cursor.connection.commit()
     else:
-        id_1 = row['awaken']
+        info_1.id = row['awaken']
 
     # 處理中文卡片名稱
     if not is_jp and row['as_name'] is None:
-        print('Update as_name for', name)
-        cursor.execute(config.set_card_cn_name, (name, id_0))
-        print('Update as_name for', name_1)
-        cursor.execute(config.set_card_cn_name, (name_1, id_1))
+        print('Update as_name for', info_0.name)
+        cursor.execute(config.set_card_cn_name, (info_0.name, info_0.id))
+        print('Update as_name for', info_1.name)
+        cursor.execute(config.set_card_cn_name, (info_1.name, info_1.id))
         cursor.connection.commit()
 
     # 處理沒有輸入偶像的情況
     if row['IID'] is None:
-        idol_id = get_iid(name, cursor, is_jp)
-        print('Set idol for', name)
-        cursor.execute(config.set_card_iid, (idol_id, id_0))
+        idol_id = get_iid(info_0.name, cursor, is_jp)
+        print('Set idol for', info_0.name)
+        cursor.execute(config.set_card_iid, (idol_id, info_0.id))
         cursor.connection.commit()
-        print('Set idol for', name_1)
-        cursor.execute(config.set_card_iid, (idol_id, id_1))
+        print('Set idol for', info_1.name)
+        cursor.execute(config.set_card_iid, (idol_id, info_1.id))
         cursor.connection.commit()
 
     # 抓卡片實裝時間
@@ -326,23 +330,23 @@ def handle_card(card, cursor, data, is_jp):
         if span:
             new_time = datetime.fromtimestamp(int(span[0]['data-date']) / 1000, timezone(timedelta(hours=9 if is_jp else 8)))
 
-            print('Set new time', datetime.strftime(new_time, '%Y-%m-%card %H:%M:%S'), 'for', name)
-            cursor.execute(config.set_card_time if is_jp else config.set_card_time_as, (new_time, id_0))
+            print('Set new time', datetime.strftime(new_time, '%Y-%m-%card %H:%M:%S'), 'for', info_0.name)
+            cursor.execute(config.set_card_time if is_jp else config.set_card_time_as, (new_time, info_0.id))
             cursor.connection.commit()
-            print('Set new time', datetime.strftime(new_time, '%Y-%m-%card %H:%M:%S'), 'for', name_1)
-            cursor.execute(config.set_card_time if is_jp else config.set_card_time_as, (new_time, id_1))
+            print('Set new time', datetime.strftime(new_time, '%Y-%m-%card %H:%M:%S'), 'for', info_1.name)
+            cursor.execute(config.set_card_time if is_jp else config.set_card_time_as, (new_time, info_1.id))
             cursor.connection.commit()
         else:
-            err = 'No time for ' + name
+            err = 'No time for ' + info_0.name
             errors.append(err)
 
 
     # 處理 Center 效果
-    if rare_0 != 0 and row['leader_skill'] is None:
-        handle_l_skill(card['id'], id_0, id_1, name, name_1, is_jp, cursor)
+    if info_0.rarity != 0 and row['leader_skill'] is None:
+        handle_l_skill(card['id'], info_0.id, info_1.id, info_0.name, info_1.name, is_jp, cursor)
 
     # 處理技能
-    if rare_0 != 0:
+    if info_0.rarity != 0:
         if row['skill_type'] is None:
             skill = card['skills'][0]
             s_val = {
@@ -355,9 +359,9 @@ def handle_card(card, cursor, data, is_jp):
                 s_val['val'].append(val)
 
             try:
-                s_type = int(get_sub_type(skill['effectId'], rare_0))
+                s_type = int(get_sub_type(skill['effectId'], info_0.rarity))
             except NotFoundError:
-                err = 'Error transposing skill type for ' + name
+                err = 'Error transposing skill type for ' + info_0.name
                 errors.append(err)
                 s_type = -1
 
@@ -369,16 +373,16 @@ def handle_card(card, cursor, data, is_jp):
                 if has_sn:
                     s_name = sn_str
                 else:
-                    err = 'Fail to extract skill name for ' + name
+                    err = 'Fail to extract skill name for ' + info_0.name
                     errors.append(err)
             else:
-                err = 'No skill name for ' + name
+                err = 'No skill name for ' + info_0.name
                 errors.append(err)
 
-            print('Set skill for', name)
-            cursor.execute(config.set_card_skill if is_jp else config.set_card_skill_as, (s_type, s_name, json.dumps(s_val), id_0))
-            print('Set skill for', name_1)
-            cursor.execute(config.set_card_skill if is_jp else config.set_card_skill_as, (s_type, s_name, json.dumps(s_val), id_1))
+            print('Set skill for', info_0.name)
+            cursor.execute(config.set_card_skill if is_jp else config.set_card_skill_as, (s_type, s_name, json.dumps(s_val), info_0.id))
+            print('Set skill for', info_1.name)
+            cursor.execute(config.set_card_skill if is_jp else config.set_card_skill_as, (s_type, s_name, json.dumps(s_val), info_1.id))
             cursor.connection.commit()
         elif not is_jp and not row['as_skill_name']:
             s_name = ''
@@ -389,37 +393,37 @@ def handle_card(card, cursor, data, is_jp):
                 if has_sn:
                     s_name = sn_str
                 else:
-                    err = 'Fail to extract skill name for ' + name
+                    err = 'Fail to extract skill name for ' + info_0.name
                     errors.append(err)
             else:
-                err = 'No skill name for ' + name
+                err = 'No skill name for ' + info_0.name
                 errors.append(err)
 
-            print('Set skill cnname for', name)
-            cursor.execute(config.set_card_skill_name_as, (s_name, id_0))
-            print('Set skill cnname for', name_1)
-            cursor.execute(config.set_card_skill_name_as, (s_name, id_1))
+            print('Set skill cnname for', info_0.name)
+            cursor.execute(config.set_card_skill_name_as, (s_name, info_0.id))
+            print('Set skill cnname for', info_1.name)
+            cursor.execute(config.set_card_skill_name_as, (s_name, info_1.id))
             cursor.connection.commit()
 
     # 處理取得方式等等
     if row['aquire'] is None:
         url = os.path.join(config.card_info_root_url if is_jp else config.as_card_info_root_url, str(card['id']))
         aquire, gashatype, ingasha = craw_aquire(url)
-        print('Update aquire, gashatype, ingasha for', name)
-        cursor.execute(config.set_card_aquire, (aquire, gashatype, ingasha, id_0))
-        print('Update aquire, gashatype, ingasha for', name_1)
-        cursor.execute(config.set_card_aquire, (5, gashatype, 2, id_1))
+        print('Update aquire, gashatype, ingasha for', info_0.name)
+        cursor.execute(config.set_card_aquire, (aquire, gashatype, ingasha, info_0.id))
+        print('Update aquire, gashatype, ingasha for', info_1.name)
+        cursor.execute(config.set_card_aquire, (5, gashatype, 2, info_1.id))
         cursor.connection.commit()
 
     # 處理卡片數值
     if row['visual_max'] is None:
         url = os.path.join(config.card_info_root_url if is_jp else config.as_card_info_root_url, str(card['id']))
-        vals_0, vals_1 = craw_values(url, name, is_jp)
+        vals_0, vals_1 = craw_values(url, info_0.name, is_jp)
         if vals_0 is not None and vals_1 is not None:
-            print('Update visual_max, vocal_max, dance_max for', name)
-            cursor.execute(config.set_card_values, (vals_0['visual'], vals_0['vocal'], vals_0['dance'], id_0))
-            print('Update visual_max, vocal_max, dance_max for', name_1)
-            cursor.execute(config.set_card_values, (vals_1['visual'], vals_1['vocal'], vals_1['dance'], id_1))
+            print('Update visual_max, vocal_max, dance_max for', info_0.name)
+            cursor.execute(config.set_card_values, (vals_0['visual'], vals_0['vocal'], vals_0['dance'], info_0.id))
+            print('Update visual_max, vocal_max, dance_max for', info_1.name)
+            cursor.execute(config.set_card_values, (vals_1['visual'], vals_1['vocal'], vals_1['dance'], info_1.id))
             cursor.connection.commit()
 
     # 處理突破數值
@@ -431,81 +435,81 @@ def handle_card(card, cursor, data, is_jp):
         vi_bonus[master_rank] = card['visualMasterBonus']
         vo_bonus[master_rank] = card['vocalMasterBonus']
         da_bonus[master_rank] = card['danceMasterBonus']
-        print('Update value bonus for', name)
-        cursor.execute(config.set_card_bonus, (json.dumps(vi_bonus), json.dumps(vo_bonus), json.dumps(da_bonus), id_0))
-        print('Update value bonus for', name_1)
-        cursor.execute(config.set_card_bonus, (json.dumps(vi_bonus), json.dumps(vo_bonus), json.dumps(da_bonus), id_1))
+        print('Update value bonus for', info_0.name)
+        cursor.execute(config.set_card_bonus, (json.dumps(vi_bonus), json.dumps(vo_bonus), json.dumps(da_bonus), info_0.id))
+        print('Update value bonus for', info_1.name)
+        cursor.execute(config.set_card_bonus, (json.dumps(vi_bonus), json.dumps(vo_bonus), json.dumps(da_bonus), info_1.id))
         cursor.connection.commit()
 
     # 處理最大突破
     if is_jp and row['jp_master_rank'] is None:
-        print('Update max master rank for', name)
-        cursor.execute(config.set_card_master, (card['masterRankMax'], id_0))
-        print('Update max master rank for', name_1)
-        cursor.execute(config.set_card_master, (card['masterRankMax'], id_1))
+        print('Update max master rank for', info_0.name)
+        cursor.execute(config.set_card_master, (card['masterRankMax'], info_0.id))
+        print('Update max master rank for', info_1.name)
+        cursor.execute(config.set_card_master, (card['masterRankMax'], info_1.id))
         cursor.connection.commit()
     elif not is_jp and row['as_master_rank'] is None:
-        print('Update max master rank for', name)
-        cursor.execute(config.set_card_master_as, (card['masterRankMax'], id_0))
-        print('Update max master rank for', name_1)
-        cursor.execute(config.set_card_master_as, (card['masterRankMax'], id_1))
+        print('Update max master rank for', info_0.name)
+        cursor.execute(config.set_card_master_as, (card['masterRankMax'], info_0.id))
+        print('Update max master rank for', info_1.name)
+        cursor.execute(config.set_card_master_as, (card['masterRankMax'], info_1.id))
         cursor.connection.commit()
 
     # 處理卡面文字
     if is_jp and row['jp_flavor'] is None:
         url = os.path.join(config.card_info_root_url, str(card['id']))
-        flavor_0, flavor_1 = craw_flavor(url, name, is_jp)
+        flavor_0, flavor_1 = craw_flavor(url, info_0.name, is_jp)
         if flavor_0 is not None and flavor_1 is not None:
-            print('Update flavor text for', name)
-            cursor.execute(config.set_card_flavor, (flavor_0, id_0))
-            print('Update flavor text for', name_1)
-            cursor.execute(config.set_card_flavor, (flavor_1, id_1))
+            print('Update flavor text for', info_0.name)
+            cursor.execute(config.set_card_flavor, (flavor_0, info_0.id))
+            print('Update flavor text for', info_1.name)
+            cursor.execute(config.set_card_flavor, (flavor_1, info_1.id))
             cursor.connection.commit()
     elif not is_jp and row['as_flavor'] is None:
         url = os.path.join(config.as_card_info_root_url, str(card['id']))
-        flavor_0, flavor_1 = craw_flavor(url, name, is_jp)
+        flavor_0, flavor_1 = craw_flavor(url, info_0.name, is_jp)
         if flavor_0 is not None and flavor_1 is not None:
-            print('Update flavor text for', name)
-            cursor.execute(config.set_card_flavor_as, (flavor_0, id_0))
-            print('Update flavor text for', name_1)
-            cursor.execute(config.set_card_flavor_as, (flavor_1, id_1))
+            print('Update flavor text for', info_0.name)
+            cursor.execute(config.set_card_flavor_as, (flavor_0, info_0.id))
+            print('Update flavor text for', info_1.name)
+            cursor.execute(config.set_card_flavor_as, (flavor_1, info_1.id))
             cursor.connection.commit()
 
     # 處理假 id
     if is_jp and row['card_id'] is None:
-        cursor.execute(config.set_card_fake_id, (id_0-6, id_0))
-        cursor.execute(config.set_card_fake_id, (id_1-6, id_1))
+        cursor.execute(config.set_card_fake_id, (info_0.id-6, info_0.id))
+        cursor.execute(config.set_card_fake_id, (info_1.id-6, info_1.id))
         cursor.connection.commit()
 
     # 爬 icon 圖
     icon_url_0 = os.path.join(config.icon_root_url, card['resourceId'] + '_0.png') if is_jp else os.path.join(config.as_icon_root_url, card['resourceId'] + '_0.png')
-    icon_path_0 = os.path.join(config.icon_dir, str(id_0) + '.png')
+    icon_path_0 = os.path.join(config.icon_dir, str(info_0.id) + '.png')
     icon_url_1 = os.path.join(config.icon_root_url, card['resourceId'] + '_1.png') if is_jp else os.path.join(config.as_icon_root_url, card['resourceId'] + '_1.png')
-    icon_path_1 = os.path.join(config.icon_dir, str(id_1) + '.png')
+    icon_path_1 = os.path.join(config.icon_dir, str(info_1.id) + '.png')
 
-    craw_card('icon', name, icon_url_0, icon_path_0)
-    craw_card('icon', name_1, icon_url_1, icon_path_1)
+    craw_card('icon', info_0.name, icon_url_0, icon_path_0)
+    craw_card('icon', info_1.name, icon_url_1, icon_path_1)
 
     # 爬卡面
     card_url_0 = os.path.join(config.card_root_url, card['resourceId'] + '_0_b.png') if is_jp else os.path.join(config.as_card_root_url, card['resourceId'] + '_0_b.png')
-    card_path_0 = os.path.join(config.card_dir, str(id_0) + '.png')
+    card_path_0 = os.path.join(config.card_dir, str(info_0.id) + '.png')
     card_url_1 = os.path.join(config.card_root_url, card['resourceId'] + '_1_b.png') if is_jp else os.path.join(config.as_card_root_url, card['resourceId'] + '_1_b.png')
-    card_path_1 = os.path.join(config.card_dir, str(id_1) + '.png')
+    card_path_1 = os.path.join(config.card_dir, str(info_1.id) + '.png')
 
-    craw_card('card', name, card_url_0, card_path_0)
-    craw_card('card', name_1, card_url_1, card_path_1)
+    craw_card('card', info_0.name, card_url_0, card_path_0)
+    craw_card('card', info_1.name, card_url_1, card_path_1)
 
     # 爬 SSR 大圖
-    if rare_0 == 6:
+    if info_0.rarity == 6:
         bg_url_0 = os.path.join(config.bg_root_url, card['resourceId'] + '_0.png') if is_jp else os.path.join(config.as_bg_root_url, card['resourceId'] + '_0.png')
-        bg_path_0 = os.path.join(config.bg_dir, str(id_0) + '.png')
+        bg_path_0 = os.path.join(config.bg_dir, str(info_0.id) + '.png')
         bg_url_1 = os.path.join(config.bg_root_url, card['resourceId'] + '_1.png') if is_jp else os.path.join(config.as_bg_root_url, card['resourceId'] + '_1.png')
-        bg_path_1 = os.path.join(config.bg_dir, str(id_1) + '.png')
+        bg_path_1 = os.path.join(config.bg_dir, str(info_1.id) + '.png')
 
-        craw_card('bg', name, bg_url_0, bg_path_0)
-        craw_card('bg', name_1, bg_url_1, bg_path_1)
+        craw_card('bg', info_0.name, bg_url_0, bg_path_0)
+        craw_card('bg', info_1.name, bg_url_1, bg_path_1)
 
-    print('Finish card', name)
+    print('Finish card', info_0.name)
 
 def main():
     global errors
