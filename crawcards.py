@@ -2,8 +2,14 @@ from datetime import datetime, timezone, timedelta
 import json
 import re
 import os.path
-from config import *
+
+import requests
+
+import config
 from dry_cursor import DryCursor
+
+get_card_info = config.get_card_info_tmp.format(name="jp_name")
+get_card_info_as = config.get_card_info_tmp.format(name="as_name")
 
 data = []
 cn_data = []
@@ -22,7 +28,7 @@ def get_iid(name, cursor, is_jp):
     if is_jp and idol == 'エミリー':
         idol = 'エミリー スチュアート'
 
-    cursor.execute(get_card_iid if is_jp else get_card_iid_as, (idol))
+    cursor.execute(config.get_card_iid if is_jp else config.get_card_iid_as, (idol))
     return cursor.fetchall()[0]['id']
 
 def edit_name(name):
@@ -41,7 +47,7 @@ def craw_aquire(url):
 
 
     # 活動相關
-    span = bs4_data(url, string=re.compile('.*イベント:.*'))
+    span = config.bs4_data(url, string=re.compile('.*イベント:.*'))
     if span:
         words = span[0].parent.text
         gashatype = 0
@@ -61,7 +67,7 @@ def craw_aquire(url):
         return aquire, gashatype, ingasha
 
     # 卡池相關
-    span = bs4_data(url, string=re.compile('.*ガシャ種別:.*'))
+    span = config.bs4_data(url, string=re.compile('.*ガシャ種別:.*'))
     if span:
         words = span[0].parent.text
         aquire = 0
@@ -89,6 +95,36 @@ def craw_aquire(url):
     ingasha = 2
     return aquire, gashatype, ingasha
 
+def handle_l_skill(row, card, id_0, id_1, name, name_1, rare_0, is_jp, cursor, connection):
+    if rare_0 != 0 and row['leader_skill'] is None:
+        url = os.path.join(config.card_info_root_url if is_jp else config.as_card_info_root_url, str(card['id']))
+        span = config.bs4_data(url, 'span', string='センター効果' if is_jp else 'Leader Skill')
+        if span:
+            has_ls, ls_str = config.consume(span[0].parent.text, 'センター効果' if is_jp else 'Leader Skill')
+            if has_ls:
+                if is_jp:
+                    cursor.execute(config.get_card_lsid, (ls_str))
+                else:
+                    cursor.execute(config.get_card_lsid_as, (ls_str))
+                res = cursor.fetchall()
+                if res:
+                    ls_id = res[0]['id']
+                    print('Set leader skill for', name)
+                    cursor.execute(config.set_card_lsid, (ls_id, id_0))
+                    connection.commit()
+                    print('Set leader skill for', name_1)
+                    cursor.execute(config.set_card_lsid, (ls_id, id_1))
+                    connection.commit()
+                else:
+                    err = 'Something wrong in leader skill string for ' + name
+                    errors.append(err)
+            else:
+                err = 'Fail to extract leader skill for ' + name
+                errors.append(err)
+        else:
+            err = 'No leader skill for ' + name
+            errors.append(err)
+
 def craw_values(url, name, is_jp):
     global errors
     res_0 = {}
@@ -103,16 +139,16 @@ def craw_values(url, name, is_jp):
             {'key': 'dance', 'target': 'Dance'}]
 
     for todo in todos:
-        spans = bs4_data(url, 'span', string=todo['target'])
+        spans = config.bs4_data(url, 'span', string=todo['target'])
         if len(spans) < 2:
             errors.append('Value ' + todo['target'] + ' for ' + name + ' not found')
             return None, None
-        has_value, value = consume(spans[0].parent.text, todo['target'])
+        has_value, value = config.consume(spans[0].parent.text, todo['target'])
         if has_value:
             res_0[todo['key']] = int(value.split('(')[0].strip())
         else:
             res_0[todo['key']] = None
-        has_value, value = consume(spans[1].parent.text, todo['target'])
+        has_value, value = config.consume(spans[1].parent.text, todo['target'])
         if has_value:
             res_1[todo['key']] = int(value.split('(')[0].strip())
         else:
@@ -122,13 +158,13 @@ def craw_values(url, name, is_jp):
 def craw_flavor(url, name, is_jp):
     global errors
     target = 'フレーバーテキスト' if is_jp else 'Flavor text'
-    spans = bs4_data(url, 'span', string=target)
+    spans = config.bs4_data(url, 'span', string=target)
     if len(spans) < 2:
         errors.append('Flavor Text for ' + name + ' not found')
         return None, None
-    has_value, value = consume(spans[0].parent.text, target)
+    has_value, value = config.consume(spans[0].parent.text, target)
     res_0 = value if has_value else None
-    has_value, value = consume(spans[1].parent.text, target)
+    has_value, value = config.consume(spans[1].parent.text, target)
     res_1 = value if has_value else None
     return res_0, res_1
 
@@ -168,10 +204,10 @@ def handle_card(card, cursor, connection, is_jp):
         idol_id = get_iid(name, cursor, is_jp)
 
         print('Inserting card', name)
-        cursor.execute(ins_card if is_jp else ins_card_as, (name, idol_id, rare_0))
+        cursor.execute(config.ins_card if is_jp else config.ins_card_as, (name, idol_id, rare_0))
         connection.commit()
         print('Inserting card', name_1)
-        cursor.execute(ins_card if is_jp else ins_card_as, (name_1, idol_id, rare_1))
+        cursor.execute(config.ins_card if is_jp else config.ins_card_as, (name_1, idol_id, rare_1))
         connection.commit()
 
         cursor.execute(get_card_info if is_jp else get_card_info_as, (name))
@@ -199,10 +235,10 @@ def handle_card(card, cursor, connection, is_jp):
 
         id_1 = res[0]['id']
         print('Update awaken for', name)
-        cursor.execute(set_card_awaken, (id_1, id_0))
+        cursor.execute(config.set_card_awaken, (id_1, id_0))
         connection.commit()
         print('Update awaken for', name_1)
-        cursor.execute(set_card_awaken, (id_0, id_1))
+        cursor.execute(config.set_card_awaken, (id_0, id_1))
         connection.commit()
     else:
         id_1 = row['awaken']
@@ -210,34 +246,34 @@ def handle_card(card, cursor, connection, is_jp):
     # 處理中文卡片名稱
     if not is_jp and row['as_name'] is None:
         print('Update as_name for', name)
-        cursor.execute(set_card_cn_name, (name, id_0))
+        cursor.execute(config.set_card_cn_name, (name, id_0))
         print('Update as_name for', name_1)
-        cursor.execute(set_card_cn_name, (name_1, id_1))
+        cursor.execute(config.set_card_cn_name, (name_1, id_1))
         connection.commit()
 
     # 處理沒有輸入偶像的情況
     if row['IID'] is None:
         idol_id = get_iid(name, cursor, is_jp)
         print('Set idol for', name)
-        cursor.execute(set_card_iid, (idol_id, id_0))
+        cursor.execute(config.set_card_iid, (idol_id, id_0))
         connection.commit()
         print('Set idol for', name_1)
-        cursor.execute(set_card_iid, (idol_id, id_1))
+        cursor.execute(config.set_card_iid, (idol_id, id_1))
         connection.commit()
 
     # 抓卡片實裝時間
     old_time = row['jp_time'] if is_jp else row['as_time']
     if old_time is None:
-        url = os.path.join(card_info_root_url if is_jp else as_card_info_root_url, str(card['id']))
-        span = bs4_data(url, 'span', class_='intl-date-dyts')
+        url = os.path.join(config.card_info_root_url if is_jp else config.as_card_info_root_url, str(card['id']))
+        span = config.bs4_data(url, 'span', class_='intl-date-dyts')
         if span:
             new_time = datetime.fromtimestamp(int(span[0]['data-date']) / 1000, timezone(timedelta(hours=9 if is_jp else 8)))
 
             print('Set new time', datetime.strftime(new_time, '%Y-%m-%card %H:%M:%S'), 'for', name)
-            cursor.execute(set_card_time if is_jp else set_card_time_as, (new_time, id_0))
+            cursor.execute(config.set_card_time if is_jp else config.set_card_time_as, (new_time, id_0))
             connection.commit()
             print('Set new time', datetime.strftime(new_time, '%Y-%m-%card %H:%M:%S'), 'for', name_1)
-            cursor.execute(set_card_time if is_jp else set_card_time_as, (new_time, id_1))
+            cursor.execute(config.set_card_time if is_jp else config.set_card_time_as, (new_time, id_1))
             connection.commit()
         else:
             err = 'No time for ' + name
@@ -245,34 +281,7 @@ def handle_card(card, cursor, connection, is_jp):
 
 
     # 處理 Center 效果
-    if rare_0 != 0 and row['leader_skill'] is None:
-        url = os.path.join(card_info_root_url if is_jp else as_card_info_root_url, str(card['id']))
-        span = bs4_data(url, 'span', string='センター効果' if is_jp else 'Leader Skill')
-        if span:
-            has_ls, ls_str = consume(span[0].parent.text, 'センター効果' if is_jp else 'Leader Skill')
-            if has_ls:
-                if is_jp:
-                    cursor.execute(get_card_lsid, (ls_str))
-                else:
-                    cursor.execute(get_card_lsid_as, (ls_str))
-                res = cursor.fetchall()
-                if res:
-                    ls_id = res[0]['id']
-                    print('Set leader skill for', name)
-                    cursor.execute(set_card_lsid, (ls_id, id_0))
-                    connection.commit()
-                    print('Set leader skill for', name_1)
-                    cursor.execute(set_card_lsid, (ls_id, id_1))
-                    connection.commit()
-                else:
-                    err = 'Something wrong in leader skill string for ' + name
-                    errors.append(err)
-            else:
-                err = 'Fail to extract leader skill for ' + name
-                errors.append(err)
-        else:
-            err = 'No leader skill for ' + name
-            errors.append(err)
+    handle_l_skill(row, card, id_0, id_1, name, name_1, rare_0, is_jp, cursor, connection)
 
     # 處理技能
     if rare_0 != 0:
@@ -323,10 +332,10 @@ def handle_card(card, cursor, connection, is_jp):
                 errors.append(err)
 
             s_name = ''
-            url = os.path.join(card_info_root_url if is_jp else as_card_info_root_url, str(card['id']))
-            span = bs4_data(url, 'span', string='スキル' if is_jp else 'Skill')
+            url = os.path.join(config.card_info_root_url if is_jp else config.as_card_info_root_url, str(card['id']))
+            span = config.bs4_data(url, 'span', string='スキル' if is_jp else 'Skill')
             if span:
-                has_sn, sn_str = consume(span[0].parent.text, 'スキル' if is_jp else 'Skill')
+                has_sn, sn_str = config.consume(span[0].parent.text, 'スキル' if is_jp else 'Skill')
                 if has_sn:
                     s_name = sn_str
                 else:
@@ -337,16 +346,16 @@ def handle_card(card, cursor, connection, is_jp):
                 errors.append(err)
 
             print('Set skill for', name)
-            cursor.execute(set_card_skill if is_jp else set_card_skill_as, (s_type, s_name, json.dumps(s_val), id_0))
+            cursor.execute(config.set_card_skill if is_jp else config.set_card_skill_as, (s_type, s_name, json.dumps(s_val), id_0))
             print('Set skill for', name_1)
-            cursor.execute(set_card_skill if is_jp else set_card_skill_as, (s_type, s_name, json.dumps(s_val), id_1))
+            cursor.execute(config.set_card_skill if is_jp else config.set_card_skill_as, (s_type, s_name, json.dumps(s_val), id_1))
             connection.commit()
         elif not is_jp and not row['as_skill_name']:
             s_name = ''
-            url = os.path.join(as_card_info_root_url, str(card['id']))
-            span = bs4_data(url, 'span', string='Skill')
+            url = os.path.join(config.as_card_info_root_url, str(card['id']))
+            span = config.bs4_data(url, 'span', string='Skill')
             if span:
-                has_sn, sn_str = consume(span[0].parent.text, 'Skill')
+                has_sn, sn_str = config.consume(span[0].parent.text, 'Skill')
                 if has_sn:
                     s_name = sn_str
                 else:
@@ -357,30 +366,30 @@ def handle_card(card, cursor, connection, is_jp):
                 errors.append(err)
 
             print('Set skill cnname for', name)
-            cursor.execute(set_card_skill_name_as, (s_name, id_0))
+            cursor.execute(config.set_card_skill_name_as, (s_name, id_0))
             print('Set skill cnname for', name_1)
-            cursor.execute(set_card_skill_name_as, (s_name, id_1))
+            cursor.execute(config.set_card_skill_name_as, (s_name, id_1))
             connection.commit()
 
     # 處理取得方式等等
     if row['aquire'] is None:
-        url = os.path.join(card_info_root_url if is_jp else as_card_info_root_url, str(card['id']))
+        url = os.path.join(config.card_info_root_url if is_jp else config.as_card_info_root_url, str(card['id']))
         aquire, gashatype, ingasha = craw_aquire(url)
         print('Update aquire, gashatype, ingasha for', name)
-        cursor.execute(set_card_aquire, (aquire, gashatype, ingasha, id_0))
+        cursor.execute(config.set_card_aquire, (aquire, gashatype, ingasha, id_0))
         print('Update aquire, gashatype, ingasha for', name_1)
-        cursor.execute(set_card_aquire, (5, gashatype, 2, id_1))
+        cursor.execute(config.set_card_aquire, (5, gashatype, 2, id_1))
         connection.commit()
 
     # 處理卡片數值
     if row['visual_max'] is None:
-        url = os.path.join(card_info_root_url if is_jp else as_card_info_root_url, str(card['id']))
+        url = os.path.join(config.card_info_root_url if is_jp else config.as_card_info_root_url, str(card['id']))
         vals_0, vals_1 = craw_values(url, name, is_jp)
         if vals_0 is not None and vals_1 is not None:
             print('Update visual_max, vocal_max, dance_max for', name)
-            cursor.execute(set_card_values, (vals_0['visual'], vals_0['vocal'], vals_0['dance'], id_0))
+            cursor.execute(config.set_card_values, (vals_0['visual'], vals_0['vocal'], vals_0['dance'], id_0))
             print('Update visual_max, vocal_max, dance_max for', name_1)
-            cursor.execute(set_card_values, (vals_1['visual'], vals_1['vocal'], vals_1['dance'], id_1))
+            cursor.execute(config.set_card_values, (vals_1['visual'], vals_1['vocal'], vals_1['dance'], id_1))
             connection.commit()
 
     # 處理突破數值
@@ -393,75 +402,75 @@ def handle_card(card, cursor, connection, is_jp):
         vo_bonus[master_rank] = card['vocalMasterBonus']
         da_bonus[master_rank] = card['danceMasterBonus']
         print('Update value bonus for', name)
-        cursor.execute(set_card_bonus, (json.dumps(vi_bonus), json.dumps(vo_bonus), json.dumps(da_bonus), id_0))
+        cursor.execute(config.set_card_bonus, (json.dumps(vi_bonus), json.dumps(vo_bonus), json.dumps(da_bonus), id_0))
         print('Update value bonus for', name_1)
-        cursor.execute(set_card_bonus, (json.dumps(vi_bonus), json.dumps(vo_bonus), json.dumps(da_bonus), id_1))
+        cursor.execute(config.set_card_bonus, (json.dumps(vi_bonus), json.dumps(vo_bonus), json.dumps(da_bonus), id_1))
         connection.commit()
 
     # 處理最大突破
     if is_jp and row['jp_master_rank'] is None:
         print('Update max master rank for', name)
-        cursor.execute(set_card_master, (card['masterRankMax'], id_0))
+        cursor.execute(config.set_card_master, (card['masterRankMax'], id_0))
         print('Update max master rank for', name_1)
-        cursor.execute(set_card_master, (card['masterRankMax'], id_1))
+        cursor.execute(config.set_card_master, (card['masterRankMax'], id_1))
         connection.commit()
     elif not is_jp and row['as_master_rank'] is None:
         print('Update max master rank for', name)
-        cursor.execute(set_card_master_as, (card['masterRankMax'], id_0))
+        cursor.execute(config.set_card_master_as, (card['masterRankMax'], id_0))
         print('Update max master rank for', name_1)
-        cursor.execute(set_card_master_as, (card['masterRankMax'], id_1))
+        cursor.execute(config.set_card_master_as, (card['masterRankMax'], id_1))
         connection.commit()
 
     # 處理卡面文字
     if is_jp and row['jp_flavor'] is None:
-        url = os.path.join(card_info_root_url, str(card['id']))
+        url = os.path.join(config.card_info_root_url, str(card['id']))
         flavor_0, flavor_1 = craw_flavor(url, name, is_jp)
         if flavor_0 is not None and flavor_1 is not None:
             print('Update flavor text for', name)
-            cursor.execute(set_card_flavor, (flavor_0, id_0))
+            cursor.execute(config.set_card_flavor, (flavor_0, id_0))
             print('Update flavor text for', name_1)
-            cursor.execute(set_card_flavor, (flavor_1, id_1))
+            cursor.execute(config.set_card_flavor, (flavor_1, id_1))
             connection.commit()
     elif not is_jp and row['as_flavor'] is None:
-        url = os.path.join(as_card_info_root_url, str(card['id']))
+        url = os.path.join(config.as_card_info_root_url, str(card['id']))
         flavor_0, flavor_1 = craw_flavor(url, name, is_jp)
         if flavor_0 is not None and flavor_1 is not None:
             print('Update flavor text for', name)
-            cursor.execute(set_card_flavor_as, (flavor_0, id_0))
+            cursor.execute(config.set_card_flavor_as, (flavor_0, id_0))
             print('Update flavor text for', name_1)
-            cursor.execute(set_card_flavor_as, (flavor_1, id_1))
+            cursor.execute(config.set_card_flavor_as, (flavor_1, id_1))
             connection.commit()
 
     # 處理假 id
     if is_jp and row['card_id'] is None:
-        cursor.execute(set_card_fake_id, (id_0-6, id_0))
-        cursor.execute(set_card_fake_id, (id_1-6, id_1))
+        cursor.execute(config.set_card_fake_id, (id_0-6, id_0))
+        cursor.execute(config.set_card_fake_id, (id_1-6, id_1))
         connection.commit()
 
     # 爬 icon 圖
-    icon_url_0 = os.path.join(icon_root_url, card['resourceId'] + '_0.png') if is_jp else os.path.join(as_icon_root_url, card['resourceId'] + '_0.png')
-    icon_path_0 = os.path.join(icon_dir, str(id_0) + '.png')
-    icon_url_1 = os.path.join(icon_root_url, card['resourceId'] + '_1.png') if is_jp else os.path.join(as_icon_root_url, card['resourceId'] + '_1.png')
-    icon_path_1 = os.path.join(icon_dir, str(id_1) + '.png')
+    icon_url_0 = os.path.join(config.icon_root_url, card['resourceId'] + '_0.png') if is_jp else os.path.join(config.as_icon_root_url, card['resourceId'] + '_0.png')
+    icon_path_0 = os.path.join(config.icon_dir, str(id_0) + '.png')
+    icon_url_1 = os.path.join(config.icon_root_url, card['resourceId'] + '_1.png') if is_jp else os.path.join(config.as_icon_root_url, card['resourceId'] + '_1.png')
+    icon_path_1 = os.path.join(config.icon_dir, str(id_1) + '.png')
 
     craw_card('icon', name, icon_url_0, icon_path_0)
     craw_card('icon', name_1, icon_url_1, icon_path_1)
 
     # 爬卡面
-    card_url_0 = os.path.join(card_root_url, card['resourceId'] + '_0_b.png') if is_jp else os.path.join(as_card_root_url, card['resourceId'] + '_0_b.png')
-    card_path_0 = os.path.join(card_dir, str(id_0) + '.png')
-    card_url_1 = os.path.join(card_root_url, card['resourceId'] + '_1_b.png') if is_jp else os.path.join(as_card_root_url, card['resourceId'] + '_1_b.png')
-    card_path_1 = os.path.join(card_dir, str(id_1) + '.png')
+    card_url_0 = os.path.join(config.card_root_url, card['resourceId'] + '_0_b.png') if is_jp else os.path.join(config.as_card_root_url, card['resourceId'] + '_0_b.png')
+    card_path_0 = os.path.join(config.card_dir, str(id_0) + '.png')
+    card_url_1 = os.path.join(config.card_root_url, card['resourceId'] + '_1_b.png') if is_jp else os.path.join(config.as_card_root_url, card['resourceId'] + '_1_b.png')
+    card_path_1 = os.path.join(config.card_dir, str(id_1) + '.png')
 
     craw_card('card', name, card_url_0, card_path_0)
     craw_card('card', name_1, card_url_1, card_path_1)
 
     # 爬 SSR 大圖
     if rare_0 == 6:
-        bg_url_0 = os.path.join(bg_root_url, card['resourceId'] + '_0.png') if is_jp else os.path.join(as_bg_root_url, card['resourceId'] + '_0.png')
-        bg_path_0 = os.path.join(bg_dir, str(id_0) + '.png')
-        bg_url_1 = os.path.join(bg_root_url, card['resourceId'] + '_1.png') if is_jp else os.path.join(as_bg_root_url, card['resourceId'] + '_1.png')
-        bg_path_1 = os.path.join(bg_dir, str(id_1) + '.png')
+        bg_url_0 = os.path.join(config.bg_root_url, card['resourceId'] + '_0.png') if is_jp else os.path.join(config.as_bg_root_url, card['resourceId'] + '_0.png')
+        bg_path_0 = os.path.join(config.bg_dir, str(id_0) + '.png')
+        bg_url_1 = os.path.join(config.bg_root_url, card['resourceId'] + '_1.png') if is_jp else os.path.join(config.as_bg_root_url, card['resourceId'] + '_1.png')
+        bg_path_1 = os.path.join(config.bg_dir, str(id_1) + '.png')
 
         craw_card('bg', name, bg_url_0, bg_path_0)
         craw_card('bg', name_1, bg_url_1, bg_path_1)
@@ -473,10 +482,10 @@ def main():
     with open('cards.json') as f:
         data = json.load(f)
 
-    with open('cncards.json') as f:
+    with open('ascards.json') as f:
         cn_data = json.load(f)
 
-    connection = connect()
+    connection = config.connect()
 
     with connection.cursor() as cursor:
         cursor = DryCursor(cursor)
