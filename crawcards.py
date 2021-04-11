@@ -12,9 +12,10 @@ from dry_cursor import DryCursor
 get_card_info = config.get_card_info_tmp.format(name="jp_name")
 get_card_info_as = config.get_card_info_tmp.format(name="as_name")
 
-data = []
-cn_data = []
 errors = []
+
+class NotFoundError(Exception):
+    pass
 
 def craw_card(write_type, name, img_url, img_path):
     if not os.path.isfile(img_path):
@@ -216,16 +217,7 @@ def get_sub_type(eff_id, rare_0):
         except KeyError:
             return None
 
-def handle_card(card, cursor, is_jp):
-    global data, cn_data, errors
-
-    # 處理稀有度
-    rare_0 = (card['rarity'] - 1) * 2
-    rare_1 = rare_0 + 1
-
-    # 在資料庫找到這張卡
-    name = edit_name(card['name'])
-
+def get_or_insert_card_entry(card, cursor, data, is_jp, name, name_1, rare_0, rare_1):
     res = []
     if is_jp:
         cursor.execute(get_card_info, (name))
@@ -244,9 +236,6 @@ def handle_card(card, cursor, is_jp):
             cursor.execute(get_card_info_as, (name))
             res = cursor.fetchall()
 
-    name_1 = name + '＋'
-    print('Start', name)
-
     # 新增卡片到資料庫
     if not res:
         idol_id = get_iid(name, cursor, is_jp)
@@ -264,10 +253,26 @@ def handle_card(card, cursor, is_jp):
     if not res:
         err = name + ' not found'
         errors.append(err)
+        raise NotFoundError
+
+    return res[0]
+
+def handle_card(card, cursor, data, is_jp):
+    global errors
+
+    # 處理稀有度
+    rare_0 = (card['rarity'] - 1) * 2
+    rare_1 = rare_0 + 1
+
+    # 在資料庫找到這張卡
+    name = edit_name(card['name'])
+    name_1 = name + '＋'
+    print('Start', name)
+
+    try:
+        row = get_or_insert_card_entry(card, cursor, data, is_jp, name, name_1, rare_0, rare_1)
+    except NotFoundError:
         return
-
-
-    row = res[0]
     id_0 = row['id']
     id_1 = -1
 
@@ -501,7 +506,7 @@ def handle_card(card, cursor, is_jp):
     print('Finish card', name)
 
 def main():
-    global data, cn_data, errors
+    global errors
     with open('cards.json') as f:
         data = json.load(f)
 
@@ -517,13 +522,13 @@ def main():
         for card in data:
             if card['extraType'] in [5, 7, 10] and card['rarity'] == 4:
                 continue
-            handle_card(card, cursor, True)
+            handle_card(card, cursor, data, True)
 
         # 更新 (海外版) 卡片資訊
         for card in cn_data:
             if card['extraType'] in [5, 7, 10] and card['rarity'] == 4:
                 continue
-            handle_card(card, cursor, False)
+            handle_card(card, cursor, data, False)
 
     connection.close()
 
