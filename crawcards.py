@@ -169,6 +169,15 @@ def craw_flavor(url, name, is_jp):
     res_1 = value if has_value else None
     return res_0, res_1
 
+class Rarity(IntEnum):
+    N = 0
+    NP = 1
+    R = 2
+    RP = 3
+    SR = 4
+    SRP = 5
+    SSR = 6
+    SSRP = 7
     
 class EffectId(IntEnum):
     SCORE_UP = 1
@@ -199,23 +208,18 @@ class SubType(IntEnum):
     
 def get_sub_type(eff_id, rare_0):
     eff_id = EffectId(eff_id)
-    if eff_id == EffectId.SCORE_UP:
-        if rare_0 == 6:
-            return SubType.SCORE_UP_PG
-        else:
-            return SubType.SCORE_UP_P
-    elif eff_id == EffectId.PERFECTLIZE:
-        if rare_0 == 6:
-            return SubType.PERFECTLIZE_GGFS
-        elif rare_0 == 4:
-            return SubType.PERFECTLIZE_GG
-        elif rare_0 == 2:
-            return SubType.PERFECTLIZE_G
-    else:
-        try:
-            return SubType[eff_id.name]
-        except KeyError:
-            return None
+    try:
+        if eff_id == EffectId.SCORE_UP:
+            return SubType.SCORE_UP_PG if rare_0 == Rarity.SSR else SubType.SCORE_UP_P
+        if eff_id == EffectId.PERFECTLIZE:
+            return {
+                Rarity.SSR: SubType.PERFECTLIZE_GGFS,
+                Rarity.SR: SubType.PERFECTLIZE_GG,
+                Rarity.R: SubType.PERFECTLIZE_G,
+            }[rare_0]
+        return SubType[eff_id.name]
+    except KeyError as e:
+        raise NotFoundError from e
 
 def get_or_insert_card_entry(card, cursor, data, is_jp, name, name_1, rare_0, rare_1):
     res = []
@@ -350,14 +354,12 @@ def handle_card(card, cursor, data, is_jp):
             for val in skill['value']:
                 s_val['val'].append(val)
 
-            s_type = get_sub_type(skill['effectId'], rare_0)
-
-            if s_type is None:
+            try:
+                s_type = int(get_sub_type(skill['effectId'], rare_0))
+            except NotFoundError:
                 err = 'Error transposing skill type for ' + name
                 errors.append(err)
                 s_type = -1
-            else:
-                s_type = int(s_type)
 
             s_name = ''
             url = os.path.join(config.card_info_root_url if is_jp else config.as_card_info_root_url, str(card['id']))
