@@ -10,6 +10,7 @@ import requests
 import config
 from db import Database, NotFoundError
 from dry_cursor import DryCursor
+from fix_json import get_idol_names, handle_data
 
 errors = []
 
@@ -27,15 +28,6 @@ def get_iid(name, db, is_jp):
         idol = 'エミリー スチュアート'
 
     return db.get_card_iid(name=idol)
-
-def edit_name(name):
-    guess = ['　', ' ']
-    res = name
-    for i in range(len(name)-1, -1, -1):
-        if name[i] in guess:
-            res = name[:i] + '　' + name[i+1:]
-            break
-    return res
 
 def craw_aquire(url):
     # aquire = [卡池, PST, 百萬收藏, 初始, 周年, 覺醒, 其他]
@@ -220,7 +212,6 @@ def get_or_insert_card_entry(card, db, data, is_jp, info_0, info_1):
                 if card['id'] == jp_card['id']:
                     jp_name = jp_card['name']
                     break
-            jp_name = edit_name(jp_name)
             return db.get_card_info(jp_name=jp_name)
         return db.get_card_info(name=info_0.name)
     except NotFoundError:
@@ -237,7 +228,7 @@ def get_or_insert_card_entry(card, db, data, is_jp, info_0, info_1):
 def handle_card(card, db, data, is_jp):
     global errors
 
-    info_0 = CardInfo(name = edit_name(card['name']), rarity = Rarity((card['rarity'] - 1) * 2))
+    info_0 = CardInfo(name = card['name'], rarity = Rarity((card['rarity'] - 1) * 2))
     info_1 = CardInfo(name = info_0.name + '＋', rarity = info_0.rarity + 1)
 
     print('Start', info_0.name)
@@ -327,7 +318,8 @@ def handle_card(card, db, data, is_jp):
                 err = 'No skill name for ' + info_0.name
                 errors.append(err)
 
-            db.update_cards([info_0, info_1], skill_type=s_type, skill_name=s_name, skill_val=json.dumps(s_val))
+            db.update_cards([info_0, info_1], skill_type=s_type,
+                            skill_name=s_name, skill_val=json.dumps(s_val))
         elif not is_jp and not row['as_skill_name']:
             s_name = ''
             url = os.path.join(config.as_card_info_root_url, str(card['id']))
@@ -357,8 +349,10 @@ def handle_card(card, db, data, is_jp):
         url = os.path.join(config.card_info_root_url if is_jp else config.as_card_info_root_url, str(card['id']))
         vals_0, vals_1 = craw_values(url, info_0.name, is_jp)
         if vals_0 is not None and vals_1 is not None:
-            db.update_card(info_0, visual_max=vals_0['visual'], vocal_max=vals_0['vocal'], dance_max=vals_0['dance'])
-            db.update_card(info_1, visual_max=vals_1['visual'], vocal_max=vals_1['vocal'], dance_max=vals_1['dance'])
+            db.update_card(info_0, visual_max=vals_0['visual'],
+                           vocal_max=vals_0['vocal'], dance_max=vals_0['dance'])
+            db.update_card(info_1, visual_max=vals_1['visual'],
+                           vocal_max=vals_1['vocal'], dance_max=vals_1['dance'])
 
     # 處理突破 Bonus
     if row['visual_bonus'] is None or str(card['masterRankMax']) not in json.loads(row['visual_bonus']):
@@ -370,7 +364,8 @@ def handle_card(card, db, data, is_jp):
         vo_bonus[master_rank] = card['vocalMasterBonus']
         da_bonus[master_rank] = card['danceMasterBonus']
 
-        db.update_cards([info_0, info_1], visual_bonus=json.dumps(vi_bonus), vocal_bonus=json.dumps(vo_bonus), dance_bonus=json.dumps(da_bonus))
+        db.update_cards([info_0, info_1], visual_bonus=json.dumps(vi_bonus),
+                        vocal_bonus=json.dumps(vo_bonus), dance_bonus=json.dumps(da_bonus))
 
     # 處理最大突破
     if is_jp and row['jp_master_rank'] is None:
@@ -429,11 +424,16 @@ def handle_card(card, db, data, is_jp):
 
 def main():
     global errors
+    
+    idol_jp_names, idol_as_names = get_idol_names()
+    
     with open('cards.json') as f:
         data = json.load(f)
+        handle_data(data, idol_jp_names, 'jp')
 
     with open('ascards.json') as f:
-        cn_data = json.load(f)
+        as_data = json.load(f)
+        handle_data(as_data, idol_as_names, 'as')
 
     connection = config.connect()
 
@@ -447,7 +447,7 @@ def main():
             handle_card(card, Database(cursor, is_jp=True), data, True)
 
         # 更新 (海外版) 卡片資訊
-        for card in cn_data:
+        for card in as_data:
             if card['extraType'] in [5, 7, 10] and card['rarity'] == 4:
                 continue
             handle_card(card, Database(cursor, is_jp=False), data, False)
