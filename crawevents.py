@@ -1,6 +1,8 @@
 from datetime import datetime, timezone, timedelta
 import json
 import re
+import argparse
+
 from config import connect
 from dry_cursor import DryCursor
 
@@ -43,6 +45,10 @@ def handle_event(begin, end, name, event_type, local, cursor, connection):
         connection.commit()
 
 def main():
+    parser = argparse.ArgumentParser(description='Arguments for crawcards.py')
+    parser.add_argument('--real', action="store_true", default=False, help='real run')    
+    args = parser.parse_args()
+
     data = []
     with open('events.json') as f:
         line = f.readline()
@@ -51,7 +57,9 @@ def main():
 
     connection = connect()
     with connection.cursor() as cursor:
-        cursor = DryCursor(cursor)
+        if not args.real:
+            cursor = DryCursor(cursor)
+        
         for i in range(len(data)-1, -1, -1):
             event = data[i]
 
