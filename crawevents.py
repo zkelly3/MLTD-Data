@@ -90,16 +90,16 @@ def main():
             event_type_name = ''
             local['other_params'] = ''
             local['other_vals'] = ''
-            if event_type in [2, 9]:
-                # ミリコレ
-                event_type_name = 'ミリコレ'
-                local['event'] = 'CollectEvent'
-            elif event_type in [3, 4, 10, 11, 12, 13]:
+            if event_type in [3, 4, 10, 11, 12, 13]:
                 # PSTイベント
                 event_type_name = 'PST'
                 local['event'] = 'PSTEvent'
                 local['other_params'] = ', `type`'
                 local['other_vals'] = ', %s'
+            elif event_type in [2, 9]:
+                # ミリコレ
+                event_type_name = 'ミリコレ'
+                local['event'] = 'CollectEvent'
             elif event_type in [6]:
                 # WORKING
                 event_type_name = 'WORKING'
