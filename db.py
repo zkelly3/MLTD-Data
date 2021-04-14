@@ -73,8 +73,8 @@ class Database:
 
     def insert_row(self, table_name, columns):
         columns = {self.map_column(k): v for (k, v) in columns.items()}
-        self.edit_database('INSERT INTO `{table_name}`({key_template}) VALUES(value_template)'.format(
-            table_name=table_name, key_template=', '.join(columns.keys()), value_template=', '.join(['%s'] * len(columns))), columns.values())
+        self.edit_database('INSERT INTO `{table_name}`({key_template}) VALUES({value_template})'.format(
+            table_name=table_name, key_template=', '.join(columns.keys()), value_template=', '.join(['%s'] * len(columns))), tuple(columns.values()))
 
     def get_card_info(self, **conds):
         return self.select_row('Card', ['*'], conds)

@@ -4,7 +4,7 @@ from enum import IntEnum
 import json
 import re
 import os.path
-
+import argparse
 import requests
 
 import config
@@ -219,9 +219,9 @@ def get_or_insert_card_entry(card, db, data, is_jp, info_0, info_1):
         idol_id = get_iid(info_0.name, db, is_jp)
 
         print('Inserting card', info_0.name)
-        db.insert_card(name=info_0.name, IID=idol_id, rare=info_0.rarity)
+        db.insert_card(name=info_0.name, IID=idol_id, rare=int(info_0.rarity))
         print('Inserting card', info_1.name)
-        db.insert_card(name=info_1.name, IID=idol_id, rare=info_1.rarity)
+        db.insert_card(name=info_1.name, IID=idol_id, rare=int(info_1.rarity))
 
         return db.get_card_info(name=info_0.name)
 
@@ -282,7 +282,7 @@ def handle_card(card, db, data, is_jp):
 
     # 處理 Center 效果
     if info_0.rarity != Rarity.N and row['leader_skill'] is None:
-        handle_l_skill(card['id'], info_0.id, info_1.id, info_0.name, info_1.name, is_jp, db)
+        handle_l_skill(card['id'], info_0, info_1, is_jp, db)
 
     # 處理技能
     if info_0.rarity != Rarity.N:
@@ -425,6 +425,11 @@ def handle_card(card, db, data, is_jp):
 def main():
     global errors
     
+    parser = argparse.ArgumentParser(description='Arguments for crawcards.py')
+    parser.add_argument('--real', action="store_true", default=False, help='real run')    
+    args = parser.parse_args()
+
+    
     idol_jp_names, idol_as_names = get_idol_names()
     
     with open('cards.json') as f:
@@ -438,7 +443,8 @@ def main():
     connection = config.connect()
 
     with connection.cursor() as cursor:
-        cursor = DryCursor(cursor)
+        if not args.real:
+            cursor = DryCursor(cursor)
 
         # 更新 (日版) 卡片資訊
         for card in data:
