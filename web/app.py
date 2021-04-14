@@ -3,7 +3,7 @@ from json import loads
 import os.path
 
 from flask import Flask
-from flask import render_template, url_for, abort
+from flask import render_template, url_for, redirect, abort
 from flask.json import dumps
 
 from config import connect
@@ -318,8 +318,12 @@ def get_card_info(card_id):
 
 @app.route("/")
 def home_page():
+    return redirect('/idols')
+
+@app.route("/idols")
+def idols_page():
     idols = get_idols()
-    return render_template('mltd.html', idols=dumps(idols))
+    return render_template('idols.html', idols=dumps(idols))
 
 @app.route("/idol/<int:idol_id>")
 def idol_page(idol_id):
