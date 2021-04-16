@@ -1,38 +1,6 @@
-table {
-  margin: 10px;
-  text-align: left;
-  border-collapse: collapse;
-}
-#gashas th {
-  text-align: center;
-}
-#card tr {
-  border: 1px solid black;
-}
-th, td {
-  padding: 2px 5px;
-}
-
-#gashas th, td {
-  border: 1px solid black;
-}
-#event th, td {
-  border: 1px solid black;
-}
-
 .card_image {
-  height: 250px;
+  max-height: 250px;
 }
 .card_icon {
   height: 40px;
-}
-
-a {
-  font-weight: normal;
-  color: blue;
-}
-
-a.active {
-  font-weight: bold;
-  color: black;
 }
