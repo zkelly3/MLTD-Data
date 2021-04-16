@@ -8,7 +8,6 @@ $(function() {
             card: card_json,
             japanese: true,
             notBoth: false,
-            hasFrom: true,
             hasAwaken: true,
             gashaTitles: ['類型', '名稱', '開始', '結束']
         },
@@ -36,7 +35,7 @@ $(function() {
                 card.awakenWord = card.is_awaken ? '覺醒前' : '覺醒後';
                 this.hasAwaken = card.awaken ? true : false;
                 card.awakenName = (!this.hasAwaken || !card.awaken.name) ? '尚未更新' : card.awaken.name;
-                card.time = (!card.time) ? '尚未更新' : card.is_jp ? new Date(card.time * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(card.time * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false});
+                card.time = (!card.time) ? '尚未更新' : card.is_jp ? new Date(card.time * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(card.time * 1000).toLocaleString('ja-JP', { timeZone: 'Asia/Taipei', hour12: false});
                 card.skillType = (!card.skill || !card.skill.type || !card.skill.type.name) ? '' : card.skill.type.name;
                 card.skillName = (!card.skill || !card.skill.name) ? '' : card.skill.name;
                 card.skillDesc = (!card.skill || !card.skill.description) ? '' : card.skill.description;
@@ -44,13 +43,13 @@ $(function() {
                 
                 for (let i in card.gashas) {
                     let g = card.gashas[i];
-                    g.start = (!g.start) ? '尚未更新' : card.is_jp ? new Date(g.start * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(g.start * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false});
-                    g.over = (!g.over) ? '尚未更新' : card.is_jp ? new Date(g.over * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(g.over * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false});
+                    g.start = (!g.start) ? '尚未更新' : card.is_jp ? new Date(g.start * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(g.start * 1000).toLocaleString('ja-JP', { timeZone: 'Asia/Taipei', hour12: false});
+                    g.over = (!g.over) ? '尚未更新' : card.is_jp ? new Date(g.over * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(g.over * 1000).toLocaleString('ja-JP', { timeZone: 'Asia/Taipei', hour12: false});
                 }
                 
                 if (card.event) {
-                    card.event.start = (!card.event.start) ? '尚未更新' : card.is_jp ? new Date(card.event.start * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(card.event.start * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false});
-                    card.event.over = (!card.event.over) ? '尚未更新' : card.is_jp ? new Date(card.event.over * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(card.event.over * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false});
+                    card.event.start = (!card.event.start) ? '尚未更新' : card.is_jp ? new Date(card.event.start * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(card.event.start * 1000).toLocaleString('ja-JP', { timeZone: 'Asia/Taipei', hour12: false});
+                    card.event.over = (!card.event.over) ? '尚未更新' : card.is_jp ? new Date(card.event.over * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(card.event.over * 1000).toLocaleString('ja-JP', { timeZone: 'Asia/Taipei', hour12: false});
                 }
             },
             changeLanguage: function() {
