@@ -1,13 +1,3 @@
-function greater_equal(a, b) {
-    return a >= b;
-}
-function less_equal(a, b) {
-    return a <= b;
-}
-function exact(a, b) {
-    return a == b;
-}
-
 $(function() {
     var info_json = JSON.parse($('#info_json').text());
     var cards_json = JSON.parse($('#cards_json').text());
