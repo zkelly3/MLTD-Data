@@ -1,0 +1,33 @@
+/*
+table {
+  text-align: left;
+  border-collapse: collapse;
+}
+#event tr {
+  border: 1px solid black;
+}
+th, td {
+  padding: 2px 5px;
+}
+
+.card_icon {
+  height: 40px;
+}
+
+a {
+  font-weight: normal;
+  color: blue;
+}
+
+a.active {
+  font-weight: bold;
+  color: black;
+}
+*/
+.card_icon {
+  height: 40px;
+}
+
+.event_image {
+  max-height: 250px;
+}

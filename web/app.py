@@ -29,13 +29,13 @@ gasha_types = [{'jp': 'タイプ限定', 'as': '屬性限定'},
     {'jp': 'フェス限定', 'as': 'FES限定'},
     {'jp': '限定復刻', 'as': '限定復刻'},
     {'jp': '特殊', 'as': '特殊'}]
-event_types = [{'jp': 'PSTイベント', 'as': 'PST活動'},
-    {'jp': 'ミリコレ', 'as': '百萬收藏'},
-    {'jp': '周年イベント', 'as': '週年活動'},
-    {'jp': 'MILLION LIVE WORKING☆', 'as': 'MILLION LIVE WORKING☆'},
-    {'jp': 'THEATER SHOW TIME☆', 'as': 'THEATER SHOW TIME☆'},
-    {'jp': 'その他', 'as': '其他'},
-    {'jp': 'THEATER TALK PARTY☆', 'as': 'THEATER TALK PARTY☆'}]
+event_types = [{'jp': 'PSTイベント', 'as': 'PST活動', 'abbr': 'PST'},
+    {'jp': 'ミリコレ', 'as': '百萬收藏', 'abbr': 'COL'},
+    {'jp': '周年イベント', 'as': '週年活動', 'abbr': 'ANN'},
+    {'jp': 'MILLION LIVE WORKING☆', 'as': 'MILLION LIVE WORKING☆', 'abbr': 'WRK'},
+    {'jp': 'THEATER SHOW TIME☆', 'as': 'THEATER SHOW TIME☆', 'abbr': 'SHT'},
+    {'jp': 'その他', 'as': '其他', 'abbr': 'OTH'},
+    {'jp': 'THEATER TALK PARTY☆', 'as': 'THEATER TALK PARTY☆', 'abbr': 'TKP'}]
 pst_types = [{'jp': 'シアター', 'as': '劇場'},
     {'jp': 'ツアー', 'as': '巡演'},
     {'jp': 'ツインステージ', 'as': 'ツインステージ'},
@@ -208,11 +208,6 @@ def get_card_skill_local(card, card_id, rare_id, local, cursor):
             card['skill']['description'] = skill['description'].format(**skill_val) if skill['description'] is not None and skill_val is not None else ''
 
 def get_card_info_local(card_id, local):
-    # sql_e_col = ""
-    # ssql_e_pst = ""
-    # ssql_e_ann = ""
-    # ssql_e_oth = ""
-
     sql_card = """SELECT id, {name} AS name, IID, rare, {time} AS time, aquire, gasha_type, in_gasha,
                   {master_rank} AS master_rank, visual_max, vocal_max, dance_max,
                   visual_bonus, vocal_bonus, dance_bonus, leader_skill,
@@ -315,6 +310,135 @@ def get_card_info(card_id):
     card.append(get_card_info_local(card_id, as_local))
     return card
 
+def get_event_info_local(event_type, event_id, local):
+    pre_sql_event_info = """SELECT id, {name} AS name, 
+                            {start} AS start, {over} AS over, comment{other_params}
+                            FROM {event} WHERE (id = %s)"""
+    pre_sql_event_card_pst = """SELECT Card.id AS id, Card.{name} AS name
+                                FROM `PSTEventToCard` INNER JOIN `Card`
+                                ON `PSTEventToCard`.CID = `Card`.id
+                                WHERE (`PSTEventToCard`.EID = %s AND type = %s)"""
+    pre_sql_event_card_col = """SELECT Card.id AS id, Card.{name} AS name
+                                FROM `CollectEventToCard` INNER JOIN `Card`
+                                ON `CollectEventToCard`.CID = `Card`.id
+                                WHERE (`CollectEventToCard`.EID = %s)
+                                ORDER BY `CollectEventToCard`.type"""
+    pre_sql_event_card_ann = """SELECT Card.id AS id, Card.{name} AS name
+                                FROM `AnniversaryToCard` INNER JOIN `Card`
+                                ON `AnniversaryToCard`.CID = `Card`.id
+                                WHERE (`AnniversaryToCard`.EID = %s AND type = %s)"""
+    pre_sql_event_card_oth = """SELECT Card.id AS id, Card.{name} AS name
+                                FROM `OtherEventToCard` INNER JOIN `Card`
+                                ON `OtherEventToCard`.CID = `Card`.id
+                                WHERE (`OtherEventToCard`.EID = %s)"""
+    
+    if event_type == 0:
+        local['event'] = 'PSTEvent'
+        local['other_params'] = ', type AS pst_type'
+    elif event_type == 1:
+        local['event'] = 'CollectEvent'
+        local['other_params'] = ''
+    elif event_type == 2:
+        local['event'] = 'Anniversary'
+        local['other_params'] = ''
+    elif event_type == 3:
+        local['event'] = 'WorkingEvent'
+        local['other_params'] = ''
+    elif event_type == 4:
+        local['event'] = 'ShowTimeEvent'
+        local['other_params'] = ''
+    elif event_type == 5:
+        local['event'] = 'OtherEvent'
+        local['other_params'] = ''
+    elif event_type == 6:
+        local['event'] = 'TalkPartyEvent'
+        local['other_params'] = ''
+    else:
+        raise NotFoundError
+    
+    sql_event_info = pre_sql_event_info.format(**local)
+    connection = connect()
+    with connection.cursor() as cursor:
+        cursor.execute(sql_event_info, (event_id))
+        event = cursor.fetchall()
+        if not event:
+            raise NotFoundError
+        
+        
+        tz_info = timezone(timedelta(hours=local['ver_time']))
+        event = event[0]
+        
+        if event['start'] is None:
+            return None
+        
+        event['is_jp'] = local['ver'] == 'jp'
+        event['img_url'] = image_path('images/event_banner', str(event_type) + '_' + str(event_id) + '.jpg')
+        event['start'] = event['start'].replace(tzinfo=tz_info).timestamp() if event['start'] is not None else None
+        event['over'] = event['over'].replace(tzinfo=tz_info).timestamp() if event['over'] is not None else None
+        event['event_type'] = event_types[event_type][local['ver']]
+        event['event_abbr'] = event_types[event_type]['abbr']
+        event['pst_type'] = pst_types[event['pst_type']][local['ver']] if 'pst_type' in event and event['pst_type'] is not None else None
+        
+        if event_type == 0:
+            card_types = [0, 1, 2]
+            sql_event_card_pst = pre_sql_event_card_pst.format(**local)
+            event['cards'] = {}
+            for card_type in card_types:
+                cursor.execute(sql_event_card_pst, (event_id, card_type))
+                event['cards'][str(card_type)] = cursor.fetchall()
+        elif event_type == 1:
+            sql_event_card_col = pre_sql_event_card_col.format(**local)
+            cursor.execute(sql_event_card_col, (event_id))
+            event['cards'] = cursor.fetchall()
+        elif event_type == 2:
+            card_types = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            sql_event_card_ann = pre_sql_event_card_ann.format(**local)
+            event['cards'] = {}
+            for card_type in card_types:
+                cursor.execute(sql_event_card_ann, (event_id, card_type))
+                event['cards'][str(card_type)] = cursor.fetchall()
+        elif event_type == 5:
+            sql_event_card_oth = pre_sql_event_card_oth.format(**local)
+            cursor.execute(sql_event_card_oth, (event_id))
+            event['cards'] = cursor.fetchall()
+        else:
+            connection.close()
+            return event
+        
+    connection.close()
+    if type(event['cards']) == list:
+        for card in event['cards']:
+            card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
+            card['url'] = '/card/' + str(card['id']) + '.png'
+    else:
+        for key in event['cards']:
+            for card in event['cards'][key]:
+                card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
+                card['url'] = '/card/' + str(card['id'])
+    return event
+    
+
+def get_event_info(event_type, event_id):
+    jp_local = {'name': 'jp_name',
+        'time': 'jp_time',
+        'start': 'jp_start',
+        'over': 'jp_over',
+        'ver': 'jp',
+        'ver_time': 9
+    }
+    as_local = {'name': 'as_name',
+        'time': 'as_time',
+        'start': 'as_start',
+        'over': 'as_over',
+        'ver': 'as',
+        'ver_time': 8
+    }
+    
+    event = []
+    event.append(get_event_info_local(event_type, event_id, jp_local))
+    event.append(get_event_info_local(event_type, event_id, as_local))
+    return event
+
 
 @app.route("/")
 def home_page():
@@ -345,6 +469,19 @@ def card_page(card_id):
     else:
         page_title = card[1]['rare'] + ' ' + card[1]['name']
     return render_template('card.html', title=page_title, card=dumps(card, ensure_ascii=False))
+
+@app.route("/event/<int:event_type>/<int:event_id>")
+def event_page(event_type, event_id):
+    try:
+        event = get_event_info(event_type, event_id)
+    except NotFoundError:
+        abort(404)
+
+    if event[0] is not None:
+        page_title = event[0]['name']
+    else:
+        page_title = event[1]['name']
+    return render_template('event.html', title=page_title, event=dumps(event, ensure_ascii=False))
 
 @app.errorhandler(404)
 def page_not_found(unused_error):
