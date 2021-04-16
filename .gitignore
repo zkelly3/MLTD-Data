@@ -9,6 +9,7 @@ web/log/*
 web/*.sock
 web/*.status
 web/*.pid
+web/*.lock
 
 *.csv
 *.json
