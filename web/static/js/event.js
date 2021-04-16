@@ -30,6 +30,7 @@ $(function() {
             fixData: function(gameEvent) {
                 if (!gameEvent) return;
                 gameEvent.name = gameEvent.name ? gameEvent.name : '未知';
+                gameEvent.startTime = (!gameEvent.start) ? null : new Date(gameEvent.start * 1000);
                 gameEvent.start = (!gameEvent.start) ? '--' : gameEvent.is_jp ? new Date(gameEvent.start * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(gameEvent.start * 1000).toLocaleString('ja-JP', { timeZone: 'Asia/Taipei', hour12: false});
                 gameEvent.over = (!gameEvent.over) ? '--' : gameEvent.is_jp ? new Date(gameEvent.over * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(gameEvent.over * 1000).toLocaleString('ja-JP', { timeZone: 'Asia/Taipei', hour12: false});
                 
@@ -39,12 +40,26 @@ $(function() {
                         card.name = (!card.name) ? '未知' : card.name;
                     }
                 }
+                else if (gameEvent.event_abbr == 'ANN') {
+                    for (let i in gameEvent.cards) {
+                        for (let j in gameEvent.cards[i].data) {
+                            let card = gameEvent.cards[i].data[j];
+                            card.name = (!card.name) ? '未知' : card.name;
+                        }
+                    }
+                }
                 else if (gameEvent.cards != null) {
                     for (let i in gameEvent.cards) {
                         for (let j in gameEvent.cards[i]) {
                             let card = gameEvent.cards[i][j];
                             card.name = (!card.name) ? '未知' : card.name;
                         }
+                    }
+                }
+                
+                if (gameEvent.event_abbr === 'ANN') {
+                    for (let i in gameEvent.cards) {
+                        gameEvent.cards[i].mission_date = (!gameEvent.cards[i].mission_date) ? null : new Date(gameEvent.cards[i].mission_date * 1000).toLocaleDateString("ja-JP", {timeZone: 'Asia/Taipei', hour12: false});
                     }
                 }
             },

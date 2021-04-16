@@ -48,7 +48,18 @@
     </td></tr>
     <tr><th>備註</th><td>{{ shown.comment }}</td></tr>
   </table>
-  </div></div>
+  <div v-if="shown.event_abbr == 'ANN'">
+  <h4>每日任務報酬</h4>
+  <table class="table" id="event">
+    <tr v-for="(val, key) in shown.cards">
+      <th>{{ val.mission_date }}</th><td v-for="card in val.data">
+      <a :href="card.url">
+        <img class="card_icon" :src="card.img_url"/> {{ card.idol_name }}
+      </a>
+      </td>
+    </tr>
+  </table>
+  </div>
 </div>
 <script type="application/json" id="event_json">{[event|safe]}</script>
 </body>

@@ -322,16 +322,17 @@ def get_event_info_local(event_type, event_id, local):
     pre_sql_event_card_pst = """SELECT Card.id AS id, Card.{name} AS name
                                 FROM `PSTEventToCard` INNER JOIN `Card`
                                 ON `PSTEventToCard`.CID = `Card`.id
-                                WHERE (`PSTEventToCard`.EID = %s AND type = %s)"""
+                                WHERE (`PSTEventToCard`.EID = %s AND `PSTEventToCard`.type = %s)"""
     pre_sql_event_card_col = """SELECT Card.id AS id, Card.{name} AS name
                                 FROM `CollectEventToCard` INNER JOIN `Card`
                                 ON `CollectEventToCard`.CID = `Card`.id
                                 WHERE (`CollectEventToCard`.EID = %s)
                                 ORDER BY `CollectEventToCard`.type"""
-    pre_sql_event_card_ann = """SELECT Card.id AS id, Card.{name} AS name
+    pre_sql_event_card_ann = """SELECT Card.id AS id, Card.{name} AS name, Idol.{name} As idol_name
                                 FROM `AnniversaryToCard` INNER JOIN `Card`
                                 ON `AnniversaryToCard`.CID = `Card`.id
-                                WHERE (`AnniversaryToCard`.EID = %s AND type = %s)"""
+                                INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
+                                WHERE (`AnniversaryToCard`.EID = %s AND `AnniversaryToCard`.type = %s)"""
     pre_sql_event_card_oth = """SELECT Card.id AS id, Card.{name} AS name
                                 FROM `OtherEventToCard` INNER JOIN `Card`
                                 ON `OtherEventToCard`.CID = `Card`.id
@@ -400,8 +401,12 @@ def get_event_info_local(event_type, event_id, local):
             sql_event_card_ann = pre_sql_event_card_ann.format(**local)
             event['cards'] = {}
             for card_type in card_types:
+                event['cards'][str(card_type)] = {'mission_date': event['start'] + timedelta(days=card_type).total_seconds() if event['start'] else None}
                 cursor.execute(sql_event_card_ann, (event_id, card_type))
-                event['cards'][str(card_type)] = cursor.fetchall()
+                event['cards'][str(card_type)]['data'] = cursor.fetchall()
+                for card in event['cards'][str(card_type)]['data']:
+                    if card['idol_name'] == 'エミリー スチュアート':
+                        card['idol_name'] = 'エミリー'
         elif event_type == 5:
             sql_event_card_oth = pre_sql_event_card_oth.format(**local)
             cursor.execute(sql_event_card_oth, (event_id))
@@ -415,6 +420,11 @@ def get_event_info_local(event_type, event_id, local):
         for card in event['cards']:
             card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
             card['url'] = '/card/' + str(card['id']) + '.png'
+    elif event_type == 2:
+        for key in event['cards']:
+            for card in event['cards'][key]['data']:
+                card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
+                card['url'] = '/card/' + str(card['id'])
     else:
         for key in event['cards']:
             for card in event['cards'][key]:
