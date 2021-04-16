@@ -14,8 +14,8 @@
   <table id="card">
     <tr><td rowspan="5"><img class="card_image" :src="shown.img_url"/></td>
     <th :style="styleList">名稱</td></td><td>{{ shown.name }}</td></tr>
-    <th :style="styleList">所屬偶像</td></td><td><a :href="shown.idolUrl"> {{ shown.idolName }}</a></td></tr>
-    <tr><th :style="styleList">取得方式</td><td><b>{{ shown.aquireType }}</b><br><a :href="shown.from_url" v-if="shown.has_from_url">{{ shown.aquireTitle }}</a><span v-else>{{ shown.aquireTitle }}</span></td></tr>
+    <th :style="styleList">所屬偶像</td></td><td><a :href="shown.idol.url"> {{ shown.idol.name }}</a></td></tr>
+    <tr><th :style="styleList">取得方式</td><td><b>{{ shown.aquire.type }}</b><br><a :href="shown.from_url" v-if="shown.has_from_url">{{ shown.aquire.title }}</a><span v-else>{{ shown.aquire.title }}</span></td></tr>
     <tr><th :style="styleList">{{ shown.awakenWord }}</td><td v-if="shown.awaken !== null"><a :href="shown.awaken.url"><img class="card_icon" :src="shown.awaken.img_url"/>{{ shown.awakenName }}</a></td><td v-else>尚未更新</td></tr>
     <tr><th :style="styleList">實裝時間<td>{{ shown.time }}</td></tr>
     <tr>
@@ -38,7 +38,7 @@
     <h3>實裝的活動</h3>
     <table id="event">
         <td>{{ shown.event.event_type }}</td>
-        <td>{{ shown.event.name }}</td>
+        <td><a :href="shown.event.url">{{ shown.event.name }}</a></td>
         <td>{{ shown.event.start }}</td>
         <td>{{ shown.event.over }}</td>
       </tr>

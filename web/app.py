@@ -165,7 +165,8 @@ def get_card_aquire_local(card, card_id, aquire_id, local, cursor):
         aquire_to_event = {1: 0, 2: 1, 4: 2, 6: 5}
         if card['event']:
             card['has_from_url'] = True
-            card['from_url'] = '/event/%d/%d' % (aquire_to_event[aquire_id], event['id'])
+            card['event']['url'] = '/event/%d/%d' % (aquire_to_event[aquire_id], event['id'])
+            card['from_url'] = card['event']['url']
             card['event']['start'] = card['event']['start'].replace(tzinfo=tz_info).timestamp()
             card['event']['over'] = card['event']['over'].replace(tzinfo=tz_info).timestamp()
             card['event']['event_type'] = pst_types[event['event_type']][local['ver']] if aquire_id == 1 else aquire_types[aquire_id][local['ver']]
