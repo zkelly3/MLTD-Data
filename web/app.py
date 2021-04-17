@@ -139,7 +139,8 @@ def get_card_aquire_local(card, card_id, aquire_id, local, cursor):
                    FROM `{event_to_card}` INNER JOIN `{event}` ON {event_to_card}.EID = {event}.id
                    WHERE ({event_to_card}.CID = %s AND {event}.{start} IS NOT NULL)
                    ORDER BY {event}.{start}"""
-
+    
+    tz_info = timezone(timedelta(hours=local['ver_time']))
     card['aquire'] = {'type': aquire_types[aquire_id][local['ver']]} if aquire_id is not None else None
 
     guest_commu = {'jp': 'ゲストコミュ', 'as':'ゲストコミュ'}
@@ -148,7 +149,6 @@ def get_card_aquire_local(card, card_id, aquire_id, local, cursor):
         card['aquire']['title'] = guest_commu[local['ver']]
         return
 
-    tz_info = timezone(timedelta(hours=local['ver_time']))
     if aquire_id == 0:
         card['from'] = 'Gasha'
         cursor.execute(sql_gasha, (card_id))
@@ -157,11 +157,14 @@ def get_card_aquire_local(card, card_id, aquire_id, local, cursor):
             cursor.execute(sql_not_up, (card['time']))
             gashas = cursor.fetchall()
         for gasha in gashas:
-            gasha['start'] = gasha['start'].replace(tzinfo=tz_info).timestamp()
-            gasha['over'] = gasha['over'].replace(tzinfo=tz_info).timestamp()
+            gasha['url'] = '/gasha/%d' % gasha['id']
+            gasha['start'] = to_timestamp(gasha['start'], tz_info)
+            gasha['over'] = to_timestamp(gasha['over'], tz_info)
             gasha['gasha_type'] = gasha_types[gasha['gasha_type']][local['ver']]
         card['gashas'] = gashas
         card['aquire']['title'] = gashas[0]['name'] if gashas else None
+        card['from_url'] = '/gasha/%d' % gashas[0]['id'] if gashas else None
+        card['has_from_url'] = card['from_url'] is not None
     elif aquire_id in [3, 5]:
         card['has_from_url'] = False
         card['from'] = 'Else'

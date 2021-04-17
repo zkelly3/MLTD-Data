@@ -43,7 +43,7 @@
     <th v-for="gashaTitle in gashaTitles">{{ gashaTitle }}</th>
     <tr v-for="gasha in shown.gashas">
       <td>{{ gasha.gasha_type }}</td>
-      <td>{{ gasha.name }}</td>
+      <td><a :href="gasha.url">{{ gasha.name }}</a></td>
       <td>{{ gasha.start }}</td>
       <td>{{ gasha.over }}</td>
     </tr>
