@@ -315,6 +315,9 @@ def get_card_info_local(card_id, local):
         tz_info = timezone(timedelta(hours=local['ver_time']))
         card['time'] = card['time'].replace(tzinfo=tz_info).timestamp() if card['time'] is not None else None
         card['img_url'] = image_path('images/card_images', str(card['id']) + '.png')
+        if rare_id >= 6:
+            card['big_img_url'] = image_path('images/card_images_bg/', str(card['id']) + '.png')
+        
     connection.close()
     return card
 
