@@ -373,6 +373,8 @@ def get_event_info_local(event_type, event_id, local):
                                 ON `OtherEventToCard`.CID = `Card`.id
                                 WHERE (`OtherEventToCard`.EID = %s)"""
     
+    tz_info = timezone(timedelta(hours=local['ver_time']))
+    
     if event_type == 0:
         local['event'] = 'PSTEvent'
         local['other_params'] = ', type AS pst_type'
@@ -406,7 +408,6 @@ def get_event_info_local(event_type, event_id, local):
             raise NotFoundError
         
         
-        tz_info = timezone(timedelta(hours=local['ver_time']))
         event = event[0]
         
         if event['start'] is None:
@@ -489,6 +490,91 @@ def get_event_info(event_type, event_id):
     event.append(get_event_info_local(event_type, event_id, as_local))
     return event
 
+def get_gasha_info_local(gasha_id, local):
+    sql_gasha_info = """SELECT id, {name} AS name, 
+                        {start} AS start, {over} AS over, type AS gasha_type, comment
+                        FROM `Gasha` WHERE (id = %s)""".format(**local)
+    sql_same_time_cards = """SELECT id, {name} AS name, rare
+                             FROM `Card` WHERE ({time} = %s AND aquire = 0)
+                             ORDER BY card_id""".format(**local)
+    sql_check_gasha_to_card = """SELECT `GashaToCard`.id FROM `GashaToCard` 
+                              INNER JOIN `Card` ON `GashaToCard`.CID = `Card`.id
+                              WHERE (`GashaToCard`.GID = %s AND `GashaToCard`.CID = %s)"""
+    sql_pick_up_draw = """SELECT `Card`.id, `Card`.{name} AS name, `Card`.rare AS rare
+                          FROM `GashaToCard` INNER JOIN `Card` ON `GashaToCard`.CID = `Card`.id
+                          WHERE (`GashaToCard`.GID = %s AND NOT `Card`.in_gasha = 2)""".format(**local)
+    sql_pick_up_others = """SELECT `Card`.id, `Card`.{name} AS name, `Card`.rare AS rare
+                          FROM `GashaToCard` INNER JOIN `Card` ON `GashaToCard`.CID = `Card`.id
+                          WHERE (`GashaToCard`.GID = %s AND `Card`.in_gasha = 2)""".format(**local)
+    
+    tz_info = timezone(timedelta(hours=local['ver_time']))
+    
+    connection = connect()
+    with connection.cursor() as cursor:
+        cursor.execute(sql_gasha_info, (gasha_id))
+        gasha = cursor.fetchall()
+        if not gasha:
+            raise NotFoundError
+        
+        gasha = gasha[0]
+        gasha['img_url'] = image_path('images/gasha_banners', str(gasha['id']) + '.jpg')
+        
+        if gasha['start'] is None:
+            return None
+        
+        gasha['pick_up'] = []
+        gasha['others'] = []
+        
+        if gasha['gasha_type'] == 5:
+            cursor.execute(sql_pick_up_draw, (gasha['id']))
+            gasha['pick_up'] = cursor.fetchall()
+            cursor.execute(sql_pick_up_others, (gasha['id']))
+            gasha['others'] = cursor.fetchall()
+        else:
+            cursor.execute(sql_same_time_cards, (gasha['start']))
+            cards = cursor.fetchall()
+            for card in cards:
+                cursor.execute(sql_check_gasha_to_card, (gasha_id, card['id']))
+                tmp = cursor.fetchall()
+                if tmp:
+                    gasha['pick_up'].append(card)
+                else:
+                    gasha['others'].append(card)
+        
+        for card in gasha['pick_up']:
+            card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
+            card['url'] = '/card/%d' % card['id']
+        for card in gasha['others']:
+            card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
+            card['url'] = '/card/%d' % card['id']
+        
+        gasha['gasha_type'] = gasha_types[gasha['gasha_type']][local['ver']]
+        gasha['start'] = to_timestamp(gasha['start'], tz_info)
+        gasha['over'] = to_timestamp(gasha['over'], tz_info)
+        
+    connection.close()
+    
+    return gasha    
+
+def get_gasha_info(gasha_id):
+    jp_local = {'name': 'jp_name',
+        'start': 'jp_start',
+        'over': 'jp_over',
+        'time': 'jp_time',
+        'ver': 'jp',
+        'ver_time': 9
+    }
+    as_local = {'name': 'as_name',
+        'start': 'as_start',
+        'over': 'as_over',
+        'time': 'as_time',
+        'ver': 'as',
+        'ver_time': 8
+    }
+    gasha = []
+    gasha.append(get_gasha_info_local(gasha_id, jp_local))
+    gasha.append(get_gasha_info_local(gasha_id, as_local))
+    return gasha
 
 @app.route("/")
 def home_page():
@@ -538,6 +624,19 @@ def event_page(event_type, event_id):
     else:
         page_title = event[1]['name']
     return render_template('event.html', title=page_title, event=dumps(event, ensure_ascii=False))
+
+@app.route("/gasha/<int:gasha_id>")
+def gasha_page(gasha_id):
+    try:
+        gasha = get_gasha_info(gasha_id)
+    except NotFoundError:
+        abort(404)
+
+    if gasha[0] is not None:
+        page_title = gasha[0]['name']
+    else:
+        page_title = gasha[1]['name']
+    return render_template('gasha.html', title=page_title, gasha=dumps(gasha, ensure_ascii=False))
 
 @app.errorhandler(404)
 def page_not_found(unused_error):
