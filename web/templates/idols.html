@@ -50,7 +50,7 @@
   </div></div>
 </div>
 
-<table class="table mt-3" id="idols">
+<table class="table mt-3 align-middle" id="idols">
   <thead class="table-light"><tr>
     <th v-for="info in idolinfo">
     <a href="#" v-on:click="sortKey(info.val)" v-bind:class="{ active: sorts.key == info.val }">{{ info.text }}</a>
