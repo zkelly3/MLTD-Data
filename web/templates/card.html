@@ -30,20 +30,22 @@
     </ol>
   </nav>
   </div>
-  <div class="row g-0"><div class="col-xl-2 col-lg-3 col-12 text-center">
-    <img role="button" class="card_image mw-100" :src="shown.img_url" data-bs-toggle="modal" data-bs-target="#cardModal"/>
+  <div class="row g-0">
+    <div class="col-xl-2 col-lg-3 col-12 text-center">
+      <img role="button" class="card_image mw-100" :src="shown.img_url" data-bs-toggle="modal" data-bs-target="#cardModal"/>
+    </div>
+    <div class="col-xl-10 col-lg-9"><div class="container-fluid">
+      <my-tr><my-th :style="styleList">名稱</my-th><my-td>{{ shown.name }}</my-td></my-tr>
+      <my-tr><my-th :style="styleList">所屬偶像</my-th><my-td><a :href="shown.idol.url"> {{ shown.idol.name }}</a></my-td></my-tr>
+      <my-tr><my-th :style="styleList">取得方式</my-th><my-td><b>{{ shown.aquire.type }}</b><br><a :href="shown.from_url" v-if="shown.has_from_url">{{ shown.aquire.title }}</a><span v-else>{{ shown.aquire.title }}</span></my-td></my-tr>
+      <my-tr><my-th :style="styleList">{{ shown.awakenWord }}</my-th><my-td v-if="shown.awaken !== null"><a :href="shown.awaken.url"><img class="card_icon me-2" :src="shown.awaken.img_url"/>{{ shown.awakenName }}</a></my-td><my-td v-else>尚未更新</my-td></my-tr>
+      <my-tr><my-th :style="styleList">實裝時間</my-th><my-td>{{ shown.time }}</my-td></my-tr>
+    </div></div>
   </div>
-  <div class="col-xl-10 col-lg-9"><div class="container-fluid">
-    <my-tr><my-th :style="styleList">名稱</my-th><my-td>{{ shown.name }}</my-td></my-tr>
-    <my-tr><my-th :style="styleList">所屬偶像</my-th><my-td><a :href="shown.idol.url"> {{ shown.idol.name }}</a></my-td></my-tr>
-    <my-tr><my-th :style="styleList">取得方式</my-th><my-td><b>{{ shown.aquire.type }}</b><br><a :href="shown.from_url" v-if="shown.has_from_url">{{ shown.aquire.title }}</a><span v-else>{{ shown.aquire.title }}</span></my-td></my-tr>
-    <my-tr><my-th :style="styleList">{{ shown.awakenWord }}</my-th><my-td v-if="shown.awaken !== null"><a :href="shown.awaken.url"><img class="card_icon me-2" :src="shown.awaken.img_url"/>{{ shown.awakenName }}</a></my-td><my-td v-else>尚未更新</my-td></my-tr>
-    <my-tr><my-th :style="styleList">實裝時間</my-th><my-td>{{ shown.time }}</my-td></my-tr>
-  </div></div>
   <div class="row g-0"><div class="col"><div class="container-fluid">
-    <my-tr><my-th :style="styleList">技能</my-th><my-td>{{ shown.skillType }}<b>{{ shown.skillName }}</b><br>{{ shown.skillDesc }}</my-td></my-tr>
-    <my-tr><my-th :style="styleList">背景敘述</my-th><my-td>{{ shown.flavor }}</my-td></my-tr>
-  </div>
+      <my-tr><my-th :style="styleList">技能</my-th><my-td>{{ shown.skillType }}<b>{{ shown.skillName }}</b><br>{{ shown.skillDesc }}</my-td></my-tr>
+      <my-tr><my-th :style="styleList">背景敘述</my-th><my-td>{{ shown.flavor }}</my-td></my-tr>
+    </div>
   </div></div>
   <div v-if="shown.from == 'Gasha' && shown.gashas.length != 0" class="row"><div class="col">
     <h4>實裝 / Pick Up 的卡池</h4>
