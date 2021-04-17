@@ -389,8 +389,8 @@ def handle_card(card, db, data, is_jp):
 
     # 處理假 id
     if is_jp and row['card_id'] is None:
-        db.update_card(info_0, card_id=info_0.id-6)
-        db.update_card(info_1, card_id=info_1.id-6)
+        db.update_card(info_0, card_id=card['id'])
+        db.update_card(info_1, card_id=card['id'])
 
     # 爬 icon 圖
     icon_url_0 = os.path.join(config.icon_root_url, card['resourceId'] + '_0.png') if is_jp else os.path.join(config.as_icon_root_url, card['resourceId'] + '_0.png')
