@@ -1,76 +1,67 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="{[ url_for('static', filename='css/idol.css') ]}">
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js" integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+{% extends "base.html" %}
+{% block title %}{[ title ]}{% endblock %}
+{% block head %}
+{[ super() ]}
 <script src="{[ url_for('static', filename='js/idol.js') ]}"></script>
-<title>{[ title ]}</title>
-</head>
-<body>
-<div id="app" class="container-sm">
-  <div class="row"><nav class="navbar navbar-expand navbar-dark bg-primary">
-    <a class="navbar-brand">ポンコマス</a>
-    <ul class="navbar-nav">
-      <li class="nav-item">
-        <a class="nav-link" aria-current="page" href="/idols">偶像</a>
-      </li>
-    </ul>
-    <button class="btn btn-outline-light ms-auto" v-on:click="changeLanguage()" :disabled="notBoth">{{ panelWord }}</button>
-  </nav></div>
-  <div class="row">
-  <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';">
-    <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/idols">所有偶像</a></li>
-      <li class="breadcrumb-item active" aria-current="page">{{ shown.info.name }}</li>
-    </ol>
-  </nav>
-  </div>
-  <div id="info" class="card mb-3" style="max-width: 450px">
-    <div class="row g-0">
-      <div class="col-md-4">
-        <img :src="shown.info.img_url"/>
-      </div>
-      <div class="col-md-8">
-        <div class="card-body">
-          <div class="row">
-            <div class="col"><b>姓名</b> {{ shown.info.name }}</div>
-          </div>
-          <div class="row">
-            <div class="col"><b>陣營</b> {{ shown.info.idol_type }}</div>
-          </div>
-          <div class="row">
-            <div class="col"><b>年齡</b> {{ shown.info.age }}</div>
-          </div>
-          <div class="row">
-            <div class="col"><b>身高</b> {{ shown.info.height }}</div>
-          </div>
-          <div class="row">
-            <div class="col"><b>體重</b> {{ shown.info.weight }}</div>
-          </div>
+{% endblock %}
+
+{% block navbar %}
+{[ super() ]}
+<button class="btn btn-outline-light ms-auto" v-on:click="changeLanguage()" :disabled="notBoth">{{ panelWord }}</button>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+<nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/idols">所有偶像</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ shown.info.name }}</li>
+  </ol>
+</nav>
+</div>
+<div id="info" class="card mb-3" style="max-width: 450px">
+  <div class="row g-0">
+    <div class="col-md-4">
+      <img :src="shown.info.img_url"/>
+    </div>
+    <div class="col-md-8">
+      <div class="card-body">
+        <div class="row">
+          <div class="col"><b>姓名</b> {{ shown.info.name }}</div>
+        </div>
+        <div class="row">
+          <div class="col"><b>陣營</b> {{ shown.info.idol_type }}</div>
+        </div>
+        <div class="row">
+          <div class="col"><b>年齡</b> {{ shown.info.age }}</div>
+        </div>
+        <div class="row">
+          <div class="col"><b>身高</b> {{ shown.info.height }}</div>
+        </div>
+        <div class="row">
+          <div class="col"><b>體重</b> {{ shown.info.weight }}</div>
         </div>
       </div>
     </div>
   </div>
-  <ul class="nav nav-tabs">
-    <li class="nav-item"><a class="nav-link active" href="#">卡片</a></li>
-  </ul>
-  <table id="cards" class="table">
-    <tr>
-      <th v-for="cardTitle in cardTitles">{{ infoTitle }}
-      </th>
-    </tr>
-    <tr v-for="card in shown.cards">
-      <td><a :href="card.url"><img class="card_icon me-2" :src="card.img_url"/>{{ card.name }}</a></td>
-      <td>{{ card.rare }}</td>
-      <td>{{ card.time }}</td>
-    </tr>
-  </table>
 </div>
+<ul class="nav nav-tabs">
+  <li class="nav-item"><a class="nav-link active" href="#">卡片</a></li>
+</ul>
+<table id="cards" class="table">
+  <tr>
+    <th v-for="cardTitle in cardTitles">{{ infoTitle }}
+    </th>
+  </tr>
+  <tr v-for="card in shown.cards">
+    <td><a :href="card.url"><img class="card_icon me-2" :src="card.img_url"/>{{ card.name }}</a></td>
+    <td>{{ card.rare }}</td>
+    <td>{{ card.time }}</td>
+  </tr>
+</table>
+{% endblock %}
+
+{% block body %}
+{[ super() ]}
 <script type="application/json" id="idol_json">{[idol|safe]}</script>
-</body>
-</html>
+{% endblock %}
