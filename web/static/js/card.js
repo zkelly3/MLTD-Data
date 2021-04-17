@@ -34,6 +34,15 @@ $(function() {
     for (let i = 0; i < card_json.length; ++i) {
         fixData(card_json[i]);
     }
+    Vue.component('my-tr', {
+        template: '<div class="row g-0 border-bottom"><slot></slot></div>'
+    });
+    Vue.component('my-th', {
+        template: '<div class="col-xl-2 col-sm-3 p-2"><slot></slot></div>'
+    });
+    Vue.component('my-td', {
+        template: '<div class="col-xl-10 col-sm-9 p-2"><slot></slot></div>'
+    });
     var app = new Vue({
         el: '#app',
         props: {
