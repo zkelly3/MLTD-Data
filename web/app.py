@@ -49,6 +49,9 @@ def image_path(img_dir, img_name):
     img_path = os.path.join(img_dir, img_name)
     return url_for('static', filename=img_path)
 
+def to_timestamp(target, tz_info):
+    return target.replace(tzinfo=tz_info).timestamp() if target is not None else None
+
 def get_idols():
     connection = connect()
     with connection.cursor() as cursor:
@@ -69,32 +72,60 @@ def get_idols():
         connection.close()
         return res
 
-def get_idol_info(idol_id):
-    sql_info = "SELECT * FROM `Idol` WHERE id = %s"
-    sql_cards = """SELECT id, jp_name, as_name, rare, jp_time, as_time FROM `Card` WHERE (IID = %s)
-                   ORDER BY jp_time, as_time, card_id"""
+def get_idol_info_local(idol_id, local):
+    sql_idol_info = """SELECT id, {name} AS name, type AS idol_type,
+                  age, height, weight
+                  FROM `Idol` WHERE id = %s""".format(**local)
+    
     connection = connect()
     with connection.cursor() as cursor:
-        cursor.execute(sql_info, (idol_id))
+        cursor.execute(sql_idol_info, (idol_id))
         info = cursor.fetchall()
         if not info:
             raise NotFoundError
-        info = info[0]
-        info['img_url'] = image_path('images/idol_icons', str(info['id']) + '.png')
-        info['i_type'] = idol_types[info['type']]
-        cursor.execute(sql_cards, (info['id']))
+    connection.close()
+    
+    info = info[0]
+    info['img_url'] = image_path('images/idol_icons', str(info['id']) + '.png')
+    info['idol_type'] = idol_types[info['idol_type']]
+    
+    return info
+
+def get_idol_cards_local(idol_id, local):
+    sql_idol_cards = """SELECT id, {name} AS name, rare, {time} AS time
+                        FROM `Card` WHERE (IID = %s AND {time} IS NOT NULL)
+                        ORDER BY {time}, card_id""".format(**local)
+    connection = connect()
+    with connection.cursor() as cursor:
+        cursor.execute(sql_idol_cards, (idol_id))
         cards = cursor.fetchall()
     connection.close()
-
+    
+    tz_info = timezone(timedelta(hours=local['ver_time']))
     for card in cards:
         card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
-        if card['jp_time']:
-            card['jp_time'] = card['jp_time'].strftime('%Y-%m-%d')
-        if card['as_time']:
-            card['as_time'] = card['as_time'].strftime('%Y-%m-%d')
         card['url'] = '/card/' + str(card['id'])
+        card['time'] = to_timestamp(card['time'], tz_info)
         card['rare'] = rarity[card['rare']]
-    return info, cards
+    
+    return cards
+
+def get_idol_data(idol_id):
+    jp_local = {'name': 'jp_name',
+        'time': 'jp_time',
+        'ver_time': 9
+    }
+    as_local = {'name': 'as_name',
+        'time': 'as_time',
+        'ver_time': 8
+    }
+    idol = []
+    idol.append({'info': get_idol_info_local(idol_id, jp_local),
+        'cards': get_idol_cards_local(idol_id, jp_local)})
+    idol.append({'info': get_idol_info_local(idol_id, as_local),
+        'cards': get_idol_cards_local(idol_id, as_local)})
+    
+    return idol
 
 def get_card_aquire_local(card, card_id, aquire_id, local, cursor):
     sql_gasha = """SELECT Gasha.id AS id, Gasha.{name} AS name,
@@ -468,10 +499,16 @@ def idols_page():
 @app.route("/idol/<int:idol_id>")
 def idol_page(idol_id):
     try:
-        info, cards = get_idol_info(idol_id)
+        idol = get_idol_data(idol_id)
     except NotFoundError:
         abort(404)
-    return render_template('idol.html', title=info['i_type'] + ' ' + info['jp_name'], info=dumps(info, ensure_ascii=False), cards=dumps(cards, ensure_ascii=False))
+    
+    if idol[0] is not None:
+        page_title = idol[0]['info']['name']
+    else:
+        page_title = idol[1]['info']['name']
+    
+    return render_template('idol.html', title=page_title, idol=dumps(idol, ensure_ascii=False))
 
 @app.route("/card/<int:card_id>")
 def card_page(card_id):
