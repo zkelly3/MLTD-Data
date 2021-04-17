@@ -6,7 +6,7 @@ from flask import Flask
 from flask import render_template, url_for, redirect, abort
 from flask.json import dumps
 
-from config import connect
+from config import connect, jp_local, as_local
 
 class NotFoundError(Exception):
     pass
@@ -52,25 +52,28 @@ def image_path(img_dir, img_name):
 def to_timestamp(target, tz_info):
     return target.replace(tzinfo=tz_info).timestamp() if target is not None else None
 
-def get_idols():
+def get_idols_info_local(local):
     connection = connect()
     with connection.cursor() as cursor:
-        sql = "SELECT * FROM Idol"
-        cursor.execute(sql)
+        sql_all_idols = """SELECT id, {name} AS name, type AS idol_type, 
+                        CV, age, height, weight FROM Idol""".format(**local)
+        
+        cursor.execute(sql_all_idols)
+        idols = cursor.fetchall()
+        for idol in idols:
+            idol['img_url'] = image_path('images/idol_icons', '%d.png' % idol['id'])
+            idol['url'] = '/idol/%d' % idol['id']
+            idol['idol_type'] = idol_types[idol['idol_type']] if idol['idol_type'] is not None else None
+    connection.close()
+    
+    return idols
 
-        db_res = cursor.fetchall()
-        res = []
-        for dbr in db_res:
-            res.append({'id': dbr['id'],
-                'url': image_path('images/idol_icons', str(dbr['id']) + '.png'),
-                'jp_name': dbr['jp_name'],
-                'as_name': dbr['as_name'],
-                'i_type': idol_types[dbr['type']],
-                'age': dbr['age'],
-                'height': dbr['height'],
-                'weight': dbr['weight']})
-        connection.close()
-        return res
+def get_idols_info():
+    idols = []
+    idols.append(get_idols_info_local(jp_local))
+    idols.append(get_idols_info_local(as_local))
+    
+    return idols
 
 def get_idol_info_local(idol_id, local):
     sql_idol_info = """SELECT id, {name} AS name, type AS idol_type,
@@ -111,14 +114,6 @@ def get_idol_cards_local(idol_id, local):
     return cards
 
 def get_idol_data(idol_id):
-    jp_local = {'name': 'jp_name',
-        'time': 'jp_time',
-        'ver_time': 9
-    }
-    as_local = {'name': 'as_name',
-        'time': 'as_time',
-        'ver_time': 8
-    }
     idol = []
     idol.append({'info': get_idol_info_local(idol_id, jp_local),
         'cards': get_idol_cards_local(idol_id, jp_local)})
@@ -325,29 +320,6 @@ def get_card_info_local(card_id, local):
     return card
 
 def get_card_info(card_id):
-    jp_local = {'name': 'jp_name',
-        'time': 'jp_time',
-        'master_rank': 'jp_master_rank',
-        'skill_name': 'jp_skill_name',
-        'flavor': 'jp_flavor',
-        'start': 'jp_start',
-        'over': 'jp_over',
-        'description': 'jp_description',
-        'ver': 'jp',
-        'ver_time': 9
-    }
-    as_local = {'name': 'as_name',
-        'time': 'as_time',
-        'master_rank': 'as_master_rank',
-        'skill_name': 'as_skill_name',
-        'flavor': 'as_flavor',
-        'start': 'as_start',
-        'over': 'as_over',
-        'description': 'as_description',
-        'ver': 'as',
-        'ver_time': 8
-    }
-
     card = []
     card.append(get_card_info_local(card_id, jp_local))
     card.append(get_card_info_local(card_id, as_local))
@@ -473,21 +445,6 @@ def get_event_info_local(event_type, event_id, local):
     
 
 def get_event_info(event_type, event_id):
-    jp_local = {'name': 'jp_name',
-        'time': 'jp_time',
-        'start': 'jp_start',
-        'over': 'jp_over',
-        'ver': 'jp',
-        'ver_time': 9
-    }
-    as_local = {'name': 'as_name',
-        'time': 'as_time',
-        'start': 'as_start',
-        'over': 'as_over',
-        'ver': 'as',
-        'ver_time': 8
-    }
-    
     event = []
     event.append(get_event_info_local(event_type, event_id, jp_local))
     event.append(get_event_info_local(event_type, event_id, as_local))
@@ -560,20 +517,6 @@ def get_gasha_info_local(gasha_id, local):
     return gasha    
 
 def get_gasha_info(gasha_id):
-    jp_local = {'name': 'jp_name',
-        'start': 'jp_start',
-        'over': 'jp_over',
-        'time': 'jp_time',
-        'ver': 'jp',
-        'ver_time': 9
-    }
-    as_local = {'name': 'as_name',
-        'start': 'as_start',
-        'over': 'as_over',
-        'time': 'as_time',
-        'ver': 'as',
-        'ver_time': 8
-    }
     gasha = []
     gasha.append(get_gasha_info_local(gasha_id, jp_local))
     gasha.append(get_gasha_info_local(gasha_id, as_local))
@@ -585,7 +528,7 @@ def home_page():
 
 @app.route("/idols")
 def idols_page():
-    idols = get_idols()
+    idols = get_idols_info()
     return render_template('idols.html', idols=dumps(idols))
 
 @app.route("/idol/<int:idol_id>")

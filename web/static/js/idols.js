@@ -8,17 +8,32 @@ function exact(a, b) {
     return a == b;
 }
 
+function fixData(idols) {
+    for (let i in idols) {
+        let idol = idols[i];
+        idol.name = (!idol.name) ? '不明' : idol.name;
+        idol.idol_type = (!idol.idol_type) ? '不明' : idol.idol_type;
+        idol.age = (!idol.age) ? '不明' : idol.age;
+        idol.height = (!idol.height) ? '不明' : idol.height;
+        idol.weight = (!idol.weight) ? '不明' : idol.weight;
+    }
+        
+}
+
 $(function() {
     var idols_info = JSON.parse($('#idols_json').text());
+    for (let i in idols_info) {
+        fixData(idols_info[i]);
+    }
+    
     var app = new Vue({
         el: '#app',
         props: {
         },
         data: {
             idols: idols_info,
-            idolinfo: [{'text': '', 'val': ''},
-                {'text': '姓名', 'val': 'jp_name'},
-                {'text': '陣營', 'val': 'i_type'},
+            idolinfo: [{'text': '姓名', 'val': 'name'},
+                {'text': '陣營', 'val': 'idol_type'},
                 {'text': '年齡', 'val': 'age'},
                 {'text': '身高', 'val': 'height'},
                 {'text': '體重', 'val': 'weight'}],
@@ -42,10 +57,20 @@ $(function() {
                 {'text': '整', 'val': exact},
                 {'text': '以下', 'val': less_equal},
             ],
+            japanese: true,
+            notBoth: false,
         },
         created: function() {
+            this.initialize();
         },
         methods: {
+            initialize: function() {
+                if (!this.idols[0] || !this.idols[1]) this.notBoth = true;
+                if (!this.idols[0]) this.japanese = false;
+            },
+            changeLanguage: function() {
+                this.japanese = !this.japanese;
+            },
             sortKey: function(key) {
                 if (this.sorts.key == key) {
                     if (this.sorts.reverse) {
@@ -58,30 +83,33 @@ $(function() {
                     this.sorts.key = key;
                     this.sorts.reverse = false;
                 }
-            },
-            makeLink: function(id) {
-                return '/idol/' + id;
             }
         },
         computed: {
+            shown() {
+                return this.japanese ? this.idols[0] : this.idols[1];
+            },
+            panelWord: function() {
+                return this.japanese ? '中文版' : '日文版'
+            }, 
             fltIdols() {
                 var self = this;
-                var res = self.idols.slice();
+                var res = self.shown.slice();
                 if (self.filters.chkage) {
                     res = res.filter(idol => {
-                        if (isNaN(parseInt(idol.age)) || idol.age == null) return false;
+                        if (isNaN(parseInt(idol.age))) return false;
                         return self.filters.agedir(idol.age, self.filters.askage);
                     });
                 }
                 if (self.filters.chkheight) {
                     res = res.filter(idol => {
-                        if (isNaN(parseInt(idol.height)) || idol.height == null) return false;
+                        if (isNaN(parseInt(idol.height))) return false;
                         return self.filters.heightdir(idol.height, self.filters.askheight);
                     });
                 }
                 if (self.filters.chkweight) {
                     res = res.filter(idol => {
-                        if (isNaN(parseInt(idol.weight)) || idol.weight == null) return false;
+                        if (isNaN(parseInt(idol.weight))) return false;
                         return self.filters.weightdir(idol.weight, self.filters.askweight);
                     });
                 }
