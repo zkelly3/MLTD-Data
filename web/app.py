@@ -29,13 +29,21 @@ gasha_types = [{'jp': 'タイプ限定', 'as': '屬性限定'},
     {'jp': 'フェス限定', 'as': 'FES限定'},
     {'jp': '限定復刻', 'as': '限定復刻'},
     {'jp': '特殊', 'as': '特殊'}]
-event_types = [{'jp': 'PSTイベント', 'as': 'PST活動', 'abbr': 'PST'},
-    {'jp': 'ミリコレ', 'as': '百萬收藏', 'abbr': 'COL'},
-    {'jp': '周年イベント', 'as': '週年活動', 'abbr': 'ANN'},
-    {'jp': 'MILLION LIVE WORKING☆', 'as': 'MILLION LIVE WORKING☆', 'abbr': 'WRK'},
-    {'jp': 'THEATER SHOW TIME☆', 'as': 'THEATER SHOW TIME☆', 'abbr': 'SHT'},
-    {'jp': 'その他', 'as': '其他', 'abbr': 'OTH'},
-    {'jp': 'THEATER TALK PARTY☆', 'as': 'THEATER TALK PARTY☆', 'abbr': 'TKP'}]
+event_types = [
+    {'jp': 'PSTイベント', 'as': 'PST活動', 
+     'abbr': 'PST', 'table': 'PSTEvent', 'to_card_table': 'PSTEventToCard'},
+    {'jp': 'ミリコレ', 'as': '百萬收藏', 
+     'abbr': 'COL', 'table': 'CollectEvent', 'to_card_table': 'CollectEventToCard'},
+    {'jp': '周年イベント', 'as': '週年活動', 
+     'abbr': 'ANN', 'table': 'Anniversary', 'to_card_table': 'AnniversaryToCard'},
+    {'jp': 'MILLION LIVE WORKING☆', 'as': 'MILLION LIVE WORKING☆', 
+     'abbr': 'WRK', 'table': 'WorkingEvent'},
+    {'jp': 'THEATER SHOW TIME☆', 'as': 'THEATER SHOW TIME☆', 
+     'abbr': 'SHT', 'table': 'ShowTimeEvent'},
+    {'jp': 'その他', 'as': '其他', 
+     'abbr': 'OTH', 'table': 'OtherEvent', 'to_card_table': 'OtherEventToCard'},
+    {'jp': 'THEATER TALK PARTY☆', 'as': 'THEATER TALK PARTY☆', 
+     'abbr': 'TKP', 'table': 'TalkPartyEvent'}]
 pst_types = [{'jp': 'シアター', 'as': '劇場'},
     {'jp': 'ツアー', 'as': '巡演'},
     {'jp': 'ツインステージ', 'as': 'ツインステージ'},
@@ -53,11 +61,11 @@ def to_timestamp(target, tz_info):
     return target.replace(tzinfo=tz_info).timestamp() if target is not None else None
 
 def get_idols_info_local(local):
+    sql_all_idols = """SELECT id, {name} AS name, type AS idol_type, 
+                        CV, age, height, weight FROM Idol""".format(**local)
+    
     connection = connect()
     with connection.cursor() as cursor:
-        sql_all_idols = """SELECT id, {name} AS name, type AS idol_type, 
-                        CV, age, height, weight FROM Idol""".format(**local)
-        
         cursor.execute(sql_all_idols)
         idols = cursor.fetchall()
         for idol in idols:
@@ -74,6 +82,47 @@ def get_idols_info():
     idols.append(get_idols_info_local(as_local))
     
     return idols
+
+def get_events_info_local(local):
+    pre_sql_all_events_columns = """SELECT id, {name} AS name,
+                                    '{type_id}' AS type_id, '{event_abbr}' AS event_abbr,
+                                    {start} AS start, {over} AS over FROM `{event}`
+                                    WHERE {start} IS NOT NULL"""
+    
+    tz_info = timezone(timedelta(hours=local['ver_time']))
+    
+    sql_list = []
+    for i in range(len(event_types)):
+        event = event_types[i]
+        e_local = loads(dumps(local))
+        e_local['event'] = event['table']
+        e_local['event_abbr'] = event['abbr']
+        e_local['type_id'] = i
+        sql_list.append(pre_sql_all_events_columns.format(**e_local))
+    
+    sql_all_events = " UNION ALL ".join(sql_list) + " ORDER BY start DESC"
+    
+    connection = connect()
+    with connection.cursor() as cursor:
+        cursor.execute(sql_all_events)
+        events = cursor.fetchall()
+    connection.close()
+    
+    for event in events:
+        type_id = int(event.pop('type_id', len(event_types)))
+        id = int(event.pop('id', 0))
+        event['url'] = '/event/%d/%d' % (type_id, id)
+        event['start'] = to_timestamp(event['start'], tz_info)
+        event['over'] = to_timestamp(event['over'], tz_info)
+    
+    return events
+
+def get_events_info():
+    events = []
+    events.append(get_events_info_local(jp_local))
+    events.append(get_events_info_local(as_local))
+    
+    return events
 
 def get_idol_info_local(idol_id, local):
     sql_idol_info = """SELECT id, {name} AS name, type AS idol_type,
@@ -531,6 +580,11 @@ def home_page():
 def idols_page():
     idols = get_idols_info()
     return render_template('idols.html', idols=dumps(idols, ensure_ascii=False))
+
+@app.route("/events")
+def events_page():
+    events = get_events_info()
+    return render_template('events.html', events=dumps(events, ensure_ascii=False))
 
 @app.route("/idol/<int:idol_id>")
 def idol_page(idol_id):
