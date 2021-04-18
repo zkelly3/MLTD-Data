@@ -8,7 +8,11 @@
 
 {% block navbar %}
 {[ super() ]}
-<button class="btn btn-outline-light ms-auto" v-on:click="changeLanguage()" :disabled="notBoth">{{ panelWord }}</button>
+<button class="btn btn-outline-light ms-auto"
+  v-on:click="changeView()" :disabled="notBoth">
+    <i :class="[viewMode == 'table_view' ? 'bi-grid' : 'bi-list']"></i>
+</button>
+<button class="btn btn-outline-light ms-2" v-on:click="changeLanguage()" :disabled="notBoth">{{ panelWord }}</button>
 {% endblock %}
 
 {% block content %}
@@ -55,7 +59,7 @@
   </div></div>
 </div>
 
-<table class="table mt-3 align-middle" id="idols">
+<table class="table mt-3 align-middle" id="idols" v-if="viewMode == 'table_view'">
   <thead class="table-light"><tr>
     <th v-for="info in idolinfo">
     <a href="#" v-on:click="sortKey(info.val)" :class="{ active: sorts.key === info.val }">{{ info.text }}</a>
@@ -69,6 +73,19 @@
     <td>{{ idol.weight }}</td>
   </tr></tbody>
 </table>
+
+<div class="row row-cols-lg-6 row-cols-md-4 row-cols-2" v-if="viewMode == 'card_view'">
+  <div class="col mt-3" v-for="idol in sortedIdols"><div class="card">
+    <a class="stretched-link" :href="idol.url">
+      <img :src="idol.img_url" class="card-img-top"/>
+    </a>
+    <div class="card-body">
+      
+      <div class="card-title">{{ idol.name }}</div>
+    </div>
+    
+  </div></div>
+</div>
 {% endblock %}
 
 {% block body %}

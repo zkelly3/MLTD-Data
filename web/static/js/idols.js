@@ -67,6 +67,7 @@ $(function() {
             ],
             japanese: true,
             notBoth: false,
+            viewMode: 'table_view'
         },
         created: function() {
             this.initialize();
@@ -91,6 +92,9 @@ $(function() {
                     this.sorts.key = key;
                     this.sorts.reverse = false;
                 }
+            },
+            changeView: function() {
+                this.viewMode = this.viewMode == 'table_view' ? 'card_view' : 'table_view';
             }
         },
         computed: {
