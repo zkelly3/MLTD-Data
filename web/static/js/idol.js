@@ -1,31 +1,35 @@
-function toDate(timestamp) {
-    return (!timestamp) ? null : new Date(timestamp * 1000);
-}
-function toDateString(time, ver) {
-    // ver 0: jp, 1: as
-    if (ver) return (!time) ? '尚未更新' : time.toLocaleDateString("ja-JP", {timeZone: 'Japan', hour12: false})
-    else return (!time) ? '尚未更新' : time.toLocaleDateString("ja-JP", {timeZone: 'Asia/Taipei', hour12: false})
-}
-
 function fixData(idol, ver) {
     if (!idol) return;
     
+    deleteNull(idol.info);
     idol.info = $.extend({
-        name: '未知',
-        idol_type: '未知',
+        name: '不明',
+        idol_type: '不明',
         age: '不明',
         height: '不明',
-        weight: '不明',
+        weight: '不明'
     }, idol.info);
-    
+        
     for (let i in idol.cards) {
         let card = idol.cards[i];
-        card.name = (!card.name) ? '未知' : card.name;
-        card.time = toDateString(toDate(card.time), ver);
+        deleteNull(card);
+        idol.cards[i] = $.extend({
+            id: 0,
+            name: '不明',
+            rare: '不明',
+            time: null,
+            img_url: '#',
+            url: '#'
+        }, card);
+        idol.cards[i].time = toDateString(toDate(card.time), ver);
     }
 }
 $(function() {
     var idol_json = JSON.parse($('#idol_json').text());
+    for (let i = 0; i < idol_json.length; ++i) {
+        fixData(idol_json[i], i);
+    }
+    
     var app = new Vue({
         el: '#app',
         props: {
@@ -42,12 +46,7 @@ $(function() {
         methods: {
             initialize: function() {
                 if (!this.idol[0] || !this.idol[1]) this.notBoth = true;
-                if (!this.idol[0]) {
-                    this.japanese = false;
-                }
-                for (let i in this.idol) {
-                    fixData(this.idol[i], i);
-                }
+                if (!this.idol[0]) this.japanese = false;
             },
             changeLanguage: function() {
                 this.japanese = !this.japanese;
@@ -61,6 +60,7 @@ $(function() {
                 return this.japanese ? '中文版' : '日文版'
             }, 
             fltCards() {
+                // 保留以便之後寫稀有度 filter
                 var self = this;
                 var res = self.cards.slice();
                 res = res.filter(card => {

@@ -1,39 +1,60 @@
-function fixData(card) {
+function fixData(card, ver) {
     if (!card) return;
-    card.name = card.name ? card.name : '未知';
+    deleteNull(card);
+    card = $.extend({
+        id: 0,
+        name: '不明',
+        awaken: null,
+        time: null,
+        flavor: '尚未更新'
+    }, card);
+    
+    deleteNull(card.idol);
     card.idol = $.extend({
-        name: '未知',
+        name: '不明',
         url: "#",
         color: '#ffffff'
     }, card.idol);
+    
+    deleteNull(card.aquire);
     card.aquire = $.extend({
-        type: '未知',
+        type: '不明',
         title: '尚未更新',
     }, card.aquire);
+    
+    if (card.skill) deleteNull(card.skill);
+    card.skill = $.extend({
+        type: {
+            'id': 0,
+            'name': ''
+        },
+        name: '',
+        description: ''
+    }, card.skill);
+    card.skill.type.name = (!card.skill.type.name) ? '' : card.skill.type.name;
+    
     card.awakenWord = card.is_awaken ? '覺醒前' : '覺醒後';
-    card.awakenName = (!card.awaken || !card.awaken.name) ? '尚未更新' : card.awaken.name;
-    card.time = (!card.time) ? '尚未更新' : card.is_jp ? new Date(card.time * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(card.time * 1000).toLocaleString('ja-JP', { timeZone: 'Asia/Taipei', hour12: false});
-    card.skillType = (!card.skill || !card.skill.type || !card.skill.type.name) ? '' : card.skill.type.name;
-    card.skillName = (!card.skill || !card.skill.name) ? '' : card.skill.name;
-    card.skillDesc = (!card.skill || !card.skill.description) ? '' : card.skill.description;
-    card.flavor = card.flavor ? card.flavor : '尚未更新'
+    card.awakenName = (!card.awaken || !card.awaken.name) ? '不明' : card.awaken.name;
+    card.time = toDateTimeString(toDate(card.time), ver);
     
     for (let i in card.gashas) {
         let g = card.gashas[i];
-        g.start = (!g.start) ? '尚未更新' : card.is_jp ? new Date(g.start * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(g.start * 1000).toLocaleString('ja-JP', { timeZone: 'Asia/Taipei', hour12: false});
-        g.over = (!g.over) ? '尚未更新' : card.is_jp ? new Date(g.over * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(g.over * 1000).toLocaleString('ja-JP', { timeZone: 'Asia/Taipei', hour12: false});
+        g.start = toDateTimeString(toDate(g.start), ver);
+        g.over = toDateTimeString(toDate(g.over), ver);
     }
     
     if (card.event) {
-        card.event.start = (!card.event.start) ? '尚未更新' : card.is_jp ? new Date(card.event.start * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(card.event.start * 1000).toLocaleString('ja-JP', { timeZone: 'Asia/Taipei', hour12: false});
-        card.event.over = (!card.event.over) ? '尚未更新' : card.is_jp ? new Date(card.event.over * 1000).toLocaleString('ja-JP', { timeZone: 'Japan', hour12: false}) : new Date(card.event.over * 1000).toLocaleString('ja-JP', { timeZone: 'Asia/Taipei', hour12: false});
+        card.event.start = toDateTimeString(toDate(card.event.start), ver);
+        card.event.over = toDateTimeString(toDate(card.event.over), ver);
     }
+    return card;
 }
 $(function() {
     var card_json = JSON.parse($('#card_json').text());
     for (let i = 0; i < card_json.length; ++i) {
-        fixData(card_json[i]);
+        card_json[i] = fixData(card_json[i], i);
     }
+    
     Vue.component('my-tr', {
         template: '<div class="row g-0 border-bottom"><slot></slot></div>'
     });

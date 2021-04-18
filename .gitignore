@@ -2,6 +2,7 @@
 
 __pycache__/*
 web/__pycache__/*
+**/*.swp
 config.py
 
 web/uwsgi.ini

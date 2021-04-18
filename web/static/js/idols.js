@@ -11,19 +11,27 @@ function exact(a, b) {
 function fixData(idols) {
     for (let i in idols) {
         let idol = idols[i];
-        idol.name = (!idol.name) ? '不明' : idol.name;
-        idol.idol_type = (!idol.idol_type) ? '不明' : idol.idol_type;
-        idol.age = (!idol.age) ? '不明' : idol.age;
-        idol.height = (!idol.height) ? '不明' : idol.height;
-        idol.weight = (!idol.weight) ? '不明' : idol.weight;
-    }
         
+        let toDelete = []
+        for (let key in idol) {
+            if (idol[key] === null) toDelete.push(key);
+        }
+        for (let i in toDelete) delete idol[toDelete[i]];
+        
+        idols[i] = $.extend({
+            name: '不明',
+            idol_type: '不明',
+            age: '不明',
+            height: '不明',
+            weight: '不明'
+        }, idol);
+    }    
 }
 
 $(function() {
-    var idols_info = JSON.parse($('#idols_json').text());
-    for (let i in idols_info) {
-        fixData(idols_info[i]);
+    var idols_json = JSON.parse($('#idols_json').text());
+    for (let i = 0; i < idols_json.length; ++i) {
+        fixData(idols_json[i]);
     }
     
     var app = new Vue({
@@ -31,7 +39,7 @@ $(function() {
         props: {
         },
         data: {
-            idols: idols_info,
+            idols: idols_json,
             idolinfo: [{'text': '姓名', 'val': 'name'},
                 {'text': '陣營', 'val': 'idol_type'},
                 {'text': '年齡', 'val': 'age'},

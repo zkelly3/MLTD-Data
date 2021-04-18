@@ -98,13 +98,15 @@ def get_idol_cards_local(idol_id, local):
     sql_idol_cards = """SELECT id, {name} AS name, rare, {time} AS time
                         FROM `Card` WHERE (IID = %s AND {time} IS NOT NULL)
                         ORDER BY {time}, card_id""".format(**local)
+    
+    tz_info = timezone(timedelta(hours=local['ver_time']))
+    
     connection = connect()
     with connection.cursor() as cursor:
         cursor.execute(sql_idol_cards, (idol_id))
         cards = cursor.fetchall()
     connection.close()
     
-    tz_info = timezone(timedelta(hours=local['ver_time']))
     for card in cards:
         card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
         card['url'] = '/card/' + str(card['id'])
@@ -196,8 +198,8 @@ def get_card_aquire_local(card, card_id, aquire_id, local, cursor):
             card['has_from_url'] = True
             card['event']['url'] = '/event/%d/%d' % (aquire_to_event[aquire_id], event['id'])
             card['from_url'] = card['event']['url']
-            card['event']['start'] = card['event']['start'].replace(tzinfo=tz_info).timestamp()
-            card['event']['over'] = card['event']['over'].replace(tzinfo=tz_info).timestamp()
+            card['event']['start'] = to_timestamp(card['event']['start'], tz_info)
+            card['event']['over'] = to_timestamp(card['event']['over'], tz_info)
             card['event']['event_type'] = pst_types[event['event_type']][local['ver']] if aquire_id == 1 else aquire_types[aquire_id][local['ver']]
 
 
@@ -311,7 +313,7 @@ def get_card_info_local(card_id, local):
         card['dance_bonus'] = loads(card['dance_bonus']) if card['dance_bonus'] is not None else None
 
         tz_info = timezone(timedelta(hours=local['ver_time']))
-        card['time'] = card['time'].replace(tzinfo=tz_info).timestamp() if card['time'] is not None else None
+        card['time'] = to_timestamp(card['time'], tz_info)
         card['img_url'] = image_path('images/card_images', str(card['id']) + '.png')
         if rare_id >= 6:
             card['big_img_url'] = image_path('images/card_images_bg/', str(card['id']) + '.png')
@@ -390,8 +392,8 @@ def get_event_info_local(event_type, event_id, local):
         
         event['is_jp'] = local['ver'] == 'jp'
         event['img_url'] = image_path('images/event_banner', str(event_type) + '_' + str(event_id) + '.jpg')
-        event['start'] = event['start'].replace(tzinfo=tz_info).timestamp() if event['start'] is not None else None
-        event['over'] = event['over'].replace(tzinfo=tz_info).timestamp() if event['over'] is not None else None
+        event['start'] = to_timestamp(event['start'], tz_info)
+        event['over'] = to_timestamp(event['over'], tz_info)
         event['event_type'] = event_types[event_type][local['ver']]
         event['event_abbr'] = event_types[event_type]['abbr']
         event['pst_type'] = pst_types[event['pst_type']][local['ver']] if 'pst_type' in event and event['pst_type'] is not None else None
@@ -529,7 +531,7 @@ def home_page():
 @app.route("/idols")
 def idols_page():
     idols = get_idols_info()
-    return render_template('idols.html', idols=dumps(idols))
+    return render_template('idols.html', idols=dumps(idols, ensure_ascii=False))
 
 @app.route("/idol/<int:idol_id>")
 def idol_page(idol_id):
