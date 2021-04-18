@@ -456,16 +456,15 @@ def get_gasha_info_local(gasha_id, local):
     sql_gasha_info = """SELECT id, {name} AS name, 
                         {start} AS start, {over} AS over, type AS gasha_type, comment
                         FROM `Gasha` WHERE (id = %s)""".format(**local)
-    sql_same_time_cards = """SELECT id, {name} AS name, rare
-                             FROM `Card` WHERE ({time} = %s AND aquire = 0)
-                             ORDER BY card_id""".format(**local)
-    sql_check_gasha_to_card = """SELECT `GashaToCard`.id FROM `GashaToCard` 
-                              INNER JOIN `Card` ON `GashaToCard`.CID = `Card`.id
-                              WHERE (`GashaToCard`.GID = %s AND `GashaToCard`.CID = %s)"""
-    sql_pick_up_draw = """SELECT `Card`.id, `Card`.{name} AS name, `Card`.rare AS rare
+    sql_general_pick_up = """SELECT `Card`.id AS id, `Card`.{name} AS name, `Card`.rare AS rare FROM `GashaToCard`
+                             INNER JOIN `Card` ON `GashaToCard`.CID = `Card`.id
+                             WHERE (`GashaToCard`.GID = %s)""".format(**local)
+    pre_sql_general_others = """SELECT id, {name} AS name, rare FROM `Card`
+                                WHERE ({time} = %s AND aquire = 0 AND id NOT IN ({id_values}))"""
+    sql_special_draw = """SELECT `Card`.id, `Card`.{name} AS name, `Card`.rare AS rare
                           FROM `GashaToCard` INNER JOIN `Card` ON `GashaToCard`.CID = `Card`.id
                           WHERE (`GashaToCard`.GID = %s AND NOT `Card`.in_gasha = 2)""".format(**local)
-    sql_pick_up_others = """SELECT `Card`.id, `Card`.{name} AS name, `Card`.rare AS rare
+    sql_special_others = """SELECT `Card`.id, `Card`.{name} AS name, `Card`.rare AS rare
                           FROM `GashaToCard` INNER JOIN `Card` ON `GashaToCard`.CID = `Card`.id
                           WHERE (`GashaToCard`.GID = %s AND `Card`.in_gasha = 2)""".format(**local)
     
@@ -488,20 +487,20 @@ def get_gasha_info_local(gasha_id, local):
         gasha['others'] = []
         
         if gasha['gasha_type'] == 5:
-            cursor.execute(sql_pick_up_draw, (gasha['id']))
+            cursor.execute(sql_special_draw, (gasha['id']))
             gasha['pick_up'] = cursor.fetchall()
-            cursor.execute(sql_pick_up_others, (gasha['id']))
+            cursor.execute(sql_special_others, (gasha['id']))
             gasha['others'] = cursor.fetchall()
         else:
-            cursor.execute(sql_same_time_cards, (gasha['start']))
-            cards = cursor.fetchall()
-            for card in cards:
-                cursor.execute(sql_check_gasha_to_card, (gasha_id, card['id']))
-                tmp = cursor.fetchall()
-                if tmp:
-                    gasha['pick_up'].append(card)
-                else:
-                    gasha['others'].append(card)
+            cursor.execute(sql_general_pick_up, (gasha['id']))
+            gasha['pick_up'] = cursor.fetchall()
+            pick_up_ids = [card['id'] for card in gasha['pick_up']]
+            g_local = loads(dumps(local))
+            g_local['id_values'] = ', '.join(['%s'] * len(pick_up_ids))
+            sql_general_others = pre_sql_general_others.format(**g_local)
+            tuple_val = (gasha['start'],) + tuple(pick_up_ids)
+            cursor.execute(sql_general_others, tuple_val)
+            gasha['others'] = cursor.fetchall()
         
         for card in gasha['pick_up']:
             card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
