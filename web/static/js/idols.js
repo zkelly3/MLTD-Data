@@ -50,15 +50,18 @@ $(function() {
                 'reverse': false
             },
             filters: {
-                'chkage': false,
-                'chkheight': false,
-                'chkweight': false,
-                'askage': 18,
-                'askheight': 150,
-                'askweight': 40,
-                'agedir': greater_equal,
-                'heightdir': greater_equal,
-                'weightdir': greater_equal
+                'age': {
+                  'label': '年齡',
+                  'enabled': false, 'value': 18, 'direction': greater_equal
+                },
+                'height': {
+                  'label': '身高',
+                  'enabled': false, 'value': 150, 'direction': greater_equal
+                },
+                'weight': {
+                  'label': '體重',
+                  'enabled': false, 'value': 40, 'direction': greater_equal
+                },
             },
             diroptions: [
                 {'text': '以上', 'val': greater_equal},
@@ -107,23 +110,14 @@ $(function() {
             fltIdols() {
                 var self = this;
                 var res = self.shown.slice();
-                if (self.filters.chkage) {
+                for (let key in self.filters) {
+                  attr = self.filters[key]
+                  if (attr.enabled) {
                     res = res.filter(idol => {
-                        if (isNaN(parseInt(idol.age))) return false;
-                        return self.filters.agedir(idol.age, self.filters.askage);
+                        if (isNaN(parseInt(idol[key]))) return false;
+                        return attr.direction(idol[key], attr.value);
                     });
-                }
-                if (self.filters.chkheight) {
-                    res = res.filter(idol => {
-                        if (isNaN(parseInt(idol.height))) return false;
-                        return self.filters.heightdir(idol.height, self.filters.askheight);
-                    });
-                }
-                if (self.filters.chkweight) {
-                    res = res.filter(idol => {
-                        if (isNaN(parseInt(idol.weight))) return false;
-                        return self.filters.weightdir(idol.weight, self.filters.askweight);
-                    });
+                  }
                 }
                 return res;
             },

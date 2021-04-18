@@ -25,35 +25,13 @@
 </div>
 <label>篩選</label>
 <div class="row g-1">
-  <div class="col-lg-4"><div class="input-group">
+  <div class="col-lg-4" v-for="(attr, key) in filters"><div class="input-group">
     <div class="input-group-text">
-      <input class="form-check-input me-1" type="checkbox" id="ageCheck" v-model="filters.chkage" />
-      <label class="form-check-label" for="ageCheck">年齡</label>
+      <input class="form-check-input me-1" type="checkbox" :id="'check-'+key" v-model="attr.enabled" />
+      <label class="form-check-label" for="'check-'+key">{{ attr.label }}</label>
     </div>
-    <input class="form-control" type="number" v-model.number="filters.askage" min="0" step="1" max="100"/>
-    <select class="form-select" v-model="filters.agedir">
-      <option v-for="opt in diroptions" :value="opt.val">{{ opt.text }}</option>
-    </select>
-  </div></div>
-
-  <div class="col-lg-4"><div class="input-group">
-    <div class="input-group-text">
-      <input class="form-check-input me-1" type="checkbox" id="heightCheck" v-model="filters.chkheight" />
-      <label class="form-check-label" for="heightCheck">身高</label>
-    </div>
-    <input class="form-control" type="number" v-model.number="filters.askheight" min="0" max="200"/>
-    <select class="form-select" v-model="filters.heightdir">
-      <option v-for="opt in diroptions" :value="opt.val">{{ opt.text }}</option>
-    </select>
-  </div></div>
-
-  <div class="col-lg-4"><div class="input-group">
-    <div class="input-group-text">
-      <input class="form-check-input me-1" type="checkbox" id="weightCheck" v-model="filters.chkweight" />
-      <label class="form-check-label" for="weightCheck">體重</label>
-    </div>
-    <input class="form-control" type="number" v-model.number="filters.askweight" min="0" max="100"/>
-    <select class="form-select" v-model="filters.weightdir">
+    <input class="form-control" type="number" v-model.number="attr.value" min="0" step="1" max="100"/>
+    <select class="form-select" v-model="attr.direction">
       <option v-for="opt in diroptions" :value="opt.val">{{ opt.text }}</option>
     </select>
   </div></div>
