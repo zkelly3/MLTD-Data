@@ -151,9 +151,9 @@ $(function() {
             }
         },
         watch: {
-            /*filters(v) {
-                this.$emit('input', v);
-            }*/
+            fltEvents: function() {
+                this.paging.current = Math.min(this.paging.current, this.totalPage);
+            }
         }
     });
 });

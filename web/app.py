@@ -135,7 +135,7 @@ def get_events_info():
     types.append(get_event_types_local(jp_local))
     types.append(get_event_types_local(as_local))
     
-    return events, event_types
+    return events, types
 
 def get_gashas_info_local(local):
     sql_all_gashas = """SELECT id, {name} AS name, type AS type_id, 
