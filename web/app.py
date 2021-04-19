@@ -23,12 +23,12 @@ aquire_types = [{'jp': 'プラチナガシャ', 'as': '白金轉蛋'},
     {'jp': '周年イベント', 'as': '週年活動'},
     {'jp': '覚醒', 'as': '覺醒'},
     {'jp': 'その他', 'as': '其他'}] # Guest 劇情之類, 其他活動
-gasha_types = [{'jp': 'タイプ限定', 'as': '屬性限定'},
-    {'jp': '一般', 'as': '一般'},
-    {'jp': '期間限定', 'as': '期間限定'},
-    {'jp': 'フェス限定', 'as': 'FES限定'},
-    {'jp': '限定復刻', 'as': '限定復刻'},
-    {'jp': '特殊', 'as': '特殊'}]
+gasha_types = [{'jp': 'タイプ限定', 'as': '屬性限定', 'abbr': 'TYP'},
+    {'jp': '一般', 'as': '一般', 'abbr': 'NML'},
+    {'jp': '期間限定', 'as': '期間限定', 'abbr': 'LMT'},
+    {'jp': 'フェス限定', 'as': 'FES限定', 'abbr': 'FES'},
+    {'jp': '限定復刻', 'as': '限定復刻', 'abbr': 'RET'},
+    {'jp': '特殊', 'as': '特殊', 'abbr': 'SPC'}]
 event_types = [
     {'jp': 'PSTイベント', 'as': 'PST活動', 
      'abbr': 'PST', 'table': 'PSTEvent', 'to_card_table': 'PSTEventToCard'},
@@ -131,11 +131,54 @@ def get_events_info():
     events.append(get_events_info_local(jp_local))
     events.append(get_events_info_local(as_local))
     
-    event_types = []
-    event_types.append(get_event_types_local(jp_local))
-    event_types.append(get_event_types_local(as_local))
+    types = []
+    types.append(get_event_types_local(jp_local))
+    types.append(get_event_types_local(as_local))
     
     return events, event_types
+
+def get_gashas_info_local(local):
+    sql_all_gashas = """SELECT id, {name} AS name, type AS type_id, 
+                        {start} AS start, {over} AS over FROM `Gasha`
+                        WHERE {start} IS NOT NULL
+                        ORDER BY {start} DESC""".format(**local)
+    
+    tz_info = timezone(timedelta(hours=local['ver_time']))
+
+    connection = connect()
+    with connection.cursor() as cursor:
+        cursor.execute(sql_all_gashas)
+        gashas = cursor.fetchall()
+    connection.close()
+    
+    for gasha in gashas:
+        type_id = int(gasha.pop('type_id', len(gasha_types)))
+        gasha['gasha_abbr'] = gasha_types[type_id]['abbr']
+        gasha['url'] = '/gasha/%d' % gasha['id']
+        gasha['start'] = to_timestamp(gasha['start'], tz_info)
+        gasha['over'] = to_timestamp(gasha['over'], tz_info)
+    
+    return gashas
+
+def get_gasha_types_local(local):
+    types = []
+    for gasha_type in gasha_types:
+        types.append({
+            'val': gasha_type['abbr'],
+            'text': gasha_type[local['ver']],
+        })
+    return types
+
+def get_gashas_info():
+    gashas = []
+    gashas.append(get_gashas_info_local(jp_local))
+    gashas.append(get_gashas_info_local(as_local))
+    
+    types = []
+    types.append(get_gasha_types_local(jp_local))
+    types.append(get_gasha_types_local(as_local))
+    
+    return gashas, types
 
 def get_idol_info_local(idol_id, local):
     sql_idol_info = """SELECT id, {name} AS name, type AS idol_type,
@@ -596,8 +639,13 @@ def idols_page():
 
 @app.route("/events")
 def events_page():
-    events, event_types = get_events_info()
-    return render_template('events.html', events=dumps(events, ensure_ascii=False), types=dumps(event_types, ensure_ascii=False))
+    events, types = get_events_info()
+    return render_template('events.html', events=dumps(events, ensure_ascii=False), types=dumps(types, ensure_ascii=False))
+
+@app.route("/gashas")
+def gashas_page():
+    gashas, types = get_gashas_info()
+    return render_template('gashas.html', gashas=dumps(gashas, ensure_ascii=False), types=dumps(types, ensure_ascii=False))
 
 @app.route("/idol/<int:idol_id>")
 def idol_page(idol_id):
