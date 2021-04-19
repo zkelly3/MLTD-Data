@@ -151,7 +151,7 @@ def get_idol_info_local(idol_id, local):
     connection.close()
     
     info = info[0]
-    info['img_url'] = image_path('images/idol_icons', str(info['id']) + '.png')
+    info['img_url'] = image_path('images/idol_icons', '%d.png' % info['id'])
     info['idol_type'] = idol_types[info['idol_type']]
     
     return info
@@ -170,8 +170,8 @@ def get_idol_cards_local(idol_id, local):
     connection.close()
     
     for card in cards:
-        card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
-        card['url'] = '/card/' + str(card['id'])
+        card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
+        card['url'] = '/card/%d' % card['id']
         card['time'] = to_timestamp(card['time'], tz_info)
         card['rare'] = rarity[card['rare']]
     
@@ -376,9 +376,9 @@ def get_card_info_local(card_id, local):
 
         tz_info = timezone(timedelta(hours=local['ver_time']))
         card['time'] = to_timestamp(card['time'], tz_info)
-        card['img_url'] = image_path('images/card_images', str(card['id']) + '.png')
+        card['img_url'] = image_path('images/card_images', '%d.png' % card['id'])
         if rare_id >= 6:
-            card['big_img_url'] = image_path('images/card_images_bg/', str(card['id']) + '.png')
+            card['big_img_url'] = image_path('images/card_images_bg/', '%d.png' % card['id'])
         
     connection.close()
     return card
@@ -453,7 +453,7 @@ def get_event_info_local(event_type, event_id, local):
             return None
         
         event['is_jp'] = local['ver'] == 'jp'
-        event['img_url'] = image_path('images/event_banner', str(event_type) + '_' + str(event_id) + '.jpg')
+        event['img_url'] = image_path('images/event_banner', '%d_%d.jpg' % (event_type, event_id))
         event['start'] = to_timestamp(event['start'], tz_info)
         event['over'] = to_timestamp(event['over'], tz_info)
         event['event_type'] = event_types[event_type][local['ver']]
@@ -493,18 +493,18 @@ def get_event_info_local(event_type, event_id, local):
     connection.close()
     if type(event['cards']) == list:
         for card in event['cards']:
-            card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
-            card['url'] = '/card/' + str(card['id']) + '.png'
+            card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
+            card['url'] = '/card/%d' % card['id']
     elif event_type == 2:
         for key in event['cards']:
             for card in event['cards'][key]['data']:
-                card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
-                card['url'] = '/card/' + str(card['id'])
+                card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
+                card['url'] = '/card/%d' % card['id']
     else:
         for key in event['cards']:
             for card in event['cards'][key]:
-                card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
-                card['url'] = '/card/' + str(card['id'])
+                card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
+                card['url'] = '/card/%d' % card['id']
     return event
     
 
@@ -540,7 +540,7 @@ def get_gasha_info_local(gasha_id, local):
             raise NotFoundError
         
         gasha = gasha[0]
-        gasha['img_url'] = image_path('images/gasha_banners', str(gasha['id']) + '.jpg')
+        gasha['img_url'] = image_path('images/gasha_banners', '%d.jpg' % gasha['id'])
         
         if gasha['start'] is None:
             return None
@@ -565,10 +565,10 @@ def get_gasha_info_local(gasha_id, local):
             gasha['others'] = cursor.fetchall()
         
         for card in gasha['pick_up']:
-            card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
+            card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
             card['url'] = '/card/%d' % card['id']
         for card in gasha['others']:
-            card['img_url'] = image_path('images/card_icons', str(card['id']) + '.png')
+            card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
             card['url'] = '/card/%d' % card['id']
         
         gasha['gasha_type'] = gasha_types[gasha['gasha_type']][local['ver']]
