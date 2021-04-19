@@ -117,12 +117,25 @@ def get_events_info_local(local):
     
     return events
 
+def get_event_types_local(local):
+    types = []
+    for event_type in event_types:
+        types.append({
+            'val': event_type['abbr'],
+            'text': event_type[local['ver']],
+        })
+    return types
+
 def get_events_info():
     events = []
     events.append(get_events_info_local(jp_local))
     events.append(get_events_info_local(as_local))
     
-    return events
+    event_types = []
+    event_types.append(get_event_types_local(jp_local))
+    event_types.append(get_event_types_local(as_local))
+    
+    return events, event_types
 
 def get_idol_info_local(idol_id, local):
     sql_idol_info = """SELECT id, {name} AS name, type AS idol_type,
@@ -583,8 +596,8 @@ def idols_page():
 
 @app.route("/events")
 def events_page():
-    events = get_events_info()
-    return render_template('events.html', events=dumps(events, ensure_ascii=False))
+    events, event_types = get_events_info()
+    return render_template('events.html', events=dumps(events, ensure_ascii=False), types=dumps(event_types, ensure_ascii=False))
 
 @app.route("/idol/<int:idol_id>")
 def idol_page(idol_id):

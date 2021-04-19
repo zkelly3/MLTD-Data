@@ -19,8 +19,20 @@
   </ol>
 </nav>
 </div>
-<table class="table mt-3 align-middle" id="event" data-pagination="true" data-page-list="[10, 25, 50, 100, all]">
-  <tbody><tr v-for="event in shown">
+<div class="row g-1">
+  <div class="col-lg-4" v-for="(attr, key) in filters"><div class="input-group">
+    <div class="input-group-text">
+      <input class="form-check-input me-1" type="checkbox" :id="'check-'+key" v-model="attr.enabled" />
+      <label class="form-check-label" for="'check-'+key">{{ attr.label }}</label>
+    </div>
+    <select class="form-select" v-model="attr.selected">
+      <option value="" disabled>選擇活動類型</option>
+      <option v-for="opt in shownOptions(attr.options)" :value="opt.val">{{ opt.text }}</option>
+    </select>
+  </div></div>
+</div>
+<table class="table mt-3 align-middle" id="event">
+  <tbody><tr v-for="event in fltEvents">
     <td><a :href="event.url">{{ event.name }}</a></td>
     <td>{{ event.start }}</td>
     <td>{{ event.over }}</td>
@@ -31,4 +43,5 @@
 {% block body %}
 {[ super() ]}
 <script type="application/json" id="events_json">{[events|safe]}</script>
+<script type="application/json" id="types_json">{[types|safe]}</script>
 {% endblock %}
