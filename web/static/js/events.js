@@ -22,13 +22,19 @@ $(function() {
             japanese: true,
             notBoth: false,
             filters: {
-                'type': {
+                'eventType': {
                     'type': 'option',
                     'label': '活動類型',
                     'enabled': false,
                     'options': types_json,
                     'selected': '',
                 },
+                'name': {
+                    'type': 'search',
+                    'label': '搜尋',
+                    'enabled': true,
+                    'value': '',
+                }
             },
         },
         created: function() {
@@ -56,9 +62,16 @@ $(function() {
                 for (let key in self.filters) {
                   attr = self.filters[key]
                   if (attr.enabled) {
-                    res = res.filter(gameEvent => {
-                        return attr.selected === '' || gameEvent.event_abbr === attr.selected;
-                    });
+                    if (attr.type === 'option') {
+                        res = res.filter(gameEvent => {
+                            return attr.selected === '' || gameEvent.event_abbr === attr.selected;
+                        });
+                    }
+                    else if (attr.type === 'search') {
+                        res = res.filter(gameEvent => {
+                            return attr.value === '' || gameEvent.name.toLowerCase().includes(attr.value.toLowerCase());
+                        });
+                    }
                   }
                 }
                 return res;

@@ -21,14 +21,15 @@
 </div>
 <div class="row g-1">
   <div class="col-lg-4" v-for="(attr, key) in filters"><div class="input-group">
-    <div class="input-group-text">
-      <input class="form-check-input me-1" type="checkbox" :id="'check-'+key" v-model="attr.enabled" />
-      <label class="form-check-label" for="'check-'+key">{{ attr.label }}</label>
-    </div>
-    <select class="form-select" v-model="attr.selected">
-      <option value="" disabled>選擇活動類型</option>
-      <option v-for="opt in shownOptions(attr.options)" :value="opt.val">{{ opt.text }}</option>
-    </select>
+      <div class="input-group-text">
+        <input class="form-check-input me-1" type="checkbox" :id="'check-'+key" v-model="attr.enabled" />
+        <label class="form-check-label" for="'check-'+key">{{ attr.label }}</label>
+      </div>
+      <input class="form-control" type="text" v-if="attr.type === 'search'" v-model="attr.value" placeholder="請輸入活動名稱"/>
+      <select class="form-select" v-model="attr.selected" v-if="attr.type === 'option'">
+        <option value="" disabled>選擇活動類型</option>
+        <option v-for="opt in shownOptions(attr.options)" :value="opt.val">{{ opt.text }}</option>
+      </select>
   </div></div>
 </div>
 <table class="table mt-3 align-middle" id="event">
