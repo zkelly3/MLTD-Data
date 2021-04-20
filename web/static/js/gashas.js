@@ -156,7 +156,7 @@ $(function() {
             }
         },
         watch: {
-            fltGashas: function() {
+            pageFltGashas: function() {
                 this.paging.current = Math.min(this.paging.current, this.totalPage);
             }
         }

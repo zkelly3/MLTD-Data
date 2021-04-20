@@ -151,7 +151,7 @@ $(function() {
             }
         },
         watch: {
-            fltEvents: function() {
+            pageFltEvents: function() {
                 this.paging.current = Math.min(this.paging.current, this.totalPage);
             }
         }
