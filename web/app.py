@@ -180,9 +180,39 @@ def get_gashas_info():
     
     return gashas, types
 
+def get_cards_info_local(local):
+    sql_all_cards = """SELECT `Card`.id AS id, `Card`.{name} AS name, `Idol`.type AS idol_type,
+                      `Card`.rare AS rare, `Card`.{time} AS time FROM `Card`
+                      INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
+                      WHERE {time} IS NOT NULL
+                      ORDER BY {time} , card_id""".format(**local)
+    
+    tz_info = timezone(timedelta(hours=local['ver_time']))
+    
+    connection = connect()
+    with connection.cursor() as cursor:
+        cursor.execute(sql_all_cards)
+        cards = cursor.fetchall()
+    connection.close()
+    
+    for card in cards:
+        card['url'] = '/card/%d' % card['id']
+        card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
+        card['time'] = to_timestamp(card['time'], tz_info)
+        card['idol_type'] = idol_types[card['idol_type']]
+    
+    return cards
+
+def get_cards_info():
+    cards = []
+    cards.append(get_cards_info_local(jp_local))
+    cards.append(get_cards_info_local(as_local))
+    
+    return cards
+
 def get_idol_info_local(idol_id, local):
     sql_idol_info = """SELECT id, {name} AS name, type AS idol_type,
-                  age, height, weight
+                  age, height, weight, CV, color
                   FROM `Idol` WHERE id = %s""".format(**local)
     
     connection = connect()
@@ -665,6 +695,11 @@ def events_page():
 def gashas_page():
     gashas, types = get_gashas_info()
     return render_template('gashas.html', gashas=dumps(gashas, ensure_ascii=False), types=dumps(types, ensure_ascii=False))
+
+@app.route("/cards")
+def cards_page():
+    cards = get_cards_info()
+    return render_template('cards.html', cards=dumps(cards, ensure_ascii=False))
 
 @app.route("/idol/<int:idol_id>")
 def idol_page(idol_id):

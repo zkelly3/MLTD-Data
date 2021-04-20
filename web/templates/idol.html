@@ -28,7 +28,7 @@
     <div class="col-md-8">
       <div class="card-body">
         <div class="row">
-          <div class="col"><b>姓名</b> {{ shown.info.name }}</div>
+          <div class="col"><b>姓名</b> {{ shown.info.name }} (CV: {{ shown.info.CV }})</div>
         </div>
         <div class="row">
           <div class="col"><b>陣營</b> {{ shown.info.idol_type }}</div>
@@ -53,7 +53,7 @@
   <tr v-for="card in shown.cards">
     <td><a :href="card.url">
       <div class="card_icon me-2" :class="cardClass(card.rare)">
-        <img :src="card.img_url"></img>
+        <img :src="card.img_url"/>
       </div>{{ card.name }}
     </a></td>
     <td>{{ card.time }}</td>
