@@ -26,24 +26,47 @@
     <tr><th>名稱</th><td>【{{ shown.gasha_type }}】{{ shown.name }}</td></tr>
     <tr><th>開始時間</th><td>{{ shown.start }}</td></tr>
     <tr><th>結束時間</th><td>{{ shown.over }}</td></tr>
-    <tr><th>Pick Up 對象</th><td>
-      <div v-for="card in shown.pick_up">
-        <img class="card_icon me-2" :src="card.img_url"/> <a :href="card.url">{{ card.name }}</a>
-      </div>
-    </td></tr>
-    <tr v-if="shown.gasha_type === '特殊'"><th>其餘活動對象卡片</th><td>
-      <div v-for="card in shown.others">
-        <img class="card_icon me-2" :src="card.img_url"/> <a :href="card.url">{{ card.name }}</a>
-      </div>
-    </td></tr>
-    <tr v-if="shown.gasha_type !== '特殊'"><th>同時實裝在卡池的卡片</th><td>
-      <div v-for="card in shown.others">
-        <img class="card_icon me-2" :src="card.img_url"/> <a :href="card.url">{{ card.name }}</a>
-      </div>
-    </td></tr>
     <tr><th>備註</th><td style="white-space: pre-wrap;">{{ shown.comment }}</td></tr>
   </table>
 </div></div>
+<div class="row"><div class="col">
+  <h4>Pick Up 對象</h4>
+  <table class="table align-middle">
+    <tr v-for="card in shown.pick_up">
+      <td><a :href="card.url">
+        <div class="card_icon me-2" :class="cardClass(card)">
+          <img :src="card.img_url"/>
+        </div>{{ card.name }}
+      </a></td>
+      <td>{{ card.comment }}</td>
+    </tr>
+  </table>
+</div></div>
+<div class="row mb-3" v-if="shown.gasha_type === '特殊'"><div class="col">
+  <h4>其餘活動對象卡片</h4>
+  <div class="row">
+    <div class="col-lg-4 mb-2" v-for="card in shown.others">
+      <a :href="card.url">
+        <div class="card_icon me-2" :class="cardClass(card)">
+          <img :src="card.img_url"/>
+        </div>{{ card.name }}
+      </a>
+    </div>
+  </div>
+</div></div>
+<div class="row mb-3" v-if="shown.gasha_type !== '特殊'"><div class="col">
+  <h4>同時實裝在卡池的卡片</h4>
+  <div class="row">
+    <div class="col-lg-4 mb-2" v-for="card in shown.others">
+      <a :href="card.url">
+        <div class="card_icon me-2" :class="cardClass(card)">
+          <img :src="card.img_url"/>
+        </div>{{ card.name }}
+      </a>
+    </div>
+  </div>
+</div></div>
+
 {% endblock %}
 
 {% block body %}

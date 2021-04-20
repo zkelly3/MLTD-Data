@@ -28,7 +28,11 @@
     <my-tr><my-th :style="styleList">名稱</my-th><my-td>{{ shown.name }}</my-td></my-tr>
     <my-tr><my-th :style="styleList">所屬偶像</my-th><my-td><a :href="shown.idol.url"> {{ shown.idol.name }}</a></my-td></my-tr>
     <my-tr><my-th :style="styleList">取得方式</my-th><my-td><b>{{ shown.aquire.type }}</b><br><a :href="shown.from_url" v-if="shown.has_from_url">{{ shown.aquire.title }}</a><span v-else>{{ shown.aquire.title }}</span></my-td></my-tr>
-    <my-tr><my-th :style="styleList">{{ shown.awakenWord }}</my-th><my-td v-if="shown.awaken !== null"><a :href="shown.awaken.url"><img class="card_icon me-2" :src="shown.awaken.img_url"/>{{ shown.awakenName }}</a></my-td><my-td v-else>尚未更新</my-td></my-tr>
+    <my-tr><my-th :style="styleList">{{ shown.awakenWord }}</my-th><my-td v-if="shown.awaken !== null"><a :href="shown.awaken.url">
+    <div class="card_icon me-2" :class="cardClass(shown.rare)">
+      <img :src="shown.awaken.img_url"/>
+    </div>{{ shown.awakenName }}</a>
+    </my-td><my-td v-else>尚未更新</my-td></my-tr>
     <my-tr><my-th :style="styleList">實裝時間</my-th><my-td>{{ shown.time }}</my-td></my-tr>
   </div></div>
 </div>

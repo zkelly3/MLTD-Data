@@ -355,7 +355,7 @@ def get_card_info_local(card_id, local):
                   skill_type, {skill_name} AS skill_name, skill_val,
                   {flavor} AS flavor, awaken
                   FROM `Card` WHERE (id = %s)""".format(**local)
-    sql_idol = "SELECT {name} AS name, color FROM `Idol` WHERE (id = %s)".format(**local)
+    sql_idol = "SELECT {name} AS name, color, type AS idol_type FROM `Idol` WHERE (id = %s)".format(**local)
     sql_awaken = "SELECT id, {name} AS name FROM `Card` WHERE (id = %s)".format(**local)
 
     connection = connect()
@@ -379,11 +379,11 @@ def get_card_info_local(card_id, local):
             idol = cursor.fetchall()
             if idol:
                 idol = idol[0]
-                card['idol'] = {'url': '/idol/%d' % idol_id, 'name': idol['name'], 'color': idol['color']}
+                card['idol'] = {'url': '/idol/%d' % idol_id, 'name': idol['name'], 
+                                'color': idol['color'], 'idol_type': idol_types[idol['idol_type']]}
 
         # 稀有度
         rare_id = card['rare']
-        card['rare'] = rarity[rare_id]
 
         # 取得方式
         aquire_id = card.pop('aquire', None)
@@ -435,23 +435,31 @@ def get_event_info_local(event_type, event_id, local):
     pre_sql_event_info = """SELECT id, {name} AS name, 
                             {start} AS start, {over} AS over, comment{other_params}
                             FROM {event} WHERE (id = %s)"""
-    pre_sql_event_card_pst = """SELECT Card.id AS id, Card.{name} AS name
+    pre_sql_event_card_pst = """SELECT `Card`.id AS id, `Card`.{name} AS name,
+                                `Card`.rare AS rare, `Idol`.type AS idol_type
                                 FROM `PSTEventToCard` INNER JOIN `Card`
                                 ON `PSTEventToCard`.CID = `Card`.id
+                                INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
                                 WHERE (`PSTEventToCard`.EID = %s AND `PSTEventToCard`.type = %s)"""
-    pre_sql_event_card_col = """SELECT Card.id AS id, Card.{name} AS name
+    pre_sql_event_card_col = """SELECT `Card`.id AS id, `Card`.{name} AS name,
+                                `Card`.rare AS rare, `Idol`.type AS idol_type
                                 FROM `CollectEventToCard` INNER JOIN `Card`
                                 ON `CollectEventToCard`.CID = `Card`.id
+                                INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
                                 WHERE (`CollectEventToCard`.EID = %s)
                                 ORDER BY `CollectEventToCard`.type"""
-    pre_sql_event_card_ann = """SELECT Card.id AS id, Card.{name} AS name, Idol.{name} As idol_name
+    pre_sql_event_card_ann = """SELECT `Card`.id AS id, `Card`.{name} AS name,
+                                `Idol`.{name} As idol_name, 
+                                `Card`.rare AS rare, `Idol`.type AS idol_type
                                 FROM `AnniversaryToCard` INNER JOIN `Card`
                                 ON `AnniversaryToCard`.CID = `Card`.id
                                 INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
                                 WHERE (`AnniversaryToCard`.EID = %s AND `AnniversaryToCard`.type = %s)"""
-    pre_sql_event_card_oth = """SELECT Card.id AS id, Card.{name} AS name
+    pre_sql_event_card_oth = """SELECT Card.id AS id, Card.{name} AS name, 
+                                `Card`.rare AS rare, `Idol`.type AS idol_type
                                 FROM `OtherEventToCard` INNER JOIN `Card`
                                 ON `OtherEventToCard`.CID = `Card`.id
+                                INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
                                 WHERE (`OtherEventToCard`.EID = %s)"""
     
     tz_info = timezone(timedelta(hours=local['ver_time']))
@@ -537,16 +545,19 @@ def get_event_info_local(event_type, event_id, local):
         for card in event['cards']:
             card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
             card['url'] = '/card/%d' % card['id']
+            card['idol_type'] = idol_types[card['idol_type']]
     elif event_type == 2:
         for key in event['cards']:
             for card in event['cards'][key]['data']:
                 card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
                 card['url'] = '/card/%d' % card['id']
+                card['idol_type'] = idol_types[card['idol_type']]
     else:
         for key in event['cards']:
             for card in event['cards'][key]:
                 card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
                 card['url'] = '/card/%d' % card['id']
+                card['idol_type'] = idol_types[card['idol_type']]
     return event
     
 
@@ -560,17 +571,24 @@ def get_gasha_info_local(gasha_id, local):
     sql_gasha_info = """SELECT id, {name} AS name, 
                         {start} AS start, {over} AS over, type AS gasha_type, comment
                         FROM `Gasha` WHERE (id = %s)""".format(**local)
-    sql_general_pick_up = """SELECT `Card`.id AS id, `Card`.{name} AS name, `Card`.rare AS rare FROM `GashaToCard`
+    sql_general_pick_up = """SELECT `Card`.id AS id, `Card`.{name} AS name, `GashaToCard`.comment AS comment,
+                            `Card`.rare AS rare, `Idol`.type AS idol_type FROM `GashaToCard`
                              INNER JOIN `Card` ON `GashaToCard`.CID = `Card`.id
+                             INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
                              WHERE (`GashaToCard`.GID = %s)""".format(**local)
-    pre_sql_general_others = """SELECT id, {name} AS name, rare FROM `Card`
-                                WHERE ({time} = %s AND aquire = 0 AND id NOT IN ({id_values}))"""
-    sql_special_draw = """SELECT `Card`.id, `Card`.{name} AS name, `Card`.rare AS rare
+    pre_sql_general_others = """SELECT `Card`.id, `Card`.{name} AS name, `Card`.rare AS rare, `Idol`.type AS idol_type
+                                FROM `Card` INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
+                                WHERE ({time} = %s AND aquire = 0 AND `Card`.id NOT IN ({id_values}))"""
+    sql_special_draw = """SELECT `Card`.id, `Card`.{name} AS name, 
+                          `GashaToCard`.comment AS comment, `Card`.rare AS rare, `Idol`.type AS idol_type
                           FROM `GashaToCard` INNER JOIN `Card` ON `GashaToCard`.CID = `Card`.id
+                          INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
                           WHERE (`GashaToCard`.GID = %s AND NOT `Card`.in_gasha = 2)""".format(**local)
-    sql_special_others = """SELECT `Card`.id, `Card`.{name} AS name, `Card`.rare AS rare
-                          FROM `GashaToCard` INNER JOIN `Card` ON `GashaToCard`.CID = `Card`.id
-                          WHERE (`GashaToCard`.GID = %s AND `Card`.in_gasha = 2)""".format(**local)
+    sql_special_others = """SELECT `Card`.id, `Card`.{name} AS name, 
+                            `Card`.rare AS rare, `Idol`.type AS idol_type
+                            FROM `GashaToCard` INNER JOIN `Card` ON `GashaToCard`.CID = `Card`.id
+                            INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
+                            WHERE (`GashaToCard`.GID = %s AND `Card`.in_gasha = 2)""".format(**local)
     
     tz_info = timezone(timedelta(hours=local['ver_time']))
     
@@ -609,9 +627,11 @@ def get_gasha_info_local(gasha_id, local):
         for card in gasha['pick_up']:
             card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
             card['url'] = '/card/%d' % card['id']
+            card['idol_type'] = idol_types[card['idol_type']]
         for card in gasha['others']:
             card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
             card['url'] = '/card/%d' % card['id']
+            card['idol_type'] = idol_types[card['idol_type']]
         
         gasha['gasha_type'] = gasha_types[gasha['gasha_type']][local['ver']]
         gasha['start'] = to_timestamp(gasha['start'], tz_info)
@@ -668,9 +688,9 @@ def card_page(card_id):
         abort(404)
 
     if card[0] is not None:
-        page_title = card[0]['rare'] + ' ' + card[0]['name']
+        page_title = rarity[card[0]['rare']] + ' ' + card[0]['name']
     else:
-        page_title = card[1]['rare'] + ' ' + card[1]['name']
+        page_title = rarity[card[1]['rare']] + ' ' + card[1]['name']
     return render_template('card.html', title=page_title, card=dumps(card, ensure_ascii=False))
 
 @app.route("/event/<int:event_type>/<int:event_id>")

@@ -13,7 +13,8 @@ function fixData(card, ver) {
     card.idol = $.extend({
         name: '不明',
         url: "#",
-        color: '#ffffff'
+        color: '#ffffff',
+        idol_type: '',
     }, card.idol);
     
     deleteNull(card.aquire);
@@ -87,7 +88,29 @@ $(function() {
             },
             changeLanguage: function() {
                 this.japanese = !this.japanese;
-            }
+            },
+            cardClass(rare) {
+                rare = parseInt(rare / 2);
+                switch (rare) {
+                    case 3:
+                        return 'card_ssr';
+                    case 2:
+                        return 'card_sr';
+                    case 1:
+                        return 'card_r';
+                }
+                if (rare == 0) {
+                    switch (this.shown.idol.idol_type) {
+                        case 'Princess':
+                            return 'card_n_pr';
+                        case 'Fairy':
+                            return 'card_n_fa';
+                        case 'Angel':
+                            return 'card_n_an';
+                    }
+                }
+                return '';
+            },
         },
         computed: {
             shown: function() {
