@@ -216,7 +216,6 @@ def get_idol_cards_local(idol_id, local):
         card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
         card['url'] = '/card/%d' % card['id']
         card['time'] = to_timestamp(card['time'], tz_info)
-        card['rare'] = rarity[card['rare']]
     
     return cards
 

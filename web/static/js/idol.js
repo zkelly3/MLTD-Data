@@ -16,7 +16,7 @@ function fixData(idol, ver) {
         idol.cards[i] = $.extend({
             id: 0,
             name: '不明',
-            rare: '不明',
+            rare: -1,
             time: null,
             img_url: '#',
             url: '#'
@@ -38,7 +38,6 @@ $(function() {
             idol: idol_json,
             japanese: true,
             notBoth: false,
-            cardTitles: ['名稱', '稀有度', '實裝時間']
         },
         created: function() {
             this.initialize();
@@ -50,7 +49,34 @@ $(function() {
             },
             changeLanguage: function() {
                 this.japanese = !this.japanese;
-            }
+            },
+            imgStyle(img_url) {
+                return {
+                    backgroundImage: 'url(' + img_url + ')',
+                };
+            },
+            cardClass(rare) {
+                rare = parseInt(rare / 2);
+                switch (rare) {
+                    case 3:
+                        return 'card_ssr';
+                    case 2:
+                        return 'card_sr';
+                    case 1:
+                        return 'card_r';
+                }
+                if (rare == 0) {
+                    switch (this.shown.info.idol_type) {
+                        case 'Princess':
+                            return 'card_n_pr';
+                        case 'Fairy':
+                            return 'card_n_fa';
+                        case 'Angel':
+                            return 'card_n_an';
+                    }
+                }
+                return '';
+            },
         },
         computed: {
             shown: function() {
