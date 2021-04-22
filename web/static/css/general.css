@@ -27,15 +27,19 @@
 .card_r:after {
   background-image: url('/static/images/card_icon_mark/rare_R.png');
 }
-.card_n_pr:after {
+.idol_pr:after, .card_n_pr:after {
   border: 2px #ff3b6a solid;
   border-radius: 5px;
 }
-.card_n_fa:after {
+.idol_fa:after, .card_n_fa:after {
   border: 2px #3245ff solid;
   border-radius: 5px;
 }
-.card_n_an:after {
+.idol_an:after, .card_n_an:after {
   border: 2px #e6e613 solid;
+  border-radius: 5px;
+}
+.idol_gu:after {
+  border: 2px #25b340 solid;
   border-radius: 5px;
 }

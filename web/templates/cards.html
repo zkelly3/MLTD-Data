@@ -78,6 +78,46 @@
               </label>
             </div>
           </div>
+          <div class="col" v-if="attr.type === 'idol_check'">
+            <div class="row gy-2 row-col-1">
+              <div class="col-10">
+                <div class="form-check me-2 d-inline-block" v-for="opt in attr.type_options">
+                  <input class="form-check-input" type="checkbox" :value="opt" :id="'check-'+opt" v-model="attr.type_selected"/>
+                  <label class="form-check-label" :for="'check-'+opt">
+                    {{ opt }}
+                  </label>
+                </div>
+              </div>
+              <div class="col-10">
+                <input class="form-check-input" type="checkbox" :value="true" id="check-one-idol" v-model="attr.idol_enabled"/>
+                <label class="form-select" for="check-one-idol" data-bs-target="#idolModal" data-bs-toggle="modal" data-bs-dismiss="modal">
+                  {{ shownIdols[attr.idol_selected.toString()].name }}
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="idolModal" tabindex="-1" aria-labelledby="idolModalLabel" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">偶像列表</h5>
+        <button type="button" class="btn-close" data-bs-target="#filterModal" data-bs-toggle="modal" ></button>
+      </div>
+      <div class="modal-body">
+        <div class="row" v-for="(idol, key) in shownIdols">
+          <div class="col d-inline-block">
+            <a role="button" v-on:click="selectIdol(idol.id)" data-bs-target="#filterModal" data-bs-toggle="modal" data-bs-dismiss="modal">
+              <div class="card_icon d-block" :class="idolClass(idol)">
+                <img :src="idol.img_url"/>
+              </div>
+              <p>{{ idol.name }}</p>
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -89,4 +129,5 @@
 {[ super() ]}
 <script type="application/json" id="cards_json">{[cards|safe]}</script>
 <script type="application/json" id="filters_json">{[filters|safe]}</script>
+<script type="application/json" id="idols_json">{[idols|safe]}</script>
 {% endblock %}

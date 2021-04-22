@@ -195,7 +195,8 @@ def get_gashas_info():
     return gashas, types
 
 def get_cards_info_local(local):
-    sql_all_cards = """SELECT `Card`.id AS id, `Card`.{name} AS name, `Idol`.type AS idol_type,
+    sql_all_cards = """SELECT `Card`.id AS id, `Card`.{name} AS name, 
+                       `Idol`.id AS idol_id, `Idol`.type AS idol_type,
                       `Card`.rare AS rare, `Card`.{time} AS time, `Awaken`.id AS a_id, 
                       `Card`.aquire AS aquire, `Awaken`.aquire AS a_aquire,
                       `Card`.gasha_type AS gasha_type, `Awaken`.gasha_type AS a_gasha_type, 
@@ -259,12 +260,39 @@ def get_cards_info_local(local):
     
     return cards
 
+def get_cards_idols_local(local):
+    sql_all_idols = "SELECT id, {name} AS name, type AS idol_type FROM `Idol` WHERE {name} IS NOT NULL".format(**local)
+    
+    connection = connect()
+    with connection.cursor() as cursor:
+        cursor.execute(sql_all_idols)
+        res = cursor.fetchall()
+    connection.close()
+    
+    idols = {}
+    for idol in res:
+        idol['img_url'] = image_path('images/idol_icons', '%d.png' % idol['id'])
+        idols[idol['id']] = idol
+    
+    return idols
+
 def get_card_filters_local(local):
     sql_all_skills = "SELECT id, {name} AS name FROM `SkillType` WHERE {name} IS NOT NULL".format(**local)
     
     filters = {}
     
-    # 偶像陣營 (暫時跳過)
+    # 偶像陣營
+    idol_labels = {'jp': '対象', 'as': '對象'}
+    filters['belong'] = {
+        'type': 'idol_check',
+        'label': idol_labels[local['ver']],
+        'enabled': True,
+        'type_options': ['Princess', 'Fairy', 'Angel', 'Guest'],
+        'type_selected': [],
+        'idol_enabled': False,
+        'idol_selected': 1, # 天海春香
+        'key': 'idol_id',
+    }
     
     # 稀有度
     rarity_labels = {'jp': 'レアリティ', 'as': '稀有度'}
@@ -339,7 +367,11 @@ def get_cards_info():
     filters.append(get_card_filters_local(jp_local))
     filters.append(get_card_filters_local(as_local))
     
-    return cards, filters
+    idols = []
+    idols.append(get_cards_idols_local(jp_local))
+    idols.append(get_cards_idols_local(as_local))
+    
+    return cards, filters, idols
 
 def get_idol_info_local(idol_id, local):
     sql_idol_info = """SELECT id, {name} AS name, type AS idol_type,
@@ -829,8 +861,8 @@ def gashas_page():
 
 @app.route("/cards")
 def cards_page():
-    cards, filters = get_cards_info()
-    return render_template('cards.html', cards=dumps(cards, ensure_ascii=False), filters=dumps(filters, ensure_ascii=False))
+    cards, filters, idols = get_cards_info()
+    return render_template('cards.html', cards=dumps(cards, ensure_ascii=False), filters=dumps(filters, ensure_ascii=False), idols=dumps(idols, ensure_ascii=False))
 
 @app.route("/idol/<int:idol_id>")
 def idol_page(idol_id):

@@ -12,6 +12,7 @@ $(function() {
     }
     
     var filters_json = JSON.parse($('#filters_json').text());
+    var idols_json = JSON.parse($('#idols_json').text());
     
     var app = new Vue({
         el: '#app',
@@ -22,10 +23,11 @@ $(function() {
             japanese: true,
             notBoth: false,
             filters: filters_json,
+            idols: idols_json,
             paging: {
                 onePageList: [10, 20, 50, 100],
                 purPage: 20,
-                current: 1
+                current: 1,
             }
         },
         created: function() {
@@ -73,6 +75,21 @@ $(function() {
                 }
                 return '';
             },
+            idolClass(idol) {
+                switch (idol.idol_type) {
+                    case 'Princess':
+                        return 'idol_pr'
+                    case 'Fairy':
+                        return 'idol_fa'
+                    case 'Angel':
+                        return 'idol_an'
+                    case 'Guest':
+                        return 'idol_gu'
+                }
+            },
+            selectIdol(idol_id) {
+                this.shownFilters.belong.idol_selected = idol_id
+            },
         },
         computed: {
             shown() {
@@ -81,24 +98,32 @@ $(function() {
             shownFilters() {
                 return this.japanese ? this.filters[0] : this.filters[1];
             },
+            shownIdols() {
+                return this.japanese ? this.idols[0] : this.idols[1];
+            },
             fltCards() {
                 var self = this;
                 var res = self.shown.slice();
                 
                 for (let key in self.shownFilters) {
-                  attr = self.shownFilters[key];
-                  if (attr.enabled) {
+                    attr = self.shownFilters[key];
                     if (attr.type === 'check') {
                         res = res.filter(card => {
                             return !attr.selected.length || attr.selected.includes(card[attr.key]);
                         });
+                    }
+                    else if (attr.type === 'idol_check') {
+                        if (attr.idol_enabled) {
+                            res = res.filter(card => {
+                                return attr.idol_selected === card[attr.key];
+                            });
+                        }
                     }
                     else if (attr.type === 'search') {
                         res = res.filter(gameEvent => {
                             return attr.value === '' || gameEvent.name.toLowerCase().includes(attr.value.toLowerCase());
                         });
                     }
-                  }
                 }
                 
                 return res;
