@@ -201,10 +201,10 @@ def get_cards_info_local(local):
                       `Card`.gasha_type AS gasha_type, `Awaken`.gasha_type AS a_gasha_type, 
                       `Card`.in_gasha AS in_gasha, `Awaken`.in_gasha AS a_in_gasha,
                       `SkillSubType`.SID AS skill_type, `LeaderSkill`.type AS l_skill_type
-                      FROM `Card` INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
-                      INNER JOIN `Card` AS `Awaken` ON `Card`.awaken = `Awaken`.id
-                      INNER JOIN `SkillSubType` ON `Card`.skill_type = `SkillSubType`.id
-                      INNER JOIN `LeaderSkill` ON `Card`.leader_skill = `LeaderSkill`.id
+                      FROM `Card` LEFT JOIN `Idol` ON `Card`.IID = `Idol`.id
+                      LEFT JOIN `Card` AS `Awaken` ON `Card`.awaken = `Awaken`.id
+                      LEFT JOIN `SkillSubType` ON `Card`.skill_type = `SkillSubType`.id
+                      LEFT JOIN `LeaderSkill` ON `Card`.leader_skill = `LeaderSkill`.id
                       WHERE `Card`.{time} IS NOT NULL
                       ORDER BY `Card`.{time} , `Card`.card_id""".format(**local)
     sql_card_anniversary = "SELECT EID FROM `AnniversaryToCard` WHERE (CID = %s)"
