@@ -29,8 +29,7 @@ gasha_types = [{'jp': 'タイプ限定', 'as': '屬性限定', 'abbr': 'TYP'},
     {'jp': 'フェス限定', 'as': 'FES限定', 'abbr': 'FES'},
     {'jp': '限定復刻', 'as': '限定復刻', 'abbr': 'RET'},
     {'jp': '特殊', 'as': '特殊', 'abbr': 'SPC'}]
-event_types = [
-    {'jp': 'PSTイベント', 'as': 'PST活動', 
+event_types = [{'jp': 'PSTイベント', 'as': 'PST活動', 
      'abbr': 'PST', 'table': 'PSTEvent', 'to_card_table': 'PSTEventToCard'},
     {'jp': 'ミリコレ', 'as': '百萬收藏', 
      'abbr': 'COL', 'table': 'CollectEvent', 'to_card_table': 'CollectEventToCard'},
@@ -49,6 +48,14 @@ pst_types = [{'jp': 'シアター', 'as': '劇場'},
     {'jp': 'ツインステージ', 'as': 'ツインステージ'},
     {'jp': 'チューン', 'as': 'チューン'},
     {'jp': 'テール', 'as': 'テール'}
+]
+card_types = [{'jp': '一般', 'as': '一般', 'abbr': 'NML'}, # 初始、常駐、百萬收藏 (N, R, SR, SSR)
+{'jp': '期間限定', 'as': '期間限定', 'abbr': 'LMT'}, # 期間限定 (SR, SSR)
+{'jp': 'フェス限定', 'as': 'FES限定', 'abbr': 'FES'}, # FES限定 (SR, SSR)
+{'jp': 'PSTイベント', 'as': 'PST活動', 'abbr': 'PST'}, # PST活動 (SR)
+{'jp': '1周年', 'as': '1週年', 'abbr': '1ST'}, # 1st (SR)
+{'jp': '2周年', 'as': '2週年', 'abbr': '2ND'}, # 2nd (SR)
+{'jp': '3周年', 'as': '3週年', 'abbr': '3RD'}, # 3rd (SR)
 ]
 
 rarity = ['N', 'N＋', 'R', 'R＋', 'SR', 'SR＋', 'SSR', 'SSR＋']
@@ -182,10 +189,15 @@ def get_gashas_info():
 
 def get_cards_info_local(local):
     sql_all_cards = """SELECT `Card`.id AS id, `Card`.{name} AS name, `Idol`.type AS idol_type,
-                      `Card`.rare AS rare, `Card`.{time} AS time FROM `Card`
-                      INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
-                      WHERE {time} IS NOT NULL
-                      ORDER BY {time} , card_id""".format(**local)
+                      `Card`.rare AS rare, `Card`.{time} AS time, `Awaken`.id AS a_id, 
+                      `Card`.aquire AS aquire, `Awaken`.aquire AS a_aquire,
+                      `Card`.gasha_type AS gasha_type, `Awaken`.gasha_type AS a_gasha_type, 
+                      `Card`.in_gasha AS in_gasha, `Awaken`.in_gasha AS a_in_gasha
+                      FROM `Card` INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
+                      INNER JOIN `Card` AS `Awaken` ON `Card`.awaken = `Awaken`.id
+                      WHERE `Card`.{time} IS NOT NULL
+                      ORDER BY `Card`.{time} , `Card`.card_id""".format(**local)
+    sql_card_anniversary = "SELECT EID FROM `AnniversaryToCard` WHERE (CID = %s)"
     
     tz_info = timezone(timedelta(hours=local['ver_time']))
     
@@ -193,22 +205,101 @@ def get_cards_info_local(local):
     with connection.cursor() as cursor:
         cursor.execute(sql_all_cards)
         cards = cursor.fetchall()
-    connection.close()
     
-    for card in cards:
-        card['url'] = '/card/%d' % card['id']
-        card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
-        card['time'] = to_timestamp(card['time'], tz_info)
-        card['idol_type'] = idol_types[card['idol_type']]
+        for card in cards:
+            card['url'] = '/card/%d' % card['id']
+            card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
+            card['time'] = to_timestamp(card['time'], tz_info)
+            card['idol_type'] = idol_types[card['idol_type']]
+            card['is_awaken'] = card['rare'] % 2 == 1
+            card['rare'] = card['rare'] // 2;
+            
+            aquire_id = card.pop('aquire', None)
+            a_aquire_id = card.pop('a_aquire', None)
+            gasha_type = card.pop('gasha_type', None)
+            a_gasha_type = card.pop('a_gasha_type', None)
+            in_gasha = card.pop('in_gasha', None)
+            a_in_gasha = card.pop('a_in_gasha', None)
+            
+            if (aquire_id == 0 and gasha_type == 2) or (a_aquire_id == 0 and a_gasha_type == 2):
+                card['card_type'] = 'FES'
+            elif (aquire_id == 0 and gasha_type == 1) or (a_aquire_id == 0 and a_gasha_type == 1):
+                card['card_type'] = 'LMT'
+            elif aquire_id == 1 or a_aquire_id == 1:
+                card['card_type'] = 'PST'
+            elif aquire_id == 4:
+                ann_types = ['1ST', '2ND', '3RD']
+                cursor.execute(sql_card_anniversary, (card['id']))
+                anns = cursor.fetchall()
+                if anns:
+                    card['card_type'] = ann_types[anns[0]['EID']-1]
+                else:
+                    card['card_type'] = 'NML'
+            elif a_aquire_id == 4:
+                ann_types = ['1ST', '2ND', '3RD']
+                cursor.execute(sql_card_anniversary, (card['a_id']))
+                anns = cursor.fetchall()
+                if anns:
+                    card['card_type'] = ann_types[anns[0]['EID']-1]
+                else:
+                    card['card_type'] = 'NML'
+            else:
+                card['card_type'] = 'NML'
+    connection.close()    
     
     return cards
+
+def get_card_filters_local(local):
+    filters = {}
+    
+    # 偶像陣營 (暫時跳過)
+    
+    # 稀有度
+    rarity_labels = {'jp': 'レア度', 'as': '稀有度'}
+    filters['rarity'] = {
+        'type': 'check',
+        'label': rarity_labels[local['ver']],
+        'enabled': True,
+        'options': [{'val': 0, 'text': 'N'}, {'val': 1, 'text': 'R'}, {'val': 2, 'text': 'SR'}, {'val': 3, 'text': 'SSR'}],
+        'selected': [],
+        'key': 'rare',
+    }
+    
+    # 覺醒
+    awaken_labels = {'jp': '覚醒', 'as': '覺醒'}
+    awaken_options = [{'val': False, 'jp': '覚醒前', 'as': '未覺醒'}, {'val': True, 'jp': '覚醒後', 'as': '已覺醒'}]
+    filters['awaken'] = {
+        'type': 'check',
+        'label': awaken_labels[local['ver']],
+        'enabled': True,
+        'options': [{'val': option['val'], 'text': option[local['ver']]} for option in awaken_options],
+        'selected': [True],
+        'key': 'is_awaken',
+    }
+    
+    # 卡片類型
+    type_labels = {'jp': 'タイプ', 'as': '卡片類型'}
+    filters['card_type'] = {
+        'type': 'check',
+        'label': type_labels[local['ver']],
+        'enabled': True,
+        'options': [{'val': option['abbr'], 'text': option[local['ver']]} for option in card_types],
+        'selected': [],
+        'key': 'card_type',
+    }
+    
+    return filters;
 
 def get_cards_info():
     cards = []
     cards.append(get_cards_info_local(jp_local))
     cards.append(get_cards_info_local(as_local))
     
-    return cards
+    filters = []
+    filters.append(get_card_filters_local(jp_local))
+    filters.append(get_card_filters_local(as_local))
+    
+    return cards, filters
 
 def get_idol_info_local(idol_id, local):
     sql_idol_info = """SELECT id, {name} AS name, type AS idol_type,
@@ -698,8 +789,8 @@ def gashas_page():
 
 @app.route("/cards")
 def cards_page():
-    cards = get_cards_info()
-    return render_template('cards.html', cards=dumps(cards, ensure_ascii=False))
+    cards, filters = get_cards_info()
+    return render_template('cards.html', cards=dumps(cards, ensure_ascii=False), filters=dumps(filters, ensure_ascii=False))
 
 @app.route("/idol/<int:idol_id>")
 def idol_page(idol_id):

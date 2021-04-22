@@ -20,22 +20,13 @@
 </nav>
 </div>
 <div class="row g-1">
-<!--
-  <div class="col-lg-4" v-for="(attr, key) in filters"><div class="input-group">
-      <div class="input-group-text">
-        <input class="form-check-input me-1" type="checkbox" :id="'check-'+key" v-model="attr.enabled" />
-        <label class="form-check-label" for="'check-'+key">{{ attr.label }}</label>
-      </div>
-      <input class="form-control" type="text" v-if="attr.type === 'search'" v-model="attr.value" placeholder="請輸入卡片名稱"/>
-      <div class="input-group-text" v-if="attr.type === 'check'">
-        <div class="form-check me-2" v-for="opt in shownOptions(attr.options)">
-          <input class="form-check-input" type="checkbox" :value="opt.val" :id="'check-'+opt.val" v-model="attr.selected">
-          <label class="form-check-label" :for="'check-'+opt.val">
-            {{ opt.text }}
-          </label>
-        </div>
-      </div>
-  </div></div>-->
+  <div class="col-2">
+    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#filterModal">篩選條件</button>
+  </div>
+  <div class="col-2">
+    <button type="button" class="btn btn-outline-primary">排序條件</button>
+    <span>依條件排序</span>
+  </div>
 </div>
 <table class="table mt-3 align-middle">
   <tbody><tr v-for="card in pageFltCards">
@@ -67,9 +58,35 @@
     </ul>
   </nav>
 </div>
+
+<div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">選擇篩選條件</h5>
+      </div>
+      <div class="modal-body">
+        <div class="row gy-2 row-cols-1" v-for="(attr, key) in shownFilters">
+          <div class="col">
+            <b>{{ attr.label }}</b>
+          </div>
+          <div class="col" v-if="attr.type === 'check'">
+            <div class="form-check me-2 d-inline-block" v-for="opt in attr.options">
+              <input class="form-check-input" type="checkbox" :value="opt.val" :id="'check-'+opt.val" v-model="attr.selected">
+              <label class="form-check-label" :for="'check-'+opt.val">
+                {{ opt.text }}
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block body %}
 {[ super() ]}
 <script type="application/json" id="cards_json">{[cards|safe]}</script>
+<script type="application/json" id="filters_json">{[filters|safe]}</script>
 {% endblock %}

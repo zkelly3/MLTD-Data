@@ -11,6 +11,8 @@ $(function() {
         fixData(cards_json[i], i);
     }
     
+    var filters_json = JSON.parse($('#filters_json').text());
+    
     var app = new Vue({
         el: '#app',
         props: {
@@ -19,14 +21,7 @@ $(function() {
             cards: cards_json,
             japanese: true,
             notBoth: false,
-            filters: {
-                cardName: {
-                    'type': 'search',
-                    'label': '搜尋',
-                    'enabled': true,
-                    'value': '',
-                },
-            },
+            filters: filters_json,
             paging: {
                 onePageList: [10, 20, 50, 100],
                 purPage: 20,
@@ -57,7 +52,7 @@ $(function() {
                 this.changePage(this.paging.current+1);
             },
             cardClass(card) {
-                var rare = parseInt(card.rare / 2);
+                var rare = card.rare;
                 switch (rare) {
                     case 3:
                         return 'card_ssr';
@@ -83,16 +78,19 @@ $(function() {
             shown() {
                 return this.japanese ? this.cards[0] : this.cards[1];
             },
+            shownFilters() {
+                return this.japanese ? this.filters[0] : this.filters[1];
+            },
             fltCards() {
                 var self = this;
                 var res = self.shown.slice();
-                /**
-                for (let key in self.filters) {
-                  attr = self.filters[key]
+                
+                for (let key in self.shownFilters) {
+                  attr = self.shownFilters[key];
                   if (attr.enabled) {
-                    if (attr.type === 'option') {
-                        res = res.filter(gameEvent => {
-                            return attr.selected === '' || gameEvent.event_abbr === attr.selected;
+                    if (attr.type === 'check') {
+                        res = res.filter(card => {
+                            return !attr.selected.length || attr.selected.includes(card[attr.key]);
                         });
                     }
                     else if (attr.type === 'search') {
@@ -102,7 +100,7 @@ $(function() {
                     }
                   }
                 }
-                **/
+                
                 return res;
             },
             pageFltCards() {
