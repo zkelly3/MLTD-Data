@@ -57,6 +57,13 @@ card_types = [{'jp': '一般', 'as': '一般', 'abbr': 'NML'}, # 初始、常駐
 {'jp': '2周年', 'as': '2週年', 'abbr': '2ND'}, # 2nd (SR)
 {'jp': '3周年', 'as': '3週年', 'abbr': '3RD'}, # 3rd (SR)
 ]
+l_skill_types = [{'jp': '全アピールアップ', 'as': '全表現值提升', 'val': 0},
+{'jp': 'ビジュアルアップ', 'as': '視覺值提升', 'val': 1},
+{'jp': 'ボーカルアップ', 'as': '歌唱值提升', 'val': 2},
+{'jp': 'ダンスアップ', 'as': '舞蹈值提升', 'val': 3},
+{'jp': 'ライフアップ', 'as': '體力提升', 'val': 4},
+{'jp': 'スキル発動率アップ', 'as': '技能發動率提升', 'val': 5},
+]
 
 rarity = ['N', 'N＋', 'R', 'R＋', 'SR', 'SR＋', 'SSR', 'SSR＋']
 
@@ -192,9 +199,12 @@ def get_cards_info_local(local):
                       `Card`.rare AS rare, `Card`.{time} AS time, `Awaken`.id AS a_id, 
                       `Card`.aquire AS aquire, `Awaken`.aquire AS a_aquire,
                       `Card`.gasha_type AS gasha_type, `Awaken`.gasha_type AS a_gasha_type, 
-                      `Card`.in_gasha AS in_gasha, `Awaken`.in_gasha AS a_in_gasha
+                      `Card`.in_gasha AS in_gasha, `Awaken`.in_gasha AS a_in_gasha,
+                      `SkillSubType`.SID AS skill_type, `LeaderSkill`.type AS l_skill_type
                       FROM `Card` INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
                       INNER JOIN `Card` AS `Awaken` ON `Card`.awaken = `Awaken`.id
+                      INNER JOIN `SkillSubType` ON `Card`.skill_type = `SkillSubType`.id
+                      INNER JOIN `LeaderSkill` ON `Card`.leader_skill = `LeaderSkill`.id
                       WHERE `Card`.{time} IS NOT NULL
                       ORDER BY `Card`.{time} , `Card`.card_id""".format(**local)
     sql_card_anniversary = "SELECT EID FROM `AnniversaryToCard` WHERE (CID = %s)"
@@ -250,12 +260,14 @@ def get_cards_info_local(local):
     return cards
 
 def get_card_filters_local(local):
+    sql_all_skills = "SELECT id, {name} AS name FROM `SkillType` WHERE {name} IS NOT NULL".format(**local)
+    
     filters = {}
     
     # 偶像陣營 (暫時跳過)
     
     # 稀有度
-    rarity_labels = {'jp': 'レア度', 'as': '稀有度'}
+    rarity_labels = {'jp': 'レアリティ', 'as': '稀有度'}
     filters['rarity'] = {
         'type': 'check',
         'label': rarity_labels[local['ver']],
@@ -266,7 +278,7 @@ def get_card_filters_local(local):
     }
     
     # 覺醒
-    awaken_labels = {'jp': '覚醒', 'as': '覺醒'}
+    awaken_labels = {'jp': '覚醒状態', 'as': '覺醒狀態'}
     awaken_options = [{'val': False, 'jp': '覚醒前', 'as': '未覺醒'}, {'val': True, 'jp': '覚醒後', 'as': '已覺醒'}]
     filters['awaken'] = {
         'type': 'check',
@@ -278,7 +290,7 @@ def get_card_filters_local(local):
     }
     
     # 卡片類型
-    type_labels = {'jp': 'タイプ', 'as': '卡片類型'}
+    type_labels = {'jp': 'カテゴリ', 'as': '分類'}
     filters['card_type'] = {
         'type': 'check',
         'label': type_labels[local['ver']],
@@ -287,6 +299,34 @@ def get_card_filters_local(local):
         'selected': [],
         'key': 'card_type',
     }
+    
+    connection = connect()
+    with connection.cursor() as cursor:
+        # 技能類型
+        cursor.execute(sql_all_skills)
+        skills = cursor.fetchall()
+        skill_label = {'jp': 'スキル', 'as': '技能'}
+        filters['skill_type'] = {
+            'type': 'check',
+            'label': skill_label[local['ver']],
+            'enabled': True,
+            'options': [{'val': skill['id'], 'text': skill['name']} for skill in skills],
+            'selected': [],
+            'key': 'skill_type',
+        }
+        
+        # Center效果類型
+        l_skill_label = {'jp': 'センター効果', 'as': 'Center效果'}
+        filters['l_skill_type'] = {
+            'type': 'check',
+            'label': l_skill_label[local['ver']],
+            'enabled': True,
+            'options': [{'val': l_skill_type['val'], 'text': l_skill_type[local['ver']]} for l_skill_type in l_skill_types],
+            'selected': [],
+            'key': 'l_skill_type',
+        }
+        
+    connection.close()
     
     return filters;
 
