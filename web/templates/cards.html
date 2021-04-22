@@ -60,7 +60,7 @@
 </div>
 
 <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">選擇篩選條件</h5>
@@ -89,10 +89,12 @@
                 </div>
               </div>
               <div class="col-10">
+              <div class="form-check">
                 <input class="form-check-input" type="checkbox" :value="true" id="check-one-idol" v-model="attr.idol_enabled"/>
-                <label class="form-select" for="check-one-idol" data-bs-target="#idolModal" data-bs-toggle="modal" data-bs-dismiss="modal">
+                <label class="form-select" data-bs-target="#idolModal" data-bs-toggle="modal" data-bs-dismiss="modal">
                   {{ shownIdols[attr.idol_selected.toString()].name }}
                 </label>
+              </div>
               </div>
             </div>
           </div>
@@ -102,21 +104,21 @@
   </div>
 </div>
 <div class="modal fade" id="idolModal" tabindex="-1" aria-labelledby="idolModalLabel" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">偶像列表</h5>
-        <button type="button" class="btn-close" data-bs-target="#filterModal" data-bs-toggle="modal" ></button>
+        <button type="button" class="btn-close" data-bs-target="#filterModal" data-bs-toggle="modal" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div class="row" v-for="(idol, key) in shownIdols">
-          <div class="col d-inline-block">
-            <a role="button" v-on:click="selectIdol(idol.id)" data-bs-target="#filterModal" data-bs-toggle="modal" data-bs-dismiss="modal">
-              <div class="card_icon d-block" :class="idolClass(idol)">
-                <img :src="idol.img_url"/>
+        <div class="row row-cols-lg-6 row-cols-4 gy-2">
+          <div class="col" v-for="(idol, key) in shownIdols">
+              <div class="card">
+                <a class="stretched-link" v-on:click="selectIdol(idol.id)" data-bs-target="#filterModal" data-bs-toggle="modal" data-bs-dismiss="modal" href="#">
+                  <img :src="idol.img_url" class="card-img-top"/>
+                </a>
+                <div class="card-body p-1 text-center">{{ idol.name }}</div>
               </div>
-              <p>{{ idol.name }}</p>
-            </a>
           </div>
         </div>
       </div>
