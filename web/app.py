@@ -197,17 +197,17 @@ def get_gashas_info():
 def get_cards_info_local(local):
     sql_all_cards = """SELECT `Card`.id AS id, `Card`.{name} AS name, 
                        `Idol`.id AS idol_id, `Idol`.type AS idol_type,
-                      `Card`.rare AS rare, `Card`.{time} AS time, `Awaken`.id AS a_id, 
-                      `Card`.aquire AS aquire, `Awaken`.aquire AS a_aquire,
-                      `Card`.gasha_type AS gasha_type, `Awaken`.gasha_type AS a_gasha_type, 
-                      `Card`.in_gasha AS in_gasha, `Awaken`.in_gasha AS a_in_gasha,
-                      `SkillSubType`.SID AS skill_type, `LeaderSkill`.type AS l_skill_type
-                      FROM `Card` LEFT JOIN `Idol` ON `Card`.IID = `Idol`.id
-                      LEFT JOIN `Card` AS `Awaken` ON `Card`.awaken = `Awaken`.id
-                      LEFT JOIN `SkillSubType` ON `Card`.skill_type = `SkillSubType`.id
-                      LEFT JOIN `LeaderSkill` ON `Card`.leader_skill = `LeaderSkill`.id
-                      WHERE `Card`.{time} IS NOT NULL
-                      ORDER BY `Card`.{time} , `Card`.card_id""".format(**local)
+                       `Card`.rare AS rare, `Card`.{time} AS time, `Awaken`.id AS a_id, 
+                       `Card`.aquire AS aquire, `Awaken`.aquire AS a_aquire,
+                       `Card`.gasha_type AS gasha_type, `Awaken`.gasha_type AS a_gasha_type, 
+                       `Card`.in_gasha AS in_gasha, `Awaken`.in_gasha AS a_in_gasha,
+                       `SkillSubType`.SID AS skill_type, `LeaderSkill`.type AS l_skill_type
+                       FROM `Card` LEFT JOIN `Idol` ON `Card`.IID = `Idol`.id
+                       LEFT JOIN `Card` AS `Awaken` ON `Card`.awaken = `Awaken`.id
+                       LEFT JOIN `SkillSubType` ON `Card`.skill_type = `SkillSubType`.id
+                       LEFT JOIN `LeaderSkill` ON `Card`.leader_skill = `LeaderSkill`.id
+                       WHERE `Card`.{time} IS NOT NULL
+                       ORDER BY `Card`.{time} , `Card`.card_id""".format(**local)
     sql_card_anniversary = "SELECT EID FROM `AnniversaryToCard` WHERE (CID = %s)"
     
     tz_info = timezone(timedelta(hours=local['ver_time']))
@@ -289,9 +289,10 @@ def get_card_filters_local(local):
         'enabled': True,
         'type_options': ['Princess', 'Fairy', 'Angel', 'Guest'],
         'type_selected': [],
+        'type_key': 'idol_type',
         'idol_enabled': False,
         'idol_selected': 1, # 天海春香
-        'key': 'idol_id',
+        'idol_key': 'idol_id',
     }
     
     # 稀有度

@@ -90,6 +90,21 @@ $(function() {
             selectIdol(idol_id) {
                 this.shownFilters.belong.idol_selected = idol_id
             },
+            setIdolEnabled(filter, enabled) {
+                filter.idol_enabled = enabled;
+                if (filter.idol_enabled) {
+                    filter.type_selected.splice(0);
+                }
+            },
+            toggleTypeSelected(filter, opt) {
+                const index = filter.type_selected.indexOf(opt);
+                if (index !== -1) {
+                  filter.type_selected.splice(index, 1);
+                } else {
+                    filter.idol_enabled = false;
+                    filter.type_selected.push(opt);
+                }
+            },
         },
         computed: {
             shown() {
@@ -115,7 +130,12 @@ $(function() {
                     else if (attr.type === 'idol_check') {
                         if (attr.idol_enabled) {
                             res = res.filter(card => {
-                                return attr.idol_selected === card[attr.key];
+                                return attr.idol_selected === card[attr.idol_key];
+                            });
+                        }
+                        else {
+                            res = res.filter(card => {
+                                return !attr.type_selected.length || attr.type_selected.includes(card[attr.type_key]);
                             });
                         }
                     }
@@ -127,7 +147,7 @@ $(function() {
                 }
                 
                 return res;
-            },
+            }, 
             pageFltCards() {
                 var self = this;
                 var res = self.fltCards.slice();
@@ -186,11 +206,15 @@ $(function() {
                     }
                 }
                 return res;
-            }
+            },
         },
         watch: {
             pageFltCards: function() {
                 this.paging.current = Math.min(this.paging.current, this.totalPage);
+            },
+            filters: function() {
+                if (this.filters.belong.idol_enabled) this.filters.belong.type_selected = [];
+                else if (this.filters.belong.type_selected.length > 0) this.filters.belong.idol_enabled = false;
             }
         }
     });
