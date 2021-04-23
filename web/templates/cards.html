@@ -23,9 +23,9 @@
   <div class="col-2">
     <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#filterModal">篩選條件</button>
   </div>
-  <div class="col-2">
-    <button type="button" class="btn btn-outline-primary">排序條件</button>
-    <span>依條件排序</span>
+  <div class="col-4">
+    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#sortModal">排序條件</button>
+    <span>依{{ sortText }}排序</span>
   </div>
 </div>
 <table class="table mt-3 align-middle">
@@ -34,7 +34,7 @@
     <div class="card_icon me-2" :class="cardClass(card)">
       <img :src="card.img_url"/>
     </div>{{ card.name }}</a></td>
-    <td>{{ card.time }}</td>
+    <td>{{ showTime(card.time) }}</td>
   </tr></tbody>
 </table>
 <div class="row g-1">
@@ -126,11 +126,33 @@
     </div>
   </div>
 </div>
+<div class="modal fade" id="sortModal" tabindex="-1" aria-labelledby="sortModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title me-2">選擇排序方式</h5>
+        <button type="button" class="btn btn-secondary btn-sm" v-on:click="sortReverse()">{{ sortPanelWord }}</button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-1">
+          <div class="col form-check" v-for="attr in shownSorts">
+            <input class="form-check-input" type="radio" v-model="sorts.sortKey" :value="attr.val" :id="'radio-'+attr.val">
+            <label class="form-check-label" :for="'radio-'+attr.val">
+              {{ attr.text }}
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block body %}
 {[ super() ]}
 <script type="application/json" id="cards_json">{[cards|safe]}</script>
 <script type="application/json" id="filters_json">{[filters|safe]}</script>
+<script type="application/json" id="sorts_json">{[sorts|safe]}</script>
 <script type="application/json" id="idols_json">{[idols|safe]}</script>
 {% endblock %}

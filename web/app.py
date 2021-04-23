@@ -64,6 +64,10 @@ l_skill_types = [{'jp': '全アピールアップ', 'as': '全表現值提升', 
 {'jp': 'ライフアップ', 'as': '體力提升', 'val': 4},
 {'jp': 'スキル発動率アップ', 'as': '技能發動率提升', 'val': 5},
 ]
+sort_types = [{'jp': '実装時間', 'as': '實裝時間', 'val': 'time'},
+{'jp': 'レアリティ', 'as': '稀有度', 'val': 'rare'},
+{'jp': 'アイドル', 'as': '偶像', 'val': 'idol_id'},
+]
 
 rarity = ['N', 'N＋', 'R', 'R＋', 'SR', 'SR＋', 'SSR', 'SSR＋']
 
@@ -196,7 +200,7 @@ def get_gashas_info():
 
 def get_cards_info_local(local):
     sql_all_cards = """SELECT `Card`.id AS id, `Card`.{name} AS name, `Card`.skill_val AS skill_val,
-                       `Idol`.id AS idol_id, `Idol`.type AS idol_type,
+                       `Idol`.id AS idol_id, `Idol`.type AS idol_type, `Card`.card_id AS fake_id,
                        `Card`.rare AS rare, `Card`.{time} AS time, `Awaken`.id AS a_id, 
                        `Card`.aquire AS aquire, `Awaken`.aquire AS a_aquire,
                        `Card`.gasha_type AS gasha_type, `Awaken`.gasha_type AS a_gasha_type, 
@@ -279,6 +283,11 @@ def get_cards_idols_local(local):
         idols[idol['id']] = idol
     
     return idols
+
+def get_cards_sorts_local(local):
+    sorts = [{'text': sort_type[local['ver']], 'val': sort_type['val']} for sort_type in sort_types]
+    
+    return sorts
 
 def get_card_filters_local(local):
     sql_all_skills = "SELECT id, {name} AS name FROM `SkillType` WHERE {name} IS NOT NULL".format(**local)
@@ -391,11 +400,15 @@ def get_cards_info():
     filters.append(get_card_filters_local(jp_local))
     filters.append(get_card_filters_local(as_local))
     
+    sorts = []
+    sorts.append(get_cards_sorts_local(jp_local))
+    sorts.append(get_cards_sorts_local(as_local))
+    
     idols = []
     idols.append(get_cards_idols_local(jp_local))
     idols.append(get_cards_idols_local(as_local))
     
-    return cards, filters, idols
+    return cards, filters, sorts, idols
 
 def get_idol_info_local(idol_id, local):
     sql_idol_info = """SELECT id, {name} AS name, type AS idol_type,
@@ -885,8 +898,8 @@ def gashas_page():
 
 @app.route("/cards")
 def cards_page():
-    cards, filters, idols = get_cards_info()
-    return render_template('cards.html', cards=dumps(cards, ensure_ascii=False), filters=dumps(filters, ensure_ascii=False), idols=dumps(idols, ensure_ascii=False))
+    cards, filters, sorts, idols = get_cards_info()
+    return render_template('cards.html', cards=dumps(cards, ensure_ascii=False), filters=dumps(filters, ensure_ascii=False), sorts=dumps(sorts, ensure_ascii=False), idols=dumps(idols, ensure_ascii=False))
 
 @app.route("/idol/<int:idol_id>")
 def idol_page(idol_id):
