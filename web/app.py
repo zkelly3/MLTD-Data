@@ -195,7 +195,7 @@ def get_gashas_info():
     return gashas, types
 
 def get_cards_info_local(local):
-    sql_all_cards = """SELECT `Card`.id AS id, `Card`.{name} AS name, 
+    sql_all_cards = """SELECT `Card`.id AS id, `Card`.{name} AS name, `Card`.skill_val AS skill_val,
                        `Idol`.id AS idol_id, `Idol`.type AS idol_type,
                        `Card`.rare AS rare, `Card`.{time} AS time, `Awaken`.id AS a_id, 
                        `Card`.aquire AS aquire, `Awaken`.aquire AS a_aquire,
@@ -256,6 +256,10 @@ def get_cards_info_local(local):
                     card['card_type'] = 'NML'
             else:
                 card['card_type'] = 'NML'
+            
+            skill_val = loads(card['skill_val']) if card['skill_val'] is not None else None
+            card['skill_cd'] = skill_val['cd'] if skill_val is not None else None
+            
     connection.close()    
     
     return cards
@@ -278,6 +282,7 @@ def get_cards_idols_local(local):
 
 def get_card_filters_local(local):
     sql_all_skills = "SELECT id, {name} AS name FROM `SkillType` WHERE {name} IS NOT NULL".format(**local)
+    sql_cards_skill_val = "SELECT skill_val FROM `Card` WHERE (skill_val IS NOT NULL)"
     
     filters = {}
     
@@ -334,10 +339,10 @@ def get_card_filters_local(local):
         # 技能類型
         cursor.execute(sql_all_skills)
         skills = cursor.fetchall()
-        skill_label = {'jp': 'スキル', 'as': '技能'}
+        skill_labels = {'jp': 'スキル', 'as': '技能'}
         filters['skill_type'] = {
             'type': 'check',
-            'label': skill_label[local['ver']],
+            'label': skill_labels[local['ver']],
             'enabled': True,
             'options': [{'val': skill['id'], 'text': skill['name']} for skill in skills],
             'selected': [],
@@ -345,14 +350,32 @@ def get_card_filters_local(local):
         }
         
         # Center效果類型
-        l_skill_label = {'jp': 'センター効果', 'as': 'Center效果'}
+        l_skill_labels = {'jp': 'センター効果', 'as': 'Center效果'}
         filters['l_skill_type'] = {
             'type': 'check',
-            'label': l_skill_label[local['ver']],
+            'label': l_skill_labels[local['ver']],
             'enabled': True,
             'options': [{'val': l_skill_type['val'], 'text': l_skill_type[local['ver']]} for l_skill_type in l_skill_types],
             'selected': [],
             'key': 'l_skill_type',
+        }
+        
+        # 技能 cd
+        cursor.execute(sql_cards_skill_val)
+        cards = cursor.fetchall()
+        
+        skill_cds = [loads(card['skill_val']).pop('cd', None) for card in cards]
+        skill_cds = [val for val in skill_cds if val is not None]
+        skill_cds = list(set(skill_cds))
+        
+        skill_cd_labels = {'jp': 'スキルクールタイム', 'as': '技能冷卻時間'}
+        filters['skill_cd'] = {
+            'type': 'check',
+            'label': skill_cd_labels[local['ver']],
+            'enabled': True,
+            'options': [{'val': skill_cd, 'text': str(skill_cd) + ' 秒'} for skill_cd in skill_cds],
+            'selected': [],
+            'key': 'skill_cd',
         }
         
     connection.close()
