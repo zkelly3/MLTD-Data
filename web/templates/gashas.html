@@ -19,14 +19,14 @@
   </ol>
 </nav>
 </div>
-<div class="row g-1">
-  <div class="col-lg-8" v-for="(attr, key) in filters"><div class="input-group">
+<div class="row g-1 mb-2" v-for="(attr, key) in filters">
+  <div class="col"><div class="input-group">
       <div class="input-group-text">
         <input class="form-check-input me-1" type="checkbox" :id="'check-'+key" v-model="attr.enabled" />
         <label class="form-check-label" for="'check-'+key">{{ attr.label }}</label>
       </div>
       <input class="form-control" type="text" v-if="attr.type === 'search'" v-model="attr.value" placeholder="請輸入卡池名稱"/>
-      <div class="input-group-text" v-if="attr.type === 'check'">
+      <div class="input-group-text" style="backgroundColor: white;" v-if="attr.type === 'check'">
         <div class="form-check me-2" v-for="opt in shownOptions(attr.options)">
           <input class="form-check-input" type="checkbox" :value="opt.val" :id="'check-'+opt.val" v-model="attr.selected">
           <label class="form-check-label" :for="'check-'+opt.val">

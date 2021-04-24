@@ -37,7 +37,7 @@
   </div></div>
 </div>
 <div class="row g-0"><div class="col"><div class="container-fluid">
-    <my-tr><my-th :style="styleList">技能</my-th><my-td>{{ shown.skill.type.name }}<b>{{ shown.skill.name }}</b><br>{{ shown.skill.description }}</my-td></my-tr>
+    <my-tr><my-th :style="styleList">技能</my-th><my-td><b class="align-middle">{{ shown.skill.name }}</b><span class="badge bg-info rounded-pill ms-1 align-middle">{{ shown.skill.type.name }}</span><br>{{ shown.skill.description }}</my-td></my-tr>
     <my-tr><my-th :style="styleList">背景敘述</my-th><my-td>{{ shown.flavor }}</my-td></my-tr>
   </div>
 </div></div>
