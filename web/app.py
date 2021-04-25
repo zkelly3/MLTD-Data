@@ -884,22 +884,22 @@ def home_page():
 @app.route("/idols")
 def idols_page():
     idols = get_idols_info()
-    return render_template('idols.html', idols=dumps(idols, ensure_ascii=False))
+    return render_template('vue/idols.html', title='偶像列表', jsons={'idols': dumps(idols, ensure_ascii=False)})
 
 @app.route("/events")
 def events_page():
     events, types = get_events_info()
-    return render_template('events.html', events=dumps(events, ensure_ascii=False), types=dumps(types, ensure_ascii=False))
+    return render_template('vue/events.html', title='活動列表', jsons={'events': dumps(events, ensure_ascii=False), 'types': dumps(types, ensure_ascii=False)})
 
 @app.route("/gashas")
 def gashas_page():
     gashas, types = get_gashas_info()
-    return render_template('gashas.html', gashas=dumps(gashas, ensure_ascii=False), types=dumps(types, ensure_ascii=False))
+    return render_template('vue/gashas.html', title='卡池列表', jsons={'gashas': dumps(gashas, ensure_ascii=False), 'types': dumps(types, ensure_ascii=False)})
 
 @app.route("/cards")
 def cards_page():
     cards, filters, sorts, idols = get_cards_info()
-    return render_template('cards.html', cards=dumps(cards, ensure_ascii=False), filters=dumps(filters, ensure_ascii=False), sorts=dumps(sorts, ensure_ascii=False), idols=dumps(idols, ensure_ascii=False))
+    return render_template('vue/cards.html', title='卡片列表', jsons={'cards': dumps(cards, ensure_ascii=False), 'filters': dumps(filters, ensure_ascii=False), 'sorts': dumps(sorts, ensure_ascii=False), 'idols': dumps(idols, ensure_ascii=False)})
 
 @app.route("/idol/<int:idol_id>")
 def idol_page(idol_id):
@@ -926,7 +926,7 @@ def card_page(card_id):
         page_title = rarity[card[0]['rare']] + ' ' + card[0]['name']
     else:
         page_title = rarity[card[1]['rare']] + ' ' + card[1]['name']
-    return render_template('card.html', title=page_title, card=dumps(card, ensure_ascii=False))
+    return render_template('vue/card.html', title=page_title, jsons={'card': dumps(card, ensure_ascii=False)})
 
 @app.route("/event/<int:event_type>/<int:event_id>")
 def event_page(event_type, event_id):
@@ -952,7 +952,7 @@ def gasha_page(gasha_id):
         page_title = gasha[0]['name']
     else:
         page_title = gasha[1]['name']
-    return render_template('gasha.html', title=page_title, gasha=dumps(gasha, ensure_ascii=False))
+    return render_template('vue/gasha.html', title=page_title, jsons={'gasha': dumps(gasha, ensure_ascii=False)})
 
 @app.errorhandler(404)
 def page_not_found(unused_error):

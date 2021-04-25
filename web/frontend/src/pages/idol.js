@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import IdolPage from '../IdolPage.vue'
+import IdolPage from '../components/IdolPage.vue'
 import { deleteNull, toDate, toDateString } from '../general'
 
 function fixData(idol, ver) {

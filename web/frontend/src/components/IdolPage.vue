@@ -1,61 +1,61 @@
 <template>
 <MainPage>
-<template v-slot:navbar>
-<button class="btn btn-outline-light ms-auto" v-on:click="changeLanguage()" :disabled="notBoth">{{ panelWord }}</button>
-</template>
+  <template v-slot:navbar>
+  <button class="btn btn-outline-light ms-auto" v-on:click="changeLanguage()" :disabled="notBoth">{{ panelWord }}</button>
+  </template>
 
-<div class="row">
-<nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="/idols">所有偶像</a></li>
-    <li class="breadcrumb-item active" aria-current="page">{{ shown.info.name }}</li>
-  </ol>
-</nav>
-</div>
-<div id="info" class="card mb-3" style="max-width: 450px">
-  <div class="row g-0">
-    <div class="col-md-4">
-      <img :src="shown.info.img_url"/>
-    </div>
-    <div class="col-md-8">
-      <div class="card-body">
-        <div class="row">
-          <div class="col"><b>姓名</b> {{ shown.info.name }} (CV: {{ shown.info.CV }})</div>
-        </div>
-        <div class="row">
-          <div class="col"><b>陣營</b> {{ shown.info.idol_type }}</div>
-        </div>
-        <div class="row">
-          <div class="col"><b>年齡</b> {{ shown.info.age }}</div>
-        </div>
-        <div class="row">
-          <div class="col"><b>身高</b> {{ shown.info.height }}</div>
-        </div>
-        <div class="row">
-          <div class="col"><b>體重</b> {{ shown.info.weight }}</div>
+  <div class="row">
+  <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/idols">所有偶像</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ shown.info.name }}</li>
+    </ol>
+  </nav>
+  </div>
+  <div id="info" class="card mb-3" style="max-width: 450px">
+    <div class="row g-0">
+      <div class="col-md-4">
+        <img :src="shown.info.img_url"/>
+      </div>
+      <div class="col-md-8">
+        <div class="card-body">
+          <div class="row">
+            <div class="col"><b>姓名</b> {{ shown.info.name }} (CV: {{ shown.info.CV }})</div>
+          </div>
+          <div class="row">
+            <div class="col"><b>陣營</b> {{ shown.info.idol_type }}</div>
+          </div>
+          <div class="row">
+            <div class="col"><b>年齡</b> {{ shown.info.age }}</div>
+          </div>
+          <div class="row">
+            <div class="col"><b>身高</b> {{ shown.info.height }}</div>
+          </div>
+          <div class="row">
+            <div class="col"><b>體重</b> {{ shown.info.weight }}</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
-<ul class="nav nav-tabs">
-  <li class="nav-item"><a class="nav-link active" href="#">卡片</a></li>
-</ul>
-<table id="cards" class="table align-middle">
-  <tr v-for="card in shown.cards" :key="card.name">
-    <td><a :href="card.url">
-      <div class="card_icon me-2" :class="cardClass(card.rare)">
-        <img :src="card.img_url"/>
-      </div>{{ card.name }}
-    </a></td>
-    <td>{{ card.time }}</td>
-  </tr>
-</table>
-</MainPage>
+  <ul class="nav nav-tabs">
+    <li class="nav-item"><a class="nav-link active" href="#">卡片</a></li>
+  </ul>
+  <table id="cards" class="table align-middle">
+    <tr v-for="card in shown.cards" :key="card.name">
+      <td><a :href="card.url">
+        <div class="card_icon me-2" :class="cardClass(card.rare)">
+          <img :src="card.img_url"/>
+        </div>{{ card.name }}
+      </a></td>
+      <td>{{ card.time }}</td>
+    </tr>
+  </table>
+  </MainPage>
 </template>
 
 <script>
-import MainPage from './components/MainPage.vue'
+import MainPage from './MainPage.vue'
 
 export default {
   name: 'IdolPage',

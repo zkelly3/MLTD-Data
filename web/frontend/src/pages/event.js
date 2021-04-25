@@ -1,10 +1,6 @@
 import { createApp } from 'vue'
-import EventPage from '../EventPage.vue'
-import { toDate, toDateString } from '../general'
-
-function standby(obj) {
-  obj.src = '/static/images/default/no_event_banner.jpg';
-}
+import EventPage from '../components/EventPage.vue'
+import { toDate, toDateString, toDateTimeString } from '../general'
 
 function fixData(gameEvent, ver) {
     if (!gameEvent) return;
@@ -44,7 +40,7 @@ function fixData(gameEvent, ver) {
     }
 }
 
-var event_json = JSON.parse($('#event_json').text());
+var event_json = JSON.parse(document.querySelector('#event_json').text);
 for (let i = 0; i < event_json.length; ++i) {
     fixData(event_json[i], i);
 }
