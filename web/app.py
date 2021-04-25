@@ -104,7 +104,7 @@ def get_idols_info():
 def get_events_info_local(local):
     pre_sql_all_events_columns = """SELECT id, {name} AS name,
                                     '{type_id}' AS type_id, '{event_abbr}' AS event_abbr,
-                                    {start} AS start, {over} AS over FROM `{event}`
+                                    {start} AS start, {over} AS `over` FROM `{event}`
                                     WHERE {start} IS NOT NULL"""
     
     tz_info = timezone(timedelta(hours=local['ver_time']))
@@ -157,7 +157,7 @@ def get_events_info():
 
 def get_gashas_info_local(local):
     sql_all_gashas = """SELECT id, {name} AS name, type AS type_id, 
-                        {start} AS start, {over} AS over FROM `Gasha`
+                        {start} AS start, {over} AS `over` FROM `Gasha`
                         WHERE {start} IS NOT NULL
                         ORDER BY {start} DESC""".format(**local)
     
@@ -460,13 +460,13 @@ def get_idol_data(idol_id):
 
 def get_card_aquire_local(card, card_id, aquire_id, local, cursor):
     sql_gasha = """SELECT Gasha.id AS id, Gasha.{name} AS name,
-                   Gasha.{start} AS start, Gasha.{over} AS over, Gasha.type AS gasha_type
+                   Gasha.{start} AS start, Gasha.{over} AS `over`, Gasha.type AS gasha_type
                    FROM `GashaToCard` INNER JOIN `Gasha` ON GashaToCard.GID = Gasha.id
                    WHERE (GashaToCard.CID = %s AND Gasha.{start} IS NOT NULL)
                    ORDER BY Gasha.{start}""".format(**local)
-    sql_not_up = """SELECT id, {name} AS name, {start} AS start, {over} AS over, type AS gasha_type
+    sql_not_up = """SELECT id, {name} AS name, {start} AS start, {over} AS `over`, type AS gasha_type
                     FROM `Gasha` WHERE ({start} = %s AND NOT type = 5)""".format(**local)
-    pre_sql_event = """SELECT `{event}`.id AS id, {event}.{name} AS name, {event}.{start} AS start, {event}.{over} AS over{other_params}
+    pre_sql_event = """SELECT `{event}`.id AS id, {event}.{name} AS name, {event}.{start} AS start, {event}.{over} AS `over`{other_params}
                    FROM `{event_to_card}` INNER JOIN `{event}` ON {event_to_card}.EID = {event}.id
                    WHERE ({event_to_card}.CID = %s AND {event}.{start} IS NOT NULL)
                    ORDER BY {event}.{start}"""
@@ -663,7 +663,7 @@ def get_card_info(card_id):
 
 def get_event_info_local(event_type, event_id, local):
     pre_sql_event_info = """SELECT id, {name} AS name, 
-                            {start} AS start, {over} AS over, comment{other_params}
+                            {start} AS start, {over} AS `over`, comment{other_params}
                             FROM {event} WHERE (id = %s)"""
     pre_sql_event_card_pst = """SELECT `Card`.id AS id, `Card`.{name} AS name,
                                 `Card`.rare AS rare, `Idol`.type AS idol_type
@@ -799,7 +799,7 @@ def get_event_info(event_type, event_id):
 
 def get_gasha_info_local(gasha_id, local):
     sql_gasha_info = """SELECT id, {name} AS name, 
-                        {start} AS start, {over} AS over, type AS gasha_type, comment
+                        {start} AS start, {over} AS `over`, type AS gasha_type, comment
                         FROM `Gasha` WHERE (id = %s)""".format(**local)
     sql_general_pick_up = """SELECT `Card`.id AS id, `Card`.{name} AS name, `GashaToCard`.comment AS comment,
                             `Card`.rare AS rare, `Idol`.type AS idol_type FROM `GashaToCard`
