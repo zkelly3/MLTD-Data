@@ -12,8 +12,7 @@ web/*.status
 web/*.pid
 web/*.lock
 
-*.csv
-*.json
-*.txt
+/*.csv
+/*.json
+/*.txt
 web/static/images/*
-web/frontend/dist/
