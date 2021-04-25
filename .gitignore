@@ -16,3 +16,4 @@ web/*.lock
 *.json
 *.txt
 web/static/images/*
+web/frontend/dist/
