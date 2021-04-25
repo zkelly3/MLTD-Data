@@ -16,5 +16,5 @@ function get_pages(page_names) {
  */
 module.exports = {
   assetsDir: 'static/vue',
-  pages: get_pages(['idol']),
+  pages: get_pages(['idol', 'event']),
 }

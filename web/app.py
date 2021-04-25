@@ -939,7 +939,7 @@ def event_page(event_type, event_id):
         page_title = event[0]['name']
     else:
         page_title = event[1]['name']
-    return render_template('event.html', title=page_title, event=dumps(event, ensure_ascii=False))
+    return render_template('vue/event.html', title=page_title, jsons={'event': dumps(event, ensure_ascii=False)})
 
 @app.route("/gasha/<int:gasha_id>")
 def gasha_page(gasha_id):
