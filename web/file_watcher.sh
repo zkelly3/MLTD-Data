@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 trap "pkill -TERM -P $$" EXIT
-while inotifywait -e close_write -r static templates frontend/src; do
-    npm run build --prefix frontend
+while inotifywait -e close_write -r static templates frontend/dist; do
     uwsgi --reload uwsgi.pid
 done
