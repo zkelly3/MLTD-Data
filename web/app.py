@@ -913,7 +913,7 @@ def idol_page(idol_id):
     else:
         page_title = idol[1]['info']['name']
     
-    return render_template('vue/idol.html', title=page_title, idol=dumps(idol, ensure_ascii=False))
+    return render_template('vue/idol.html', title=page_title, jsons={'idol': dumps(idol, ensure_ascii=False)})
 
 @app.route("/card/<int:card_id>")
 def card_page(card_id):
