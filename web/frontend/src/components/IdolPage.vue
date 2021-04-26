@@ -41,7 +41,7 @@
   <ul class="nav nav-tabs">
     <li class="nav-item"><a class="nav-link active" href="#">卡片</a></li>
   </ul>
-  <table id="cards" class="table align-middle">
+  <table id="cards" class="table align-middle"><tbody>
     <tr v-for="card in shown.cards" :key="card.name">
       <td><a :href="card.url">
         <div class="card_icon me-2" :class="cardClass(card.rare)">
@@ -50,7 +50,7 @@
       </a></td>
       <td>{{ card.time }}</td>
     </tr>
-  </table>
+  </tbody></table>
   </MainPage>
 </template>
 
