@@ -146,24 +146,47 @@
 import MainPage from './MainPage.vue'
 import { toDate, toDateString } from '../general'
 
+function getDefaultSorts() {
+    return [{
+        'val': 'time',
+        'text': '',
+    }];
+}
+
+function getDefaultIdols() {
+    return {
+        '1': {
+            'id': 1,
+            'name': '',
+        },
+    }
+}
+
+function fixData(cards) {
+    for (let i in cards) {
+        cards[i].name = (!cards[i].name) ? '不明' : cards[i].name;
+    }    
+}
+
 export default {
     name: 'CardsPage',
     components: {
         MainPage,
     },
-    props: ['cards_json', 'filters_json', 'sorts_json', 'idols_json'],
+    inject: ['$api'],
+    props: [],
     data() {
         return {
-            cards: this.cards_json,
+            cards: [[], []],
             japanese: true,
             notBoth: false,
-            filters: this.filters_json,
+            filters: [{}, {}],
             sorts: {
                 sortKey: 'time',
                 reverse: true,
-                options: this.sorts_json,
+                options: [getDefaultSorts(), getDefaultSorts()],
             },
-            idols: this.idols_json,
+            idols: [getDefaultIdols(), getDefaultIdols()],
             paging: {
                 onePageList: [10, 20, 50, 100],
                 purPage: 20,
@@ -172,7 +195,23 @@ export default {
         };
     },
     created: function() {
-        this.initialize();
+        this.$api.getCardFilters().then((res) => {
+            this.filters = res.data;
+        });
+        this.$api.getCardSorts().then((res) => {
+            this.sorts.options = res.data;
+        });
+        this.$api.getCardIdols().then((res) => {
+            this.idols = res.data;
+        });
+        this.$api.getCards().then((res) => {
+            const tmpCards = res.data;
+            for (let i=0; i<tmpCards.length; ++i) {
+                fixData(tmpCards[i]);
+            }
+            this.cards = tmpCards;
+            this.initialize();
+        });
     },
     methods: {
         initialize: function() {

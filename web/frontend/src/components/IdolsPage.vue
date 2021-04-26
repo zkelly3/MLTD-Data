@@ -68,6 +68,21 @@
 
 <script>
 import MainPage from './MainPage.vue'
+import { deleteNull } from '../general'
+
+function fixData(idols) {
+    for (let i in idols) {
+        let idol = idols[i];
+        deleteNull(idol);
+        idols[i] = Object.assign({
+            name: '不明',
+            idol_type: '不明',
+            age: '不明',
+            height: '不明',
+            weight: '不明'
+        }, idol);
+    }    
+}
 
 function greater_equal(a, b) {
     return a >= b;
@@ -84,10 +99,11 @@ export default {
     components: {
         MainPage,
     },
-    props: ['idols_json'],
+    inject: ['$api'],
+    props: [],
         data() {
             return {
-                idols: this.idols_json,
+                idols: [[], []],
                 idolinfo: [{'text': '姓名', 'val': 'name'},
                     {'text': '陣營', 'val': 'idol_type'},
                     {'text': '年齡', 'val': 'age'},
@@ -122,7 +138,14 @@ export default {
             };
         },
         created: function() {
-            this.initialize();
+            this.$api.getIdols().then((res) => {
+                const tmpIdols = res.data;
+                for (let i=0; i<tmpIdols.length; ++i) {
+                    fixData(tmpIdols[i]);
+                }
+                this.idols = tmpIdols;
+                this.initialize();
+            });
         },
         methods: {
             initialize: function() {

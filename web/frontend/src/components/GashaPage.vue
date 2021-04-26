@@ -62,24 +62,61 @@
 </template>
 
 <script>
-import MainPage from './MainPage.vue';
+import MainPage from './MainPage.vue'
+import { toDate, toDateTimeString } from '../general'
+
+function getDefaultGasha() {
+    return {
+        name: '不明',
+        start: null,
+        over: null,
+        pick_up: [],
+        others: [],
+    };
+}
+
+function fixData(gasha, ver) {
+    if (!gasha) return;
+    
+    gasha.name = (!gasha.name) ? '不明' : gasha.name;
+    gasha.start = toDateTimeString(toDate(gasha.start), ver);
+    gasha.over = toDateTimeString(toDate(gasha.over), ver);
+    
+    for (let i in gasha.pick_up) {
+        let card = gasha.pick_up[i];
+        card.name = (!card.name) ? '不明' : card.name;
+    }
+    
+    for (let i in gasha.others) {
+        let card = gasha.others[i];
+        card.name = (!card.name) ? '不明' : card.name;
+    }
+}
 
 export default {
     name: 'GashaPage',
     components: {
         MainPage,
     },
-    props: ['gasha_json'],
+    inject: ['$api'],
+    props: ['gasha_id'],
     data() {
         return {
-            gasha: this.gasha_json,
+            gasha: [getDefaultGasha(), getDefaultGasha()],
             japanese: true,
             notBoth: false,
             defaultGasha: '/static/images/default/no_gasha_banner.png'
         };
     },
     created: function() {
-        this.initialize();
+        this.$api.getGasha(this.gasha_id).then((res)=> {
+            const tmpGasha = res.data;
+            for (let i=0; i<tmpGasha.length; ++i) {
+                fixData(tmpGasha[i], i);
+            }
+            this.gasha = tmpGasha;
+            this.initialize();
+        });
     },
     methods: {
         initialize: function() {

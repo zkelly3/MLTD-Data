@@ -85,7 +85,89 @@
 <script>
 import { h } from 'vue'
 import MainPage from './MainPage.vue'
-console.log(MainPage)
+import { deleteNull, toDate, toDateTimeString } from '../general'
+
+function getDefaultCard() {
+    return {
+        id: 0,
+        name: '不明',
+        awaken: null,
+        time: null,
+        flavor: '尚未更新',
+        idol: {
+            name: '不明',
+            url: '#',
+            color: '#ffffff',
+            idol_type: '不明'
+        },
+        aquire: {
+            type: '不明',
+            title: '尚未更新',
+        },
+        skill: {
+            type: {
+                id: 0,
+                name: '',
+            },
+            name: '',
+            description: '',
+        }
+    };
+}
+
+function fixData(card, ver) {
+    if (!card) return;
+    deleteNull(card);
+    card = Object.assign({
+        id: 0,
+        name: '不明',
+        awaken: null,
+        time: null,
+        flavor: '尚未更新'
+    }, card);
+    
+    deleteNull(card.idol);
+    card.idol = Object.assign({
+        name: '不明',
+        url: "#",
+        color: '#ffffff',
+        idol_type: '不明',
+    }, card.idol);
+    
+    deleteNull(card.aquire);
+    card.aquire = Object.assign({
+        type: '不明',
+        title: '尚未更新',
+    }, card.aquire);
+    
+    if (card.skill) deleteNull(card.skill);
+    card.skill = Object.assign({
+        type: {
+            'id': 0,
+            'name': ''
+        },
+        name: '',
+        description: ''
+    }, card.skill);
+    card.skill.type.name = (!card.skill.type.name) ? '' : card.skill.type.name;
+    
+    card.awakenWord = card.is_awaken ? '覺醒前' : '覺醒後';
+    card.awakenName = (!card.awaken || !card.awaken.name) ? '不明' : card.awaken.name;
+    card.time = toDateTimeString(toDate(card.time), ver);
+    
+    for (let i in card.gashas) {
+        let g = card.gashas[i];
+        g.start = toDateTimeString(toDate(g.start), ver);
+        g.over = toDateTimeString(toDate(g.over), ver);
+    }
+    
+    if (card.event) {
+        card.event.start = toDateTimeString(toDate(card.event.start), ver);
+        card.event.over = toDateTimeString(toDate(card.event.over), ver);
+    }
+    return card;
+}
+
 
 const MyTr = {
     name: 'MyTr',
@@ -116,17 +198,25 @@ export default {
         MyTh,
         MyTd,
     },
-    props: ['card_json'],
+    inject: ['$api'],
+    props: ['card_id'],
     data() {
         return {
-            card: this.card_json,
+            card: [getDefaultCard(), getDefaultCard()],
             japanese: true,
             notBoth: false,
             gashaTitles: ['類型', '名稱', '開始', '結束']
         };
     },
     created: function() {
-        this.initialize();
+        this.$api.getCard(this.card_id).then((res)=> {
+            const tmpCard = res.data;
+            for (let i=0; i<tmpCard.length; ++i) {
+                tmpCard[i] = fixData(tmpCard[i], i);
+            }
+            this.card = tmpCard;
+            this.initialize();
+        })
     },
     methods: {
         initialize: function() {

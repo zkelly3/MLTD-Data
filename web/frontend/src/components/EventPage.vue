@@ -95,23 +95,78 @@
 
 <script>
 import MainPage from './MainPage.vue'
+import { toDate, toDateString, toDateTimeString } from '../general'
+
+function getDefaultEvent() {
+    return {
+        name: '不明',
+        start: null,
+        over: null,
+    }
+}
+
+function fixData(gameEvent, ver) {
+    if (!gameEvent) return;
+    
+    gameEvent.name = (!gameEvent.name) ? '不明' : gameEvent.name;
+    gameEvent.startTime = toDate(gameEvent.start);
+    gameEvent.start = toDateTimeString(gameEvent.startTime, ver);
+    gameEvent.over = toDateTimeString(toDate(gameEvent.over), ver);
+    
+    if (gameEvent.cards !== null && Array.isArray(gameEvent.cards)) {
+        for (let i in gameEvent.cards) {
+            let card = gameEvent.cards[i];
+            card.name = (!card.name) ? '不明' : card.name;
+        }
+    }
+    else if (gameEvent.event_abbr == 'ANN') {
+        for (let i in gameEvent.cards) {
+            for (let j in gameEvent.cards[i].data) {
+                let card = gameEvent.cards[i].data[j];
+                card.name = (!card.name) ? '不明' : card.name;
+            }
+        }
+    }
+    else if (gameEvent.cards !== null) {
+        for (let i in gameEvent.cards) {
+            for (let j in gameEvent.cards[i]) {
+                let card = gameEvent.cards[i][j];
+                card.name = (!card.name) ? '不明' : card.name;
+            }
+        }
+    }
+    
+    if (gameEvent.event_abbr === 'ANN') {
+        for (let i in gameEvent.cards) {
+            gameEvent.cards[i].mission_date = toDateString(toDate(gameEvent.cards[i].mission_date), ver);
+        }
+    }
+}
 
 export default {
     name: 'EventPage',
     components: {
         MainPage,
     },
-    props: ['event_json'],
+    inject: ['$api'],
+    props: ['event_type', 'event_id'],
     data() {
         return {
-            gameEvent: this.event_json,
+            gameEvent: [getDefaultEvent(), getDefaultEvent()],
             japanese: true,
             notBoth: false,
             defaultEvent: '/static/images/default/no_event_banner.jpg'
         };
     },
     created: function() {
-        this.initialize();
+        this.$api.getEvent(this.event_type, this.event_id).then((res) => {
+            const tmpEvent = res.data;
+            for (let i=0; i<tmpEvent.length; ++i) {
+                fixData(tmpEvent[i], i);
+            }
+            this.gameEvent = tmpEvent;
+            this.initialize();
+        });
     },
     methods: {
         initialize: function() {

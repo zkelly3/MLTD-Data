@@ -61,16 +61,26 @@
 
 <script>
 import MainPage from './MainPage.vue'
+import { toDate, toDateString } from '../general'
+
+function fixData(gashas, ver) {
+    for (let i in gashas) {
+        gashas[i].name = (!gashas[i].name) ? '不明' : gashas[i].name;
+        gashas[i].start = toDateString(toDate(gashas[i].start), ver);
+        gashas[i].over = toDateString(toDate(gashas[i].over), ver);
+    }    
+}
 
 export default {
     name: 'GashasPage',
     components: {
         MainPage,
     },
-    props: ['gashas_json', 'types_json'],
+    inject: ['$api'],
+    props: [],
     data() {
         return {
-            gashas: this.gashas_json,
+            gashas: [[], []],
             japanese: true,
             notBoth: false,
             filters: {
@@ -78,7 +88,7 @@ export default {
                     'type': 'check',
                     'label': '卡池類型',
                     'enabled': true,
-                    'options': this.types_json,
+                    'options': [[], []],
                     'selected': [],
                 },
                 'gashaName': {
@@ -96,18 +106,25 @@ export default {
         };
     },
     created: function() {
-        this.initialize();
-    },
-    methods: {
-        initialize: function() {
-            if (!this.gashas[0] || !this.gashas[1]) this.notBoth = true;
-            if (!this.gashas[0]) this.japanese = false;
+        this.$api.getGashaTypes().then((res) => {
+            this.filters.gashaType.options = res.data;
             
             for (let i in this.filters.gashaType.options[0]) {
                 let val = this.filters.gashaType.options[0][i].val;
                 if (val !== 'SPC') this.filters.gashaType.selected.push(val);
             }
-        },
+        });
+        this.$api.getGashas().then((res) => {
+            const tmpGashas = res.data;
+            for (let i=0; i<tmpGashas.length; ++i) {
+                fixData(tmpGashas[i], i);
+            }
+            this.gashas = tmpGashas;
+            if (!this.gashas[0] || !this.gashas[1]) this.notBoth = true;
+            if (!this.gashas[0]) this.japanese = false;
+        });
+    },
+    methods: {
         changeLanguage: function() {
             this.japanese = !this.japanese;
         },

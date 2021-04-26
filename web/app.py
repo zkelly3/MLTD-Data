@@ -884,22 +884,67 @@ def home_page():
 @app.route("/idols")
 def idols_page():
     idols = get_idols_info()
-    return render_template('vue/idols.html', title='偶像列表', jsons={'idols': dumps(idols, ensure_ascii=False)})
+    return render_template('vue/idols.html', title='偶像列表', jsons={})
+
+@app.route("/api/idols")
+def idols_api():
+    idols = get_idols_info()
+    return dumps(idols)
 
 @app.route("/events")
 def events_page():
     events, types = get_events_info()
-    return render_template('vue/events.html', title='活動列表', jsons={'events': dumps(events, ensure_ascii=False), 'types': dumps(types, ensure_ascii=False)})
+    return render_template('vue/events.html', title='活動列表', jsons={})
+
+@app.route("/api/events")
+def events_api():
+    events, types = get_events_info()
+    return dumps(events, ensure_ascii=False)
+
+@app.route("/api/events/types")
+def event_types_api():
+    events, types = get_events_info()
+    return dumps(types, ensure_ascii=False)
 
 @app.route("/gashas")
 def gashas_page():
     gashas, types = get_gashas_info()
-    return render_template('vue/gashas.html', title='卡池列表', jsons={'gashas': dumps(gashas, ensure_ascii=False), 'types': dumps(types, ensure_ascii=False)})
+    return render_template('vue/gashas.html', title='卡池列表', jsons={})
+
+@app.route("/api/gashas")
+def gashas_api():
+    gashas, types = get_gashas_info()
+    return dumps(gashas, ensure_ascii=False)
+
+@app.route("/api/gashas/types")
+def gasha_types_api():
+    gashas, types = get_gashas_info()
+    return dumps(types, ensure_ascii=False)
 
 @app.route("/cards")
 def cards_page():
     cards, filters, sorts, idols = get_cards_info()
     return render_template('vue/cards.html', title='卡片列表', jsons={'cards': dumps(cards, ensure_ascii=False), 'filters': dumps(filters, ensure_ascii=False), 'sorts': dumps(sorts, ensure_ascii=False), 'idols': dumps(idols, ensure_ascii=False)})
+
+@app.route("/api/cards")
+def cards_api():
+    cards, filters, sorts, idols = get_cards_info()
+    return dumps(cards, ensure_ascii=False)
+
+@app.route("/api/cards/filters")
+def card_filters_api():
+    cards, filters, sorts, idols = get_cards_info()
+    return dumps(filters, ensure_ascii=False)
+
+@app.route("/api/cards/sorts")
+def card_sorts_api():
+    cards, filters, sorts, idols = get_cards_info()
+    return dumps(sorts, ensure_ascii=False)
+
+@app.route("/api/cards/idols")
+def card_idols_api():
+    cards, filters, sorts, idols = get_cards_info()
+    return dumps(idols, ensure_ascii=False)
 
 @app.route("/idol/<int:idol_id>")
 def idol_page(idol_id):
@@ -913,7 +958,16 @@ def idol_page(idol_id):
     else:
         page_title = idol[1]['info']['name']
     
-    return render_template('vue/idol.html', title=page_title, jsons={'idol': dumps(idol, ensure_ascii=False)})
+    return render_template('vue/idol.html', title=page_title, jsons={'idol_id': idol_id})
+
+@app.route("/api/idol/<int:idol_id>")
+def idol_api(idol_id):
+    try:
+        idol = get_idol_data(idol_id)
+    except NotFoundError:
+        abort(404)
+
+    return dumps(idol, ensure_ascii=False)
 
 @app.route("/card/<int:card_id>")
 def card_page(card_id):
@@ -926,7 +980,15 @@ def card_page(card_id):
         page_title = rarity[card[0]['rare']] + ' ' + card[0]['name']
     else:
         page_title = rarity[card[1]['rare']] + ' ' + card[1]['name']
-    return render_template('vue/card.html', title=page_title, jsons={'card': dumps(card, ensure_ascii=False)})
+    return render_template('vue/card.html', title=page_title, jsons={'card_id': card_id})
+
+@app.route("/api/card/<int:card_id>")
+def card_api(card_id):
+    try:
+        card = get_card_info(card_id)
+    except NotFoundError:
+        abort(404)
+    return dumps(card, ensure_ascii=False)
 
 @app.route("/event/<int:event_type>/<int:event_id>")
 def event_page(event_type, event_id):
@@ -939,7 +1001,15 @@ def event_page(event_type, event_id):
         page_title = event[0]['name']
     else:
         page_title = event[1]['name']
-    return render_template('vue/event.html', title=page_title, jsons={'event': dumps(event, ensure_ascii=False)})
+    return render_template('vue/event.html', title=page_title, jsons={'event_type': event_type, 'event_id': event_id})
+
+@app.route("/api/event/<int:event_type>/<int:event_id>")
+def event_api(event_type, event_id):
+    try:
+        event = get_event_info(event_type, event_id)
+    except NotFoundError:
+        abort(404)
+    return dumps(event, ensure_ascii=False)
 
 @app.route("/gasha/<int:gasha_id>")
 def gasha_page(gasha_id):
@@ -952,7 +1022,15 @@ def gasha_page(gasha_id):
         page_title = gasha[0]['name']
     else:
         page_title = gasha[1]['name']
-    return render_template('vue/gasha.html', title=page_title, jsons={'gasha': dumps(gasha, ensure_ascii=False)})
+    return render_template('vue/gasha.html', title=page_title, jsons={'gasha_id': gasha_id})
+
+@app.route("/api/gasha/<int:gasha_id>")
+def gasha_id(gasha_id):
+    try:
+        gasha = get_gasha_info(gasha_id)
+    except NotFoundError:
+        abort(404)
+    return dumps(gasha, ensure_ascii=False)
 
 @app.errorhandler(404)
 def page_not_found(unused_error):

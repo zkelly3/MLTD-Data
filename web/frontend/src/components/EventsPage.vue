@@ -57,16 +57,26 @@
 
 <script>
 import MainPage from './MainPage.vue'
+import { toDate, toDateString } from '../general'
+
+function fixData(events, ver) {
+    for (let i in events) {
+        events[i].name = (!events[i].name) ? '不明' : events[i].name;
+        events[i].start = toDateString(toDate(events[i].start), ver);
+        events[i].over = toDateString(toDate(events[i].over), ver);
+    }    
+}
 
 export default {
     name: 'EventsPage',
     components: {
         MainPage,
     },
-    props: ['events_json', 'types_json'],
+    inject: ['$api'],
+    props: [],
     data() {
         return {
-            events: this.events_json,
+            events: [[], []],
             japanese: true,
             notBoth: false,
             filters: {
@@ -74,7 +84,7 @@ export default {
                     'type': 'option',
                     'label': '活動類型',
                     'enabled': false,
-                    'options': this.types_json,
+                    'options': [[], []],
                     'selected': '',
                 },
                 eventName: {
@@ -92,7 +102,17 @@ export default {
         };
     },
     created: function() {
-        this.initialize();
+        this.$api.getEventTypes().then((res) => {
+            this.filters.eventType.options = res.data;
+        });
+        this.$api.getEvents().then((res) => {
+            const tmpEvents = res.data;
+            for (let i=0; i<tmpEvents.length; ++i) {
+                fixData(tmpEvents[i], i);
+            }
+            this.events = tmpEvents;
+            this.initialize();
+        });
     },
     methods: {
         initialize: function() {
