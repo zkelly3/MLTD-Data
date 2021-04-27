@@ -4,16 +4,16 @@
       <a class="navbar-brand">ポンコマス</a>
       <ul class="navbar-nav">
         <li class="nav-item">
-          <a class="nav-link" aria-current="page" href="/idols">偶像</a>
+          <router-link class="nav-link" aria-current="page" to="/idols">偶像</router-link>
         </li>
         <li class="nav-item">
-          <a class="nav-link" aria-current="page" href="/cards">卡片</a>
+          <router-link class="nav-link" aria-current="page" to="/cards">卡片</router-link>
         </li>
         <li class="nav-item">
-          <a class="nav-link" aria-current="page" href="/events">活動</a>
+          <router-link class="nav-link" aria-current="page" to="/events">活動</router-link>
         </li>
         <li class="nav-item">
-          <a class="nav-link" aria-current="page" href="/gashas">卡池</a>
+          <router-link class="nav-link" aria-current="page" to="/gashas">卡池</router-link>
         </li>
       </ul>
       <slot name="navbar"></slot>

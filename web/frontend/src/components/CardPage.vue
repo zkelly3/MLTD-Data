@@ -7,7 +7,7 @@
   <div class="row">
   <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/cards">所有卡片</a></li>
+      <li class="breadcrumb-item"><router-link to="/cards">所有卡片</router-link></li>
       <li class="breadcrumb-item active" aria-current="page">{{ shown.name }}</li>
     </ol>
   </nav>
@@ -18,12 +18,12 @@
     </div>
     <div class="col-xl-10 col-lg-9"><div class="container-fluid">
       <MyTr><MyTh :style="styleList">名稱</MyTh><MyTd>{{ shown.name }}</MyTd></MyTr>
-      <MyTr><MyTh :style="styleList">所屬偶像</MyTh><MyTd><a :href="shown.idol.url"> {{ shown.idol.name }}</a></MyTd></MyTr>
-      <MyTr><MyTh :style="styleList">取得方式</MyTh><MyTd><b>{{ shown.aquire.type }}</b><br><a :href="shown.from_url" v-if="shown.has_from_url">{{ shown.aquire.title }}</a><span v-else>{{ shown.aquire.title }}</span></MyTd></MyTr>
-      <MyTr><MyTh :style="styleList">{{ shown.awakenWord }}</MyTh><MyTd v-if="shown.awaken !== null"><a :href="shown.awaken.url">
+      <MyTr><MyTh :style="styleList">所屬偶像</MyTh><MyTd><router-link :to="shown.idol.url"> {{ shown.idol.name }}</router-link></MyTd></MyTr>
+      <MyTr><MyTh :style="styleList">取得方式</MyTh><MyTd><b>{{ shown.aquire.type }}</b><br><router-link :to="shown.from_url" v-if="shown.has_from_url">{{ shown.aquire.title }}</router-link><span v-else>{{ shown.aquire.title }}</span></MyTd></MyTr>
+      <MyTr><MyTh :style="styleList">{{ shown.awakenWord }}</MyTh><MyTd v-if="shown.awaken !== null"><router-link :to="shown.awaken.url">
       <div class="card_icon me-2" :class="cardClass(shown.rare)">
         <img :src="shown.awaken.img_url"/>
-      </div>{{ shown.awakenName }}</a>
+      </div>{{ shown.awakenName }}</router-link>
       </MyTd><MyTd v-else>尚未更新</MyTd></MyTr>
       <MyTr><MyTh :style="styleList">實裝時間</MyTh><MyTd>{{ shown.time }}</MyTd></MyTr>
     </div></div>
@@ -39,7 +39,7 @@
       <th v-for="gashaTitle in gashaTitles" :key="gashaTitle">{{ gashaTitle }}</th>
       <tr v-for="gasha in shown.gashas" :key="gasha.start">
         <td>{{ gasha.gasha_type }}</td>
-        <td><a :href="gasha.url">{{ gasha.name }}</a></td>
+        <td><router-link :to="gasha.url">{{ gasha.name }}</router-link></td>
         <td>{{ gasha.start }}</td>
         <td>{{ gasha.over }}</td>
       </tr>
@@ -50,7 +50,7 @@
     <table id="event" class="table"><tbody>
       <tr>
         <td>{{ shown.event.event_type }}</td>
-        <td><a :href="shown.event.url">{{ shown.event.name }}</a></td>
+        <td><router-link :to="shown.event.url">{{ shown.event.name }}</router-link></td>
         <td>{{ shown.event.start }}</td>
         <td>{{ shown.event.over }}</td>
       </tr>

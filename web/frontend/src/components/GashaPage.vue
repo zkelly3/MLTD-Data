@@ -7,7 +7,7 @@
   <div class="row">
     <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';">
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="/gashas">所有卡池</a></li>
+        <li class="breadcrumb-item"><router-link to="/gashas">所有卡池</router-link></li>
         <li class="breadcrumb-item active" aria-current="page">{{ shown.name }}</li>
       </ol>
     </nav>
@@ -25,11 +25,11 @@
     <h4>Pick Up 對象</h4>
     <table class="table align-middle"><tbody>
       <tr v-for="card in shown.pick_up" :key="card.name">
-        <td><a :href="card.url">
+        <td><router-link :to="card.url">
           <div class="card_icon me-2" :class="cardClass(card)">
             <img :src="card.img_url"/>
           </div>{{ card.name }}
-        </a></td>
+        </router-link></td>
         <td>{{ card.comment }}</td>
       </tr>
     </tbody></table>
@@ -38,11 +38,11 @@
     <h4>其餘活動對象卡片</h4>
     <div class="row">
       <div class="col-lg-4 mb-2" v-for="card in shown.others" :key="card.name">
-        <a :href="card.url">
+        <router-link :to="card.url">
           <div class="card_icon me-2" :class="cardClass(card)">
             <img :src="card.img_url"/>
           </div>{{ card.name }}
-        </a>
+        </router-link>
       </div>
     </div>
   </div></div>
@@ -50,11 +50,11 @@
     <h4>同時實裝在卡池的卡片</h4>
     <div class="row">
       <div class="col-lg-4 mb-2" v-for="card in shown.others" :key="card.name">
-        <a :href="card.url">
+        <router-link :to="card.url">
           <div class="card_icon me-2" :class="cardClass(card)">
             <img :src="card.img_url"/>
           </div>{{ card.name }}
-        </a>
+        </router-link>
       </div>
     </div>
   </div></div>

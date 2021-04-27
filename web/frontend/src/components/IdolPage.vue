@@ -7,7 +7,7 @@
   <div class="row">
     <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';">
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="/idols">所有偶像</a></li>
+        <li class="breadcrumb-item"><router-link to="/idols">所有偶像</router-link></li>
         <li class="breadcrumb-item active" aria-current="page">{{ shown.info.name }}</li>
       </ol>
     </nav>
@@ -44,11 +44,11 @@
   <table id="cards" class="table align-middle">
     <tbody>
       <tr v-for="card in shown.cards" :key="card.name">
-        <td><a :href="card.url">
+        <td><router-link :to="card.url">
             <div class="card_icon me-2" :class="cardClass(card.rare)">
               <img :src="card.img_url" />
             </div>{{ card.name }}
-          </a></td>
+          </router-link></td>
         <td>{{ card.time }}</td>
       </tr>
     </tbody>

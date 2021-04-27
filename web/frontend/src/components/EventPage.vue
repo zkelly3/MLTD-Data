@@ -7,7 +7,7 @@
   <div class="row">
   <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/events">所有活動</a></li>
+      <li class="breadcrumb-item"><router-link to="/events">所有活動</router-link></li>
       <li class="breadcrumb-item active" aria-current="page">{{ shown.name }}</li>
     </ol>
   </nav>
@@ -21,55 +21,55 @@
       <tr v-if="shown.event_abbr == 'PST'"><th>上位 (排名報酬) 卡</th><td>
         <div class="row gy-2 row-cols-1">
           <div class="col" v-for="card in shown.cards['0']" :key="card.name">
-            <a :href="card.url">
+            <router-link :to="card.url">
               <div class="card_icon me-2" :class="cardClass(card)">
                 <img :src="card.img_url"/>
               </div>{{ card.name }}
-            </a>
+            </router-link>
           </div>
         </div>
       </td></tr>
       <tr v-if="shown.event_abbr == 'PST'"><th>下位 (累積報酬) 卡</th><td>
         <div class="row gy-2 row-cols-1">
           <div class="col" v-for="card in shown.cards['1']" :key="card.name">
-            <a :href="card.url">
+            <router-link :to="card.url">
               <div class="card_icon me-2" :class="cardClass(card)">
                 <img :src="card.img_url"/>
               </div>{{ card.name }}
-            </a>
+            </router-link>
           </div>
         </div>
       </td></tr>
       <tr v-if="shown.event_abbr == 'PST'"><th>其他報酬卡</th><td>
         <div class="row gy-2 row-cols-1">
           <div class="col" v-for="card in shown.cards['2']" :key="card.name">
-            <a :href="card.url">
+            <router-link :to="card.url">
               <div class="card_icon me-2" :class="cardClass(card)">
                 <img :src="card.img_url"/>
               </div>{{ card.name }}
-            </a>
+            </router-link>
           </div>
         </div>
       </td></tr>
       <tr v-if="shown.event_abbr == 'COL'"><th>累積報酬卡</th><td>
         <div class="row gy-2 row-cols-1">
           <div class="col" v-for="card in shown.cards" :key="card.name">
-            <a :href="card.url">
+            <router-link :to="card.url">
               <div class="card_icon me-2" :class="cardClass(card)">
                 <img :src="card.img_url"/>
               </div>{{ card.name }}
-            </a>
+            </router-link>
           </div>
         </div>
       </td></tr>
       <tr v-if="shown.event_abbr == 'OTH'"><th>活動報酬卡</th><td>
         <div class="row gy-2 row-cols-1">
           <div class="col" v-for="card in shown.cards" :key="card.name">
-            <a :href="card.url">
+            <router-link :to="card.url">
               <div class="card_icon me-2" :class="cardClass(card)">
                 <img :src="card.img_url"/>
               </div>{{ card.name }}
-            </a>
+            </router-link>
           </div>
         </div>
       </td></tr>
@@ -80,11 +80,11 @@
       <table class="table align-middle" id="event"><tbody>
         <tr v-for="(val, key) in shown.cards" :key="key">
           <th>{{ val.mission_date }}</th><td v-for="card in val.data" :key="card.name">
-          <a :href="card.url" :title="card.name">
+          <router-link :to="card.url" :title="card.name">
             <div class="card_icon me-2" :class="cardClass(card)">
               <img :src="card.img_url"/>
             </div>{{ card.idol_name }}
-          </a>
+          </router-link>
           </td>
         </tr>
       </tbody></table>

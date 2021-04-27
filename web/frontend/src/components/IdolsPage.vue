@@ -40,7 +40,7 @@
         </thead>
         <tbody>
             <tr v-for="idol in sortedIdols" :key="idol.name">
-                <td><a :href="idol.url"><img class="idol_icon me-2" :src="idol.img_url" />{{ idol.name }}</a></td>
+                <td><router-link :to="idol.url"><img class="idol_icon me-2" :src="idol.img_url" />{{ idol.name }}</router-link></td>
                 <td>{{ idol.idol_type }}</td>
                 <td>{{ idol.age }}</td>
                 <td>{{ idol.height }}</td>
@@ -52,9 +52,9 @@
     <div class="row row-cols-lg-6 row-cols-md-4 row-cols-2" v-if="viewMode == 'card_view'">
         <div class="col mt-3" v-for="idol in sortedIdols" :key="idol.name">
             <div class="card">
-                <a class="stretched-link" :href="idol.url">
+                <router-link class="stretched-link" :to="idol.url">
                     <img :src="idol.img_url" class="card-img-top" />
-                </a>
+                </router-link>
                 <div class="card-body">
 
                     <div class="card-title">{{ idol.name }}</div>

@@ -22,10 +22,10 @@
 </div>
 <table class="table mt-3 align-middle">
   <tbody><tr v-for="card in pageFltCards" :key="card.name">
-    <td><a :href="card.url">
+    <td><router-link :to="card.url">
     <div class="card_icon me-2" :class="cardClass(card)">
       <img :src="card.img_url"/>
-    </div>{{ card.name }}</a></td>
+    </div>{{ card.name }}</router-link></td>
     <td>{{ showTime(card.time) }}</td>
   </tr></tbody>
 </table>
