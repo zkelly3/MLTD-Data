@@ -40,14 +40,14 @@
     <nav aria-label="event_pagination">
         <ul class="pagination justify-content-end">
         <li :class="{'page-item': true, disabled: calcPagination.noPrev}">
-            <a class="page-link" href="#" v-on:click="prevPage()" :aria-disabled="calcPagination.noPrev">Previous</a>
+            <button class="page-link" v-on:click="prevPage()" :aria-disabled="calcPagination.noPrev">Previous</button>
         </li>
         <li v-for="page in calcPagination.pages" :key="page.val" :class="{'page-item': true, active: page.isCurrent}">
             <span class="page-link" v-if="page.isCurrent">{{ page.val }}</span>
-            <a class="page-link" href="#" v-on:click="changePage(page.val)" v-else>{{ page.val }}</a>
+            <button class="page-link" v-on:click="changePage(page.val)" v-else>{{ page.val }}</button>
         </li>
         <li :class="{'page-item': true, disabled: calcPagination.noNext}">
-            <a class="page-link" href="#" v-on:click="nextPage()" :aria-disabled="calcPagination.noNext">Next</a>
+            <button class="page-link" v-on:click="nextPage()" :aria-disabled="calcPagination.noNext">Next</button>
         </li>
         </ul>
     </nav>
