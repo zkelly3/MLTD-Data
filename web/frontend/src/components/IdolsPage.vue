@@ -15,20 +15,11 @@
         </nav>
     </div>
     <label>篩選</label>
-    <div class="row g-1">
-        <div class="col-lg-4" v-for="(attr, key) in filters" :key="key">
-            <div class="input-group">
-                <div class="input-group-text">
-                    <input class="form-check-input me-1" type="checkbox" :id="'check-'+key" v-model="attr.enabled" />
-                    <label class="form-check-label" for="'check-'+key">{{ attr.label }}</label>
-                </div>
-                <input class="form-control" type="number" v-model.number="attr.value" min="0" step="1" max="100" />
-                <select class="form-select" v-model="attr.direction">
-                    <option v-for="opt in diroptions" :key="opt.val" :value="opt.val">{{ opt.text }}</option>
-                </select>
-            </div>
-        </div>
-    </div>
+    <ListFilter :list="shown" :filters="[
+                       { key: 'age', label: '年齡', default_value: 18 },
+                       { key: 'height', label: '身高', default_value: 150 },
+                       { key: 'weight', 'label': '體重', default_value: 40 },
+                       ]" @filtered_list="val => { fltIdols = val; }"/>
 
     <table class="table mt-3 align-middle" id="idols" v-if="viewMode == 'table_view'">
         <thead class="table-light">
@@ -68,6 +59,7 @@
 
 <script>
 import MainPage from './MainPage.vue'
+import ListFilter from './ListFilter.vue'
 import { deleteNull } from '../general'
 
 function fixData(idols) {
@@ -84,26 +76,17 @@ function fixData(idols) {
     }    
 }
 
-function greater_equal(a, b) {
-    return a >= b;
-}
-function less_equal(a, b) {
-    return a <= b;
-}
-function exact(a, b) {
-    return a == b;
-}
-
 export default {
         name: 'IdolsPage',
     components: {
-        MainPage,
+        MainPage, ListFilter,
     },
     inject: ['$api'],
     props: [],
         data() {
             return {
                 idols: [[], []],
+                fltIdols: [],
                 idolinfo: [{'text': '姓名', 'val': 'name'},
                     {'text': '陣營', 'val': 'idol_type'},
                     {'text': '年齡', 'val': 'age'},
@@ -113,25 +96,6 @@ export default {
                     'key': '',
                     'reverse': false
                 },
-                filters: {
-                    'age': {
-                    'label': '年齡',
-                    'enabled': false, 'value': 18, 'direction': greater_equal
-                    },
-                    'height': {
-                    'label': '身高',
-                    'enabled': false, 'value': 150, 'direction': greater_equal
-                    },
-                    'weight': {
-                    'label': '體重',
-                    'enabled': false, 'value': 40, 'direction': greater_equal
-                    },
-                },
-                diroptions: [
-                    {'text': '以上', 'val': greater_equal},
-                    {'text': '整', 'val': exact},
-                    {'text': '以下', 'val': less_equal},
-                ],
                 japanese: true,
                 notBoth: false,
                 viewMode: 'table_view'
@@ -182,20 +146,6 @@ export default {
             panelWord: function() {
                 return this.japanese ? '中文版' : '日文版'
             }, 
-            fltIdols() {
-                var self = this;
-                var res = self.shown.slice();
-                for (let key in self.filters) {
-                  let attr = self.filters[key]
-                  if (attr.enabled) {
-                    res = res.filter(idol => {
-                        if (isNaN(parseInt(idol[key]))) return false;
-                        return attr.direction(idol[key], attr.value);
-                    });
-                  }
-                }
-                return res;
-            },
             sortedIdols() {
                 var self = this;
                 var res = self.fltIdols.slice();
