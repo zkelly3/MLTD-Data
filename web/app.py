@@ -985,7 +985,7 @@ def send_static(u_path):
 @app.route('/', defaults={'u_path': ''})
 @app.route('/<path:u_path>')
 def main_page(u_path):
-    return render_template('vue/main.html')
+    return render_template('index.html')
 
 @app.errorhandler(404)
 def page_not_found(unused_error):

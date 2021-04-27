@@ -1,14 +1,14 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
-import { AjaxAPI } from '../api'
-import IdolsPage from '../components/IdolsPage.vue'
-import CardsPage from '../components/CardsPage.vue'
-import EventsPage from '../components/EventsPage.vue'
-import GashasPage from '../components/GashasPage.vue'
-import IdolPage from '../components/IdolPage.vue'
-import CardPage from '../components/CardPage.vue'
-import EventPage from '../components/EventPage.vue'
-import GashaPage from '../components/GashaPage.vue'
+import { AjaxAPI } from './api'
+import IdolsPage from './components/IdolsPage.vue'
+import CardsPage from './components/CardsPage.vue'
+import EventsPage from './components/EventsPage.vue'
+import GashasPage from './components/GashasPage.vue'
+import IdolPage from './components/IdolPage.vue'
+import CardPage from './components/CardPage.vue'
+import EventPage from './components/EventPage.vue'
+import GashaPage from './components/GashaPage.vue'
 
 const routes = [
     { path: '/', component: IdolsPage, meta: {title: '偶像列表'} },
