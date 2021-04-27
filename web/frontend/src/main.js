@@ -15,7 +15,7 @@ import EventPage from './components/EventPage.vue'
 import GashaPage from './components/GashaPage.vue'
 
 const routes = [
-    { path: '/', component: IdolsPage, meta: {title: '偶像列表'} },
+    { path: '/', redirect: '/idols' },
     { path: '/idols', component: IdolsPage, meta: {title: '偶像列表'} },
     { path: '/cards', component: CardsPage, meta: {title: '卡片列表'} },
     { path: '/events', component: EventsPage, meta: {title: '活動列表'} },
