@@ -16,10 +16,10 @@ const routes = [
     { path: '/cards', component: CardsPage, meta: {title: '卡片列表'} },
     { path: '/events', component: EventsPage, meta: {title: '活動列表'} },
     { path: '/gashas', component: GashasPage, meta: {title: '卡池列表'} },
-    { path: '/idol/:idol_id', component: IdolPage, props: true, meta: {title: '偶像'} },
-    { path: '/card/:card_id', component: CardPage, props: true, meta: {title: '卡片'} },
-    { path: '/event/:event_type/:event_id', component: EventPage, props: true, meta: {title: '活動'} },
-    { path: '/gasha/:gasha_id', component: GashaPage, props: true, meta: {title: '卡池'} },
+    { path: '/idol/:idol_id', component: IdolPage, props: true },
+    { path: '/card/:card_id', component: CardPage, props: true },
+    { path: '/event/:event_type/:event_id', component: EventPage, props: true },
+    { path: '/gasha/:gasha_id', component: GashaPage, props: true },
 ];
 
 const router = createRouter({
@@ -27,20 +27,19 @@ const router = createRouter({
     routes: routes,
 });
 
+function setTitle(title) {
+    if (title) {
+        document.title = title + ' - ポンコマス';
+    } else {
+        document.title = title + 'ポンコマス';
+    }
+}
+
 router.beforeEach(async (to) => {
-    if (to.meta.title) {
-        if (to.params.card_id) {
-            let $api = new AjaxAPI();
-            let res = await $api.getCardTitle(to.params.card_id);
-            document.title = res.data;
-        }
-        else {
-            document.title = to.meta.title + ' - ポンコマス';
-        }
-    }
-    else {
-        document.title = 'ポンコマス';
-    }
+    setTitle(to.meta.title || '');
 });
 
-createApp({}).use(router).provide('$api', new AjaxAPI()).mount('#app');
+createApp({}).use(router)
+    .provide('$api', new AjaxAPI())
+    .provide('$setTitle', setTitle)
+    .mount('#app');

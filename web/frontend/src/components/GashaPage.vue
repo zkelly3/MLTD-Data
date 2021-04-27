@@ -98,7 +98,7 @@ export default {
     components: {
         MainPage,
     },
-    inject: ['$api'],
+    inject: ['$api', '$setTitle'],
     props: ['gasha_id'],
     data() {
         return {
@@ -108,7 +108,7 @@ export default {
             defaultGasha: '/static/images/default/no_gasha_banner.png'
         };
     },
-    created: function() {
+    mounted() {
         this.$api.getGasha(this.gasha_id).then((res)=> {
             const tmpGasha = res.data;
             for (let i=0; i<tmpGasha.length; ++i) {
@@ -116,6 +116,7 @@ export default {
             }
             this.gasha = tmpGasha;
             this.initialize();
+            this.$setTitle(this.shown.name);
         });
     },
     methods: {

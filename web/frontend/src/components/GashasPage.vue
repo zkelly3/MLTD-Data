@@ -105,7 +105,7 @@ export default {
             }
         };
     },
-    created: function() {
+    mounted() {
         this.$api.getGashaTypes().then((res) => {
             this.filters.gashaType.options = res.data;
             

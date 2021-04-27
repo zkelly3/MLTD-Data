@@ -105,7 +105,7 @@ export default {
     components: {
         MainPage,
     },
-    inject: ['$api'],
+    inject: ['$api', '$setTitle'],
     props: ['idol_id'],
     data() {
         return {
@@ -114,15 +114,16 @@ export default {
             notBoth: false,
         };
     },
-    created: function () {
+    mounted() {
         this.$api.getIdol(this.idol_id).then((res) => {
             const tmpIdol = res.data;
             for (let i=0; i<tmpIdol.length; ++i) {
                 fixData(tmpIdol[i], i);
             }
             this.idol = tmpIdol;
+            this.initialize();
+            this.$setTitle(this.shown.info.name);
         })
-        this.initialize();
     },
     methods: {
         initialize: function () {

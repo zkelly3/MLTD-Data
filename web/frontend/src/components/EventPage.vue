@@ -148,7 +148,7 @@ export default {
     components: {
         MainPage,
     },
-    inject: ['$api'],
+    inject: ['$api', '$setTitle'],
     props: ['event_type', 'event_id'],
     data() {
         return {
@@ -158,7 +158,7 @@ export default {
             defaultEvent: '/static/images/default/no_event_banner.jpg'
         };
     },
-    created: function() {
+    mounted() {
         this.$api.getEvent(this.event_type, this.event_id).then((res) => {
             const tmpEvent = res.data;
             for (let i=0; i<tmpEvent.length; ++i) {
@@ -166,6 +166,7 @@ export default {
             }
             this.gameEvent = tmpEvent;
             this.initialize();
+            this.$setTitle(this.shown.name);
         });
     },
     methods: {

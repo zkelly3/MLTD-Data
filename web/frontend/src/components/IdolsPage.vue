@@ -137,7 +137,7 @@ export default {
                 viewMode: 'table_view'
             };
         },
-        created: function() {
+        mounted() {
             this.$api.getIdols().then((res) => {
                 const tmpIdols = res.data;
                 for (let i=0; i<tmpIdols.length; ++i) {

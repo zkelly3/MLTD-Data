@@ -101,7 +101,7 @@ export default {
             }
         };
     },
-    created: function() {
+    mounted() {
         this.$api.getEventTypes().then((res) => {
             this.filters.eventType.options = res.data;
         });

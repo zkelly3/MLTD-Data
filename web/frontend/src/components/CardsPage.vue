@@ -194,7 +194,7 @@ export default {
             }
         };
     },
-    created: function() {
+    mounted() {
         this.$api.getCardFilters().then((res) => {
             this.filters = res.data;
         });

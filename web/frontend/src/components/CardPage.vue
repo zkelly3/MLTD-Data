@@ -198,7 +198,7 @@ export default {
         MyTh,
         MyTd,
     },
-    inject: ['$api'],
+    inject: ['$api', '$setTitle'],
     props: ['card_id'],
     data() {
         return {
@@ -208,7 +208,7 @@ export default {
             gashaTitles: ['類型', '名稱', '開始', '結束']
         };
     },
-    created: function() {
+    mounted() {
         this.$api.getCard(this.card_id).then((res) => {
             const tmpCard = res.data;
             for (let i=0; i<tmpCard.length; ++i) {
@@ -216,6 +216,7 @@ export default {
             }
             this.card = tmpCard;
             this.initialize();
+            this.$setTitle(this.shown.name);
         });
     },
     methods: {
