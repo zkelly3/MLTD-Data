@@ -978,15 +978,6 @@ def gasha_id(gasha_id):
         abort(404)
     return dumps(gasha, ensure_ascii=False)
 
-@app.route('/static/<path:u_path>')
-def send_static(u_path):
-    return send_from_directory('static', u_path)
-
-@app.route('/', defaults={'u_path': ''})
-@app.route('/<path:u_path>')
-def main_page(u_path):
-    return render_template('index.html')
-
 @app.errorhandler(404)
 def page_not_found(unused_error):
     return render_template('page_not_found.html'), 404
