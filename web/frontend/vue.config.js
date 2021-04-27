@@ -4,7 +4,6 @@
  * @type {import('@vue/cli-service').ProjectOptions}
  */
 module.exports = {
-  assetsDir: 'static/vue',
   runtimeCompiler: true,
   devServer: {
       proxy: {
