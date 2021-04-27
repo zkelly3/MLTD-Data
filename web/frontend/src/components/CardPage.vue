@@ -209,17 +209,20 @@ export default {
         };
     },
     mounted() {
-        this.$api.getCard(this.card_id).then((res) => {
-            const tmpCard = res.data;
-            for (let i=0; i<tmpCard.length; ++i) {
-                tmpCard[i] = fixData(tmpCard[i], i);
-            }
-            this.card = tmpCard;
-            this.initialize();
-            this.$setTitle(this.shown.name);
-        });
+        this.updatePage();
     },
     methods: {
+        updatePage: function() {
+            this.$api.getCard(this.card_id).then((res) => {
+                const tmpCard = res.data;
+                for (let i=0; i<tmpCard.length; ++i) {
+                    tmpCard[i] = fixData(tmpCard[i], i);
+                }
+                this.card = tmpCard;
+                this.initialize();
+                this.$setTitle(this.shown.name);
+            });
+        },
         initialize: function() {
             if (!this.card[0] || !this.card[1]) this.notBoth = true;
             if (!this.card[0]) {
@@ -267,6 +270,7 @@ export default {
         }
     },
     watch: {
+        card_id: function() { this.updatePage(); },
     }
 }
 </script>

@@ -159,17 +159,20 @@ export default {
         };
     },
     mounted() {
-        this.$api.getEvent(this.event_type, this.event_id).then((res) => {
-            const tmpEvent = res.data;
-            for (let i=0; i<tmpEvent.length; ++i) {
-                fixData(tmpEvent[i], i);
-            }
-            this.gameEvent = tmpEvent;
-            this.initialize();
-            this.$setTitle(this.shown.name);
-        });
+        this.updatePage();
     },
     methods: {
+        updatePage: function() {
+            this.$api.getEvent(this.event_type, this.event_id).then((res) => {
+                const tmpEvent = res.data;
+                for (let i=0; i<tmpEvent.length; ++i) {
+                    fixData(tmpEvent[i], i);
+                }
+                this.gameEvent = tmpEvent;
+                this.initialize();
+                this.$setTitle(this.shown.name);
+            });
+        },
         initialize: function() {
             if (!this.gameEvent[0] || !this.gameEvent[1]) this.notBoth = true;
             if (!this.gameEvent[0]) this.japanese = false;
@@ -212,6 +215,8 @@ export default {
         }
     },
     watch: {
+        'event_type': function() { this.updatePage(); },
+        'event_id': function() { this.updatePage(); },
     }
 }
 </script>

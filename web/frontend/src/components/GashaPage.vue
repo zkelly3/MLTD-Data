@@ -109,17 +109,20 @@ export default {
         };
     },
     mounted() {
-        this.$api.getGasha(this.gasha_id).then((res)=> {
-            const tmpGasha = res.data;
-            for (let i=0; i<tmpGasha.length; ++i) {
-                fixData(tmpGasha[i], i);
-            }
-            this.gasha = tmpGasha;
-            this.initialize();
-            this.$setTitle(this.shown.name);
-        });
+        this.updatePage();
     },
     methods: {
+        updatePage: function() {
+            this.$api.getGasha(this.gasha_id).then((res)=> {
+                const tmpGasha = res.data;
+                for (let i=0; i<tmpGasha.length; ++i) {
+                    fixData(tmpGasha[i], i);
+                }
+                this.gasha = tmpGasha;
+                this.initialize();
+                this.$setTitle(this.shown.name);
+            });
+        },
         initialize: function() {
             if (!this.gasha[0] || !this.gasha[1]) this.notBoth = true;
             if (!this.gasha[0]) {
@@ -164,6 +167,7 @@ export default {
         }
     },
     watch: {
+        gasha_id: function() { this.updatePage(); },
     }
 };
 </script>

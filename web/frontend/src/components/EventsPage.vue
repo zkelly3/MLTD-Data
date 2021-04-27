@@ -102,19 +102,22 @@ export default {
         };
     },
     mounted() {
-        this.$api.getEventTypes().then((res) => {
-            this.filters.eventType.options = res.data;
-        });
-        this.$api.getEvents().then((res) => {
-            const tmpEvents = res.data;
-            for (let i=0; i<tmpEvents.length; ++i) {
-                fixData(tmpEvents[i], i);
-            }
-            this.events = tmpEvents;
-            this.initialize();
-        });
+        this.updatePage();
     },
     methods: {
+        updatePage: function() {
+            this.$api.getEventTypes().then((res) => {
+                this.filters.eventType.options = res.data;
+            });
+            this.$api.getEvents().then((res) => {
+                const tmpEvents = res.data;
+                for (let i=0; i<tmpEvents.length; ++i) {
+                    fixData(tmpEvents[i], i);
+                }
+                this.events = tmpEvents;
+                this.initialize();
+            });
+        },
         initialize: function() {
             if (!this.events[0] || !this.events[1]) this.notBoth = true;
             if (!this.events[0]) this.japanese = false;

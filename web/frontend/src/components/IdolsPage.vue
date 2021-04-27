@@ -138,16 +138,19 @@ export default {
             };
         },
         mounted() {
-            this.$api.getIdols().then((res) => {
-                const tmpIdols = res.data;
-                for (let i=0; i<tmpIdols.length; ++i) {
-                    fixData(tmpIdols[i]);
-                }
-                this.idols = tmpIdols;
-                this.initialize();
-            });
+            this.updatePage();
         },
         methods: {
+            updatePage: function() {
+                this.$api.getIdols().then((res) => {
+                    const tmpIdols = res.data;
+                    for (let i=0; i<tmpIdols.length; ++i) {
+                        fixData(tmpIdols[i]);
+                    }
+                    this.idols = tmpIdols;
+                    this.initialize();
+                });
+            },
             initialize: function() {
                 if (!this.idols[0] || !this.idols[1]) this.notBoth = true;
                 if (!this.idols[0]) this.japanese = false;

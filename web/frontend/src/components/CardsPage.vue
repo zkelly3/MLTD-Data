@@ -195,25 +195,28 @@ export default {
         };
     },
     mounted() {
-        this.$api.getCardFilters().then((res) => {
-            this.filters = res.data;
-        });
-        this.$api.getCardSorts().then((res) => {
-            this.sorts.options = res.data;
-        });
-        this.$api.getCardIdols().then((res) => {
-            this.idols = res.data;
-        });
-        this.$api.getCards().then((res) => {
-            const tmpCards = res.data;
-            for (let i=0; i<tmpCards.length; ++i) {
-                fixData(tmpCards[i]);
-            }
-            this.cards = tmpCards;
-            this.initialize();
-        });
+        this.updatePage();
     },
     methods: {
+        updatePage: function() {
+            this.$api.getCardFilters().then((res) => {
+                this.filters = res.data;
+            });
+            this.$api.getCardSorts().then((res) => {
+                this.sorts.options = res.data;
+            });
+            this.$api.getCardIdols().then((res) => {
+                this.idols = res.data;
+            });
+            this.$api.getCards().then((res) => {
+                const tmpCards = res.data;
+                for (let i=0; i<tmpCards.length; ++i) {
+                    fixData(tmpCards[i]);
+                }
+                this.cards = tmpCards;
+                this.initialize();
+            });
+        },
         initialize: function() {
             if (!this.cards[0] || !this.cards[1]) this.notBoth = true;
             if (!this.cards[0]) this.japanese = false;

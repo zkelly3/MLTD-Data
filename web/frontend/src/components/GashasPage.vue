@@ -106,25 +106,28 @@ export default {
         };
     },
     mounted() {
-        this.$api.getGashaTypes().then((res) => {
-            this.filters.gashaType.options = res.data;
-            
-            for (let i in this.filters.gashaType.options[0]) {
-                let val = this.filters.gashaType.options[0][i].val;
-                if (val !== 'SPC') this.filters.gashaType.selected.push(val);
-            }
-        });
-        this.$api.getGashas().then((res) => {
-            const tmpGashas = res.data;
-            for (let i=0; i<tmpGashas.length; ++i) {
-                fixData(tmpGashas[i], i);
-            }
-            this.gashas = tmpGashas;
-            if (!this.gashas[0] || !this.gashas[1]) this.notBoth = true;
-            if (!this.gashas[0]) this.japanese = false;
-        });
+        this.updatePage();
     },
     methods: {
+        updatePage: function() {
+            this.$api.getGashaTypes().then((res) => {
+                this.filters.gashaType.options = res.data;
+                
+                for (let i in this.filters.gashaType.options[0]) {
+                    let val = this.filters.gashaType.options[0][i].val;
+                    if (val !== 'SPC') this.filters.gashaType.selected.push(val);
+                }
+            });
+            this.$api.getGashas().then((res) => {
+                const tmpGashas = res.data;
+                for (let i=0; i<tmpGashas.length; ++i) {
+                    fixData(tmpGashas[i], i);
+                }
+                this.gashas = tmpGashas;
+                if (!this.gashas[0] || !this.gashas[1]) this.notBoth = true;
+                if (!this.gashas[0]) this.japanese = false;
+            });
+        },
         changeLanguage: function() {
             this.japanese = !this.japanese;
         },

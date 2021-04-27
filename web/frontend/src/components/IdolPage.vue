@@ -115,17 +115,20 @@ export default {
         };
     },
     mounted() {
-        this.$api.getIdol(this.idol_id).then((res) => {
-            const tmpIdol = res.data;
-            for (let i=0; i<tmpIdol.length; ++i) {
-                fixData(tmpIdol[i], i);
-            }
-            this.idol = tmpIdol;
-            this.initialize();
-            this.$setTitle(this.shown.info.name);
-        })
+        this.updatePage();
     },
     methods: {
+        updatePage: function() {
+            this.$api.getIdol(this.idol_id).then((res) => {
+                const tmpIdol = res.data;
+                for (let i=0; i<tmpIdol.length; ++i) {
+                    fixData(tmpIdol[i], i);
+                }
+                this.idol = tmpIdol;
+                this.initialize();
+                this.$setTitle(this.shown.info.name);
+            });
+        },
         initialize: function () {
             if (!this.idol[0] || !this.idol[1]) this.notBoth = true;
             if (!this.idol[0]) this.japanese = false;
@@ -181,6 +184,9 @@ export default {
             });
             return res;
         }
+    },
+    watch: {
+        idol_id: function() { this.updatePage(); },
     },
 };
 </script>
