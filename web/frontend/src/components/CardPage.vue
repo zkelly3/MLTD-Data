@@ -209,14 +209,14 @@ export default {
         };
     },
     created: function() {
-        this.$api.getCard(this.card_id).then((res)=> {
+        this.$api.getCard(this.card_id).then((res) => {
             const tmpCard = res.data;
             for (let i=0; i<tmpCard.length; ++i) {
                 tmpCard[i] = fixData(tmpCard[i], i);
             }
             this.card = tmpCard;
             this.initialize();
-        })
+        });
     },
     methods: {
         initialize: function() {
