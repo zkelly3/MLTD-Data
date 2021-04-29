@@ -35,7 +35,7 @@ function setTitle(title) {
     if (title) {
         document.title = title + ' - ポンコマス';
     } else {
-        document.title = title + 'ポンコマス';
+        document.title = 'ポンコマス';
     }
 }
 
