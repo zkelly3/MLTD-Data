@@ -31,32 +31,13 @@
         <td>{{ event.over }}</td>
     </tr></tbody>
     </table>
-    <div class="row g-1">
-    <div class="col-lg-2">
-        <select class="form-select" v-model.number="paging.purPage">
-        <option v-for="opt in paging.onePageList" :key="opt" :value="opt">{{ opt }}</option>
-        </select>
-    </div>
-    <nav aria-label="event_pagination">
-        <ul class="pagination justify-content-end">
-        <li :class="{'page-item': true, disabled: calcPagination.noPrev}">
-            <button class="page-link" v-on:click="prevPage()" :aria-disabled="calcPagination.noPrev">Previous</button>
-        </li>
-        <li v-for="page in calcPagination.pages" :key="page.val" :class="{'page-item': true, active: page.isCurrent}">
-            <span class="page-link" v-if="page.isCurrent">{{ page.val }}</span>
-            <button class="page-link" v-on:click="changePage(page.val)" v-else>{{ page.val }}</button>
-        </li>
-        <li :class="{'page-item': true, disabled: calcPagination.noNext}">
-            <button class="page-link" v-on:click="nextPage()" :aria-disabled="calcPagination.noNext">Next</button>
-        </li>
-        </ul>
-    </nav>
-    </div>
+    <Pagination :list="fltEvents" :purPageInit=20 :currentInit=1 @filtered_list="val => { pageFltEvents = val; }"/>
 </MainPage>
 </template>
 
 <script>
 import MainPage from './MainPage.vue'
+import Pagination from './Pagination'
 import { toDate, toDateString } from '../general'
 
 function fixData(events, ver) {
@@ -71,6 +52,7 @@ export default {
     name: 'EventsPage',
     components: {
         MainPage,
+        Pagination,
     },
     inject: ['$api'],
     props: [],
@@ -94,11 +76,7 @@ export default {
                     'value': '',
                 }
             },
-            paging: {
-                onePageList: [10, 20, 50, 100],
-                purPage: 20,
-                current: 1
-            }
+            pageFltEvents: [],
         };
     },
     mounted() {
@@ -128,15 +106,6 @@ export default {
         shownOptions: function(options) {
             return this.japanese ? options[0] : options[1];
         },
-        changePage(page) {
-            this.paging.current = page;
-        }, 
-        prevPage() {
-            this.changePage(this.paging.current-1);
-        },
-        nextPage() {
-            this.changePage(this.paging.current+1);
-        },
     },
     computed: {
         shown() {
@@ -162,70 +131,11 @@ export default {
             }
             return res;
         },
-        pageFltEvents() {
-            var self = this;
-            var res = self.fltEvents.slice();
-            var first = (self.paging.current-1) * (self.paging.purPage);
-            var last = (self.paging.current) * (self.paging.purPage);
-            res = res.filter((gameEvent, index) => {
-                return (index >= first) && (index < last);
-            });
-            return res;
-        },
         panelWord() {
             return this.japanese ? '中文版' : '日文版'
         },
-        totalPage() {
-            return parseInt((this.fltEvents.length-1) / this.paging.purPage) + 1
-        },
-        calcPagination() {
-            var res = {};
-            var last = this.totalPage;
-            var first = 1;
-            
-            res.noPrev = (this.paging.current) === first;
-            res.noNext = (this.paging.current) === last;
-            
-            res.pages = [];
-            if (this.totalPage <= 5) {
-                for (let i=1; i<= this.totalPage; i++) {
-                    res.pages.push({
-                        'val': i,
-                        'isCurrent': (i === this.paging.current), 
-                    });
-                }
-            }
-            else if (this.paging.current <= 3) {
-                for (let i=1; i<=5; i++) {
-                    res.pages.push({
-                        'val': i,
-                        'isCurrent': (i === this.paging.current), 
-                    });
-                }
-            }
-            else if ((this.paging.current+2) > this.totalPage) {
-                for (let i=this.totalPage-4; i<=this.totalPage; i++) {
-                    res.pages.push({
-                        'val': i,
-                        'isCurrent': (i === this.paging.current), 
-                    });
-                }
-            }
-            else {
-                for (let i=this.paging.current-2; i<=this.paging.current+2; i++) {
-                    res.pages.push({
-                        'val': i,
-                        'isCurrent': (i === this.paging.current), 
-                    });
-                }
-            }
-            return res;
-        }
     },
     watch: {
-        pageFltEvents: function() {
-            this.paging.current = Math.min(this.paging.current, this.totalPage);
-        }
     }
 }
 </script>
