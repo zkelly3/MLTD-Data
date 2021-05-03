@@ -7,7 +7,7 @@ from config import connect
 from dry_cursor import DryCursor
 
 def handle_event(begin, end, name, event_type, local, cursor, connection):
-    pre_sql_get_event = "SELECT id, {start} AS start, {over} AS over FROM `{event}` WHERE ({start} = %s)"
+    pre_sql_get_event = "SELECT id, {start} AS start, {over} AS `over` FROM `{event}` WHERE ({start} = %s)"
     pre_sql_set_event = "UPDATE `{event}` SET {start} = %s, {over} = %s WHERE (id = %s)"
     pre_sql_ins_event = "INSERT INTO `{event}`(`{name}`, `{start}`, `{over}`{other_params}) VALUES(%s, %s, %s{other_vals})"
 

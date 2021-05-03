@@ -36,12 +36,12 @@ class Database:
 
     @staticmethod
     def parse_conditions(conds):
-        template = ' AND '.join(['{0} = %s'.format(key) for key in conds.keys()])
+        template = ' AND '.join(['`{0}` = %s'.format(key) for key in conds.keys()])
         return template, tuple(conds.values())
 
     @staticmethod
     def parse_columns(columns):
-        template = ', '.join(['{0} = %s'.format(key) for key in columns.keys()])
+        template = ', '.join(['`{0}` = %s'.format(key) for key in columns.keys()])
         return template, tuple(columns.values())
 
     def fetch_one(self, *args, **kwargs):
