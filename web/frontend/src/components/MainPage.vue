@@ -15,6 +15,9 @@
         <li class="nav-item">
           <router-link class="nav-link" aria-current="page" to="/gashas">卡池</router-link>
         </li>
+        <li class="nav-item">
+          <router-link class="nav-link" aria-current="page" to="/songs">曲目</router-link>
+        </li>
       </ul>
       <slot name="navbar"></slot>
     </nav></div>

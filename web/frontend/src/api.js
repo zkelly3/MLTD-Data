@@ -30,6 +30,9 @@ export class AjaxAPI {
     getGashaTypes() {
         return axios.get(`/api/gashas/types`);
     }
+    getSongs() {
+        return axios.get(`/api/songs`);
+    }
     getIdol(idolId) {
         return axios.get(`/api/idol/${idolId}`);
     }

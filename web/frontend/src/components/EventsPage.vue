@@ -25,7 +25,7 @@
     </div></div>
     </div>
     <table class="table mt-3 align-middle" id="event">
-    <tbody><tr v-for="event in pageFltEvents" :key="event.start">
+    <tbody><tr v-for="event in pageFltEvents" :key="event.url">
         <td><router-link :to="event.url">{{ event.name }}</router-link></td>
         <td>{{ event.start }}</td>
         <td>{{ event.over }}</td>

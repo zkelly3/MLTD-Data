@@ -410,6 +410,50 @@ def get_cards_info():
     
     return cards, filters, sorts, idols
 
+def get_songs_local(local):
+    sql_songs = """SELECT ANY_VALUE(`Song`.`id`) AS `id`,
+                   ANY_VALUE(`Song`.`{name}`) AS `name`, 
+                   ANY_VALUE(`GameSound`.`{time}`) AS `time`,
+                   ANY_VALUE(`IdolGroup`.`id`) AS `group_id`,
+                   ANY_VALUE(`IdolGroup`.`{name}`) AS `group_name`
+                   FROM `GameSound` LEFT JOIN `Sound`
+                   ON `GameSound`.`SID` = `Sound`.`id`
+                   LEFT JOIN `Song` ON `Sound`.`SID` = `Song`.`id`
+                   LEFT JOIN `MainStory` ON `Song`.`id` = `MainStory`.`song`
+                   LEFT JOIN `IdolGroup` ON `Sound`.`GID` = `IdolGroup`.`id`
+                   WHERE (`GameSound`.`{time}` IS NOT NULL)
+                   GROUP BY `Song`.`id`
+                   ORDER BY ANY_VALUE(`GameSound`.`{time}`), 
+                   ANY_VALUE(`Song`.`song_type`), ANY_VALUE(`MainStory`.`num`)""".format(**local)
+    sql_songs_group = """SELECT `Idol`.id, `Idol`.{name} AS name FROM `GroupToIdol`
+                         LEFT JOIN `Idol` ON `GroupToIdol`.IID = `Idol`.id
+                         WHERE (`GroupToIdol`.GID = %s)""".format(**local) 
+
+    tz_info = timezone(timedelta(hours=local['ver_time']))
+    connection = connect()
+    with connection.cursor() as cursor:
+        cursor.execute(sql_songs)
+        songs = cursor.fetchall()
+
+        for song in songs:
+            song['group_members'] = []
+            group_id = song.pop('group_id', None)
+            if group_id is not None:
+                cursor.execute(sql_songs_group, (group_id))
+                song['group_members'] = cursor.fetchall()
+            if song['group_name'] is None:
+                song['group_name'] = '、'.join([m['name'] for m in song['group_members']])
+            song['time'] = to_timestamp(song['time'], tz_info)
+    
+    return songs
+
+def get_songs():
+    songs = []
+    songs.append(get_songs_local(jp_local))
+    songs.append(get_songs_local(as_local))
+
+    return songs
+
 def get_idol_info_local(idol_id, local):
     sql_idol_info = """SELECT id, {name} AS name, type AS idol_type,
                   age, height, weight, CV, color
@@ -940,6 +984,11 @@ def card_sorts_api():
 def card_idols_api():
     cards, filters, sorts, idols = get_cards_info()
     return dumps(idols, ensure_ascii=False)
+
+@app.route("/api/songs")
+def songs_api():
+    songs = get_songs()
+    return dumps(songs, ensure_ascii=False)
 
 @app.route("/api/idol/<int:idol_id>")
 def idol_api(idol_id):

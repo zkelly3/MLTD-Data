@@ -9,6 +9,7 @@ import IdolsPage from './components/IdolsPage.vue'
 import CardsPage from './components/CardsPage.vue'
 import EventsPage from './components/EventsPage.vue'
 import GashasPage from './components/GashasPage.vue'
+import SongsPage from './components/SongsPage.vue'
 import IdolPage from './components/IdolPage.vue'
 import CardPage from './components/CardPage.vue'
 import EventPage from './components/EventPage.vue'
@@ -20,6 +21,7 @@ const routes = [
     { path: '/cards', component: CardsPage, meta: {title: '卡片列表'} },
     { path: '/events', component: EventsPage, meta: {title: '活動列表'} },
     { path: '/gashas', component: GashasPage, meta: {title: '卡池列表'} },
+    { path: '/songs', component: SongsPage, meta: {title: '曲目列表'} },
     { path: '/idol/:idol_id', component: IdolPage, props: true },
     { path: '/card/:card_id', component: CardPage, props: true },
     { path: '/event/:event_type/:event_id', component: EventPage, props: true },

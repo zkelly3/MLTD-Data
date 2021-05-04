@@ -29,7 +29,7 @@
     </div></div>
     </div>
     <table class="table mt-3 align-middle" id="gasha">
-    <tbody><tr v-for="gasha in pageFltGashas" :key="gasha.start">
+    <tbody><tr v-for="gasha in pageFltGashas" :key="gasha.url">
         <td><router-link :to="gasha.url">{{ gasha.name }}</router-link></td>
         <td>{{ gasha.start }}</td>
         <td>{{ gasha.over }}</td>
