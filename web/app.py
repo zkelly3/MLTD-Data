@@ -389,7 +389,7 @@ def get_card_filters_local(local):
         
     connection.close()
     
-    return filters;
+    return filters
 
 def get_cards_info():
     cards = []
@@ -412,7 +412,8 @@ def get_cards_info():
 
 def get_songs_local(local):
     sql_songs = """SELECT ANY_VALUE(`Song`.`id`) AS `id`,
-                   ANY_VALUE(`Song`.`{name}`) AS `name`, 
+                   ANY_VALUE(`Song`.`{name}`) AS `name`,
+                   ANY_VALUE(`Song`.`resource`) AS `img_url`,
                    ANY_VALUE(`GameSound`.`{time}`) AS `time`,
                    ANY_VALUE(`IdolGroup`.`id`) AS `group_id`,
                    ANY_VALUE(`IdolGroup`.`{name}`) AS `group_name`
@@ -436,6 +437,7 @@ def get_songs_local(local):
         songs = cursor.fetchall()
 
         for song in songs:
+            song['img_url'] = image_path('images/song_icons', 'jacket_%s.png' % song['img_url'])
             song['group_members'] = []
             group_id = song.pop('group_id', None)
             if group_id is not None:

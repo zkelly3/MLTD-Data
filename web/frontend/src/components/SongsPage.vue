@@ -13,6 +13,7 @@
   </div>
   <table class="table mt-3 align-middle" id="songs">
     <tbody><tr v-for="song in pageFltSongs" :key="song.id">
+        <td style="width:80px;"><img :src="song.img_url" class="song_icon"/></td>
         <td>{{ song.name }}<br/><small class="text-muted">{{ song.group_name }}</small></td>
         <td>{{ showTime(song.time) }}</td>
     </tr></tbody>
@@ -94,3 +95,9 @@ export default {
     },
 };
 </script>
+
+<style>
+.song_icon {
+    height: 60px;
+}
+</style>
