@@ -437,6 +437,7 @@ def get_songs_local(local):
         songs = cursor.fetchall()
 
         for song in songs:
+            song['url'] = '/song/%d' % song['id']
             song['img_url'] = image_path('images/song_icons', 'jacket_%s.png' % song['img_url'])
             song['group_members'] = []
             group_id = song.pop('group_id', None)
@@ -942,6 +943,54 @@ def get_gasha_info(gasha_id):
     gasha.append(get_gasha_info_local(gasha_id, as_local))
     return gasha
 
+def get_song_info_local(song_id, local):
+    sql_song_info = """SELECT id, {name} AS name, `type`, song_type, resource AS img_url
+                       FROM `Song` WHERE (id = %s)""".format(**local)
+    sql_song_sound = """SELECT `GameSound`.id AS id, `GameSound`.{time} AS time,
+                        `Sound`.GID AS group_id, `IdolGroup`.{name} AS group_name
+                        FROM `GameSound` LEFT JOIN `Sound`
+                        ON `GameSound`.`SID` = `Sound`.id
+                        LEFT JOIN `IdolGroup` ON `Sound`.GID = `IdolGroup`.id
+                        WHERE (`Sound`.SID = %s AND `GameSound`.{time} IS NOT NULL)
+                        ORDER BY `GameSound`.{time}""".format(**local)
+    sql_song_group_members = """SELECT `Idol`.{name} AS name FROM `GroupToIdol`
+                           LEFT JOIN `Idol` ON `GroupToIdol`.IID = `Idol`.id
+                           WHERE `GroupToIdol`.GID = %s""".format(**local)
+
+    tz_info = timezone(timedelta(hours=local['ver_time']))
+    
+    connection = connect()
+    with connection.cursor() as cursor:
+        cursor.execute(sql_song_info, (song_id))
+        song = cursor.fetchall()
+        if not song:
+            raise NotFoundError
+        
+        song = song[0]
+        song['img_url'] = image_path('images/song_icons', 'jacket_%s.png' % song['img_url']) if song['img_url'] is not None else ''
+        cursor.execute(sql_song_sound, (song_id))
+        song['sound'] = cursor.fetchall()
+        song['time'] = song['sound'][0]['time'] if song['sound'] else None
+        
+        song['time'] = to_timestamp(song['time'], tz_info)
+        for sound in song['sound']:
+            group_id = sound.pop('group_id', 0)
+            if sound['group_name'] is None:
+                cursor.execute(sql_song_group_members, (group_id))
+                members = cursor.fetchall()
+                sound['group_name'] = '、'.join([member['name'] for member in members])
+            sound['time'] = to_timestamp(sound['time'], tz_info)
+    connection.close()
+
+    return song
+
+def get_song_info(song_id):
+    song = []
+    song.append(get_song_info_local(song_id, jp_local))
+    song.append(get_song_info_local(song_id, as_local))
+    
+    return song
+
 @app.route("/api/idols")
 def idols_api():
     idols = get_idols_info()
@@ -1022,12 +1071,20 @@ def event_api(event_type, event_id):
     return dumps(event, ensure_ascii=False)
 
 @app.route("/api/gasha/<int:gasha_id>")
-def gasha_id(gasha_id):
+def gasha_api(gasha_id):
     try:
         gasha = get_gasha_info(gasha_id)
     except NotFoundError:
         abort(404)
     return dumps(gasha, ensure_ascii=False)
+
+@app.route("/api/song/<int:song_id>")
+def song_api(song_id):
+    try:
+        song = get_song_info(song_id)
+    except NotFoundError:
+        abort(404)
+    return dumps(song, ensure_ascii=False)
 
 @app.errorhandler(404)
 def page_not_found(unused_error):

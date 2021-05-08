@@ -14,6 +14,7 @@ import IdolPage from './components/IdolPage.vue'
 import CardPage from './components/CardPage.vue'
 import EventPage from './components/EventPage.vue'
 import GashaPage from './components/GashaPage.vue'
+import SongPage from './components/SongPage.vue'
 
 const routes = [
     { path: '/', redirect: '/idols' },
@@ -26,6 +27,7 @@ const routes = [
     { path: '/card/:card_id', component: CardPage, props: true },
     { path: '/event/:event_type/:event_id', component: EventPage, props: true },
     { path: '/gasha/:gasha_id', component: GashaPage, props: true },
+    { path: '/song/:song_id', component: SongPage, props: true},
 ];
 
 const router = createRouter({

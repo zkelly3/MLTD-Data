@@ -48,4 +48,7 @@ export class AjaxAPI {
     getGasha(gashaId) {
         return axios.get(`/api/gasha/${gashaId}`);
     }
+    getSong(songId) {
+        return axios.get(`/api/song/${songId}`);
+    }
 }
