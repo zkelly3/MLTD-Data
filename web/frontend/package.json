@@ -5,7 +5,8 @@
   "scripts": {
     "serve": "vue-cli-service serve --host zkelly3.csie.org",
     "build": "vue-cli-service build && uwsgi --reload ../uwsgi.pid",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "serve-local": "vue-cli-service serve"
   },
   "dependencies": {
     "axios": "^0.21.1",
