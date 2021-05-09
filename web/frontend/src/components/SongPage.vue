@@ -17,9 +17,9 @@
       <img class="song_image mw-100" :src="shown.img_url"/>
     </div>
     <div class="col-xl-10 col-lg-9"><div class="container-fluid">
-      <MyTr><MyTh>名稱</MyTh><MyTd>{{ shown.name }}</MyTd></MyTr>
-      <MyTr><MyTh>取得方式</MyTh><MyTd>尚未更新</MyTd></MyTr>
-      <MyTr><MyTh>實裝時間</MyTh><MyTd>{{ shown.time }}</MyTd></MyTr>
+      <MyTr><MyTh :class="songClass(shown.idol_type)">名稱</MyTh><MyTd>{{ shown.name }}</MyTd></MyTr>
+      <MyTr><MyTh :class="songClass(shown.idol_type)">取得方式</MyTh><MyTd>尚未更新</MyTd></MyTr>
+      <MyTr><MyTh :class="songClass(shown.idol_type)">實裝時間</MyTh><MyTd>{{ shown.time }}</MyTd></MyTr>
     </div></div>
   </div>
   <ul class="nav nav-tabs mt-3">
@@ -121,6 +121,20 @@ export default {
         changeLanguage: function() {
             this.japanese = !this.japanese;
         },
+        songClass: function(idol_type) {
+            switch (idol_type) {
+                case 'All':
+                    return 'song_all';
+                case 'Princess':
+                    return 'song_princess';
+                case 'Fairy':
+                    return 'song_fairy';
+                case 'Angel':
+                    return 'song_angel';
+                default:
+                    return 'song_all';
+            }
+        }
     },
     computed: {
         shown: function() {
@@ -139,5 +153,17 @@ export default {
 <style>
 .song_image {
     height: 150px;
+}
+.song_all {
+    background: #aaaaaa33;
+}
+.song_princess {
+    background: #ff3b6a33;
+}
+.song_fairy {
+    background: #3245ff33;
+}
+.song_angel {
+    background: #e6e61333;
 }
 </style>

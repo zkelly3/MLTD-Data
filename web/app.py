@@ -944,7 +944,7 @@ def get_gasha_info(gasha_id):
     return gasha
 
 def get_song_info_local(song_id, local):
-    sql_song_info = """SELECT id, {name} AS name, `type`, song_type, resource AS img_url
+    sql_song_info = """SELECT id, {name} AS name, `type` AS idol_type, resource AS img_url
                        FROM `Song` WHERE (id = %s)""".format(**local)
     sql_song_sound = """SELECT `GameSound`.id AS id, `GameSound`.{time} AS time,
                         `Sound`.GID AS group_id, `IdolGroup`.{name} AS group_name
@@ -967,6 +967,7 @@ def get_song_info_local(song_id, local):
             raise NotFoundError
         
         song = song[0]
+        song['idol_type'] = idol_types[song['idol_type']]
         song['img_url'] = image_path('images/song_icons', 'jacket_%s.png' % song['img_url']) if song['img_url'] is not None else ''
         cursor.execute(sql_song_sound, (song_id))
         song['sound'] = cursor.fetchall()
