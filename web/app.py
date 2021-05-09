@@ -1,4 +1,5 @@
-from datetime import timezone, timedelta
+from dataclasses import asdict
+from datetime import datetime, timezone, timedelta
 from json import loads
 import os.path
 
@@ -6,7 +7,8 @@ from flask import Flask
 from flask import render_template, url_for, redirect, abort
 from flask.json import dumps
 
-from config import connect, jp_local, as_local
+from config import connect
+from local import Local, jp_local, as_local
 
 class NotFoundError(Exception):
     pass
@@ -71,16 +73,16 @@ sort_types = [{'jp': '実装時間', 'as': '實裝時間', 'val': 'time'},
 
 rarity = ['N', 'N＋', 'R', 'R＋', 'SR', 'SR＋', 'SSR', 'SSR＋']
 
-def image_path(img_dir, img_name):
+def image_path(img_dir: str, img_name: str):
     img_path = os.path.join(img_dir, img_name)
     return url_for('static', filename=img_path)
 
-def to_timestamp(target, tz_info):
+def to_timestamp(target: datetime, tz_info: timezone):
     return target.replace(tzinfo=tz_info).timestamp() if target is not None else None
 
-def get_idols_info_local(local):
+def get_idols_info_local(local: Local):
     sql_all_idols = """SELECT id, {name} AS name, type AS idol_type, 
-                        CV, age, height, weight FROM Idol""".format(**local)
+                        CV, age, height, weight FROM Idol""".format_map(asdict(local))
     
     connection = connect()
     with connection.cursor() as cursor:
@@ -101,18 +103,18 @@ def get_idols_info():
     
     return idols
 
-def get_events_info_local(local):
+def get_events_info_local(local: Local):
     pre_sql_all_events_columns = """SELECT id, {name} AS name,
                                     '{type_id}' AS type_id, '{event_abbr}' AS event_abbr,
                                     {start} AS start, {over} AS `over` FROM `{event}`
                                     WHERE {start} IS NOT NULL"""
     
-    tz_info = timezone(timedelta(hours=local['ver_time']))
+    tz_info = timezone(timedelta(hours=local.ver_time))
     
     sql_list = []
     for i in range(len(event_types)):
         event = event_types[i]
-        e_local = loads(dumps(local))
+        e_local = asdict(local)
         e_local['event'] = event['table']
         e_local['event_abbr'] = event['abbr']
         e_local['type_id'] = i
@@ -135,12 +137,12 @@ def get_events_info_local(local):
     
     return events
 
-def get_event_types_local(local):
+def get_event_types_local(local: Local):
     types = []
     for event_type in event_types:
         types.append({
             'val': event_type['abbr'],
-            'text': event_type[local['ver']],
+            'text': event_type[local.ver],
         })
     return types
 
@@ -155,13 +157,13 @@ def get_events_info():
     
     return events, types
 
-def get_gashas_info_local(local):
+def get_gashas_info_local(local: Local):
     sql_all_gashas = """SELECT id, {name} AS name, type AS type_id, 
                         {start} AS start, {over} AS `over` FROM `Gasha`
                         WHERE {start} IS NOT NULL
-                        ORDER BY {start} DESC""".format(**local)
+                        ORDER BY {start} DESC""".format_map(asdict(local))
     
-    tz_info = timezone(timedelta(hours=local['ver_time']))
+    tz_info = timezone(timedelta(hours=local.ver_time))
 
     connection = connect()
     with connection.cursor() as cursor:
@@ -178,12 +180,12 @@ def get_gashas_info_local(local):
     
     return gashas
 
-def get_gasha_types_local(local):
+def get_gasha_types_local(local: Local):
     types = []
     for gasha_type in gasha_types:
         types.append({
             'val': gasha_type['abbr'],
-            'text': gasha_type[local['ver']],
+            'text': gasha_type[local.ver],
         })
     return types
 
@@ -198,7 +200,7 @@ def get_gashas_info():
     
     return gashas, types
 
-def get_cards_info_local(local):
+def get_cards_info_local(local: Local):
     sql_all_cards = """SELECT `Card`.id AS id, `Card`.{name} AS name, `Card`.skill_val AS skill_val,
                        `Idol`.id AS idol_id, `Idol`.type AS idol_type, `Card`.card_id AS fake_id,
                        `Card`.rare AS rare, `Card`.{time} AS time, `Awaken`.id AS a_id, 
@@ -211,10 +213,10 @@ def get_cards_info_local(local):
                        LEFT JOIN `SkillSubType` ON `Card`.skill_type = `SkillSubType`.id
                        LEFT JOIN `LeaderSkill` ON `Card`.leader_skill = `LeaderSkill`.id
                        WHERE `Card`.{time} IS NOT NULL
-                       ORDER BY `Card`.{time} , `Card`.card_id""".format(**local)
+                       ORDER BY `Card`.{time} , `Card`.card_id""".format_map(asdict(local))
     sql_card_anniversary = "SELECT EID FROM `AnniversaryToCard` WHERE (CID = %s)"
     
-    tz_info = timezone(timedelta(hours=local['ver_time']))
+    tz_info = timezone(timedelta(hours=local.ver_time))
     
     connection = connect()
     with connection.cursor() as cursor:
@@ -268,8 +270,8 @@ def get_cards_info_local(local):
     
     return cards
 
-def get_cards_idols_local(local):
-    sql_all_idols = "SELECT id, {name} AS name, type AS idol_type FROM `Idol` WHERE {name} IS NOT NULL".format(**local)
+def get_cards_idols_local(local: Local):
+    sql_all_idols = "SELECT id, {name} AS name, type AS idol_type FROM `Idol` WHERE {name} IS NOT NULL".format_map(asdict(local))
     
     connection = connect()
     with connection.cursor() as cursor:
@@ -284,13 +286,13 @@ def get_cards_idols_local(local):
     
     return idols
 
-def get_cards_sorts_local(local):
-    sorts = [{'text': sort_type[local['ver']], 'val': sort_type['val']} for sort_type in sort_types]
+def get_cards_sorts_local(local: Local):
+    sorts = [{'text': sort_type[local.ver], 'val': sort_type['val']} for sort_type in sort_types]
     
     return sorts
 
-def get_card_filters_local(local):
-    sql_all_skills = "SELECT id, {name} AS name FROM `SkillType` WHERE {name} IS NOT NULL".format(**local)
+def get_card_filters_local(local: Local):
+    sql_all_skills = "SELECT id, {name} AS name FROM `SkillType` WHERE {name} IS NOT NULL".format_map(asdict(local))
     sql_cards_skill_val = "SELECT skill_val FROM `Card` WHERE (skill_val IS NOT NULL)"
     
     filters = {}
@@ -299,7 +301,7 @@ def get_card_filters_local(local):
     idol_labels = {'jp': '対象', 'as': '對象'}
     filters['belong'] = {
         'type': 'idol_check',
-        'label': idol_labels[local['ver']],
+        'label': idol_labels[local.ver],
         'enabled': True,
         'type_options': ['Princess', 'Fairy', 'Angel', 'Guest'],
         'type_selected': [],
@@ -313,7 +315,7 @@ def get_card_filters_local(local):
     rarity_labels = {'jp': 'レアリティ', 'as': '稀有度'}
     filters['rarity'] = {
         'type': 'check',
-        'label': rarity_labels[local['ver']],
+        'label': rarity_labels[local.ver],
         'enabled': True,
         'options': [{'val': 0, 'text': 'N'}, {'val': 1, 'text': 'R'}, {'val': 2, 'text': 'SR'}, {'val': 3, 'text': 'SSR'}],
         'selected': [],
@@ -325,9 +327,9 @@ def get_card_filters_local(local):
     awaken_options = [{'val': False, 'jp': '覚醒前', 'as': '未覺醒'}, {'val': True, 'jp': '覚醒後', 'as': '已覺醒'}]
     filters['awaken'] = {
         'type': 'check',
-        'label': awaken_labels[local['ver']],
+        'label': awaken_labels[local.ver],
         'enabled': True,
-        'options': [{'val': option['val'], 'text': option[local['ver']]} for option in awaken_options],
+        'options': [{'val': option['val'], 'text': option[local.ver]} for option in awaken_options],
         'selected': [True],
         'key': 'is_awaken',
     }
@@ -336,9 +338,9 @@ def get_card_filters_local(local):
     type_labels = {'jp': 'カテゴリ', 'as': '分類'}
     filters['card_type'] = {
         'type': 'check',
-        'label': type_labels[local['ver']],
+        'label': type_labels[local.ver],
         'enabled': True,
-        'options': [{'val': option['abbr'], 'text': option[local['ver']]} for option in card_types],
+        'options': [{'val': option['abbr'], 'text': option[local.ver]} for option in card_types],
         'selected': [],
         'key': 'card_type',
     }
@@ -351,7 +353,7 @@ def get_card_filters_local(local):
         skill_labels = {'jp': 'スキル', 'as': '技能'}
         filters['skill_type'] = {
             'type': 'check',
-            'label': skill_labels[local['ver']],
+            'label': skill_labels[local.ver],
             'enabled': True,
             'options': [{'val': skill['id'], 'text': skill['name']} for skill in skills],
             'selected': [],
@@ -362,9 +364,9 @@ def get_card_filters_local(local):
         l_skill_labels = {'jp': 'センター効果', 'as': 'Center效果'}
         filters['l_skill_type'] = {
             'type': 'check',
-            'label': l_skill_labels[local['ver']],
+            'label': l_skill_labels[local.ver],
             'enabled': True,
-            'options': [{'val': l_skill_type['val'], 'text': l_skill_type[local['ver']]} for l_skill_type in l_skill_types],
+            'options': [{'val': l_skill_type['val'], 'text': l_skill_type[local.ver]} for l_skill_type in l_skill_types],
             'selected': [],
             'key': 'l_skill_type',
         }
@@ -380,7 +382,7 @@ def get_card_filters_local(local):
         skill_cd_labels = {'jp': 'スキルクールタイム', 'as': '技能冷卻時間'}
         filters['skill_cd'] = {
             'type': 'check',
-            'label': skill_cd_labels[local['ver']],
+            'label': skill_cd_labels[local.ver],
             'enabled': True,
             'options': [{'val': skill_cd, 'text': str(skill_cd) + ' 秒'} for skill_cd in skill_cds],
             'selected': [],
@@ -410,7 +412,7 @@ def get_cards_info():
     
     return cards, filters, sorts, idols
 
-def get_songs_local(local):
+def get_songs_local(local: Local):
     sql_songs = """SELECT ANY_VALUE(`Song`.`id`) AS `id`,
                    ANY_VALUE(`Song`.`{name}`) AS `name`,
                    ANY_VALUE(`Song`.`resource`) AS `img_url`,
@@ -425,12 +427,12 @@ def get_songs_local(local):
                    WHERE (`GameSound`.`{time}` IS NOT NULL)
                    GROUP BY `Song`.`id`
                    ORDER BY ANY_VALUE(`GameSound`.`{time}`), 
-                   ANY_VALUE(`Song`.`song_type`), ANY_VALUE(`MainStory`.`num`)""".format(**local)
+                   ANY_VALUE(`Song`.`song_type`), ANY_VALUE(`MainStory`.`num`)""".format_map(asdict(local))
     sql_songs_group = """SELECT `Idol`.id, `Idol`.{name} AS name FROM `GroupToIdol`
                          LEFT JOIN `Idol` ON `GroupToIdol`.IID = `Idol`.id
-                         WHERE (`GroupToIdol`.GID = %s)""".format(**local) 
+                         WHERE (`GroupToIdol`.GID = %s)""".format_map(asdict(local)) 
 
-    tz_info = timezone(timedelta(hours=local['ver_time']))
+    tz_info = timezone(timedelta(hours=local.ver_time))
     connection = connect()
     with connection.cursor() as cursor:
         cursor.execute(sql_songs)
@@ -457,10 +459,10 @@ def get_songs():
 
     return songs
 
-def get_idol_info_local(idol_id, local):
+def get_idol_info_local(idol_id: int, local: Local):
     sql_idol_info = """SELECT id, {name} AS name, type AS idol_type,
                   age, height, weight, CV, color
-                  FROM `Idol` WHERE id = %s""".format(**local)
+                  FROM `Idol` WHERE id = %s""".format_map(asdict(local))
     
     connection = connect()
     with connection.cursor() as cursor:
@@ -476,12 +478,12 @@ def get_idol_info_local(idol_id, local):
     
     return info
 
-def get_idol_cards_local(idol_id, local):
+def get_idol_cards_local(idol_id: int, local: Local):
     sql_idol_cards = """SELECT id, {name} AS name, rare, {time} AS time
                         FROM `Card` WHERE (IID = %s AND {time} IS NOT NULL)
-                        ORDER BY {time}, card_id""".format(**local)
+                        ORDER BY {time}, card_id""".format_map(asdict(local))
     
-    tz_info = timezone(timedelta(hours=local['ver_time']))
+    tz_info = timezone(timedelta(hours=local.ver_time))
     
     connection = connect()
     with connection.cursor() as cursor:
@@ -496,7 +498,7 @@ def get_idol_cards_local(idol_id, local):
     
     return cards
 
-def get_idol_data(idol_id):
+def get_idol_data(idol_id: int):
     idol = []
     idol.append({'info': get_idol_info_local(idol_id, jp_local),
         'cards': get_idol_cards_local(idol_id, jp_local)})
@@ -505,26 +507,26 @@ def get_idol_data(idol_id):
     
     return idol
 
-def get_card_aquire_local(card, card_id, aquire_id, local, cursor):
+def get_card_aquire_local(card, card_id: int, aquire_id: int, local: Local, cursor):
     sql_gasha = """SELECT Gasha.id AS id, Gasha.{name} AS name,
                    Gasha.{start} AS start, Gasha.{over} AS `over`, Gasha.type AS gasha_type
                    FROM `GashaToCard` INNER JOIN `Gasha` ON GashaToCard.GID = Gasha.id
                    WHERE (GashaToCard.CID = %s AND Gasha.{start} IS NOT NULL)
-                   ORDER BY Gasha.{start}""".format(**local)
+                   ORDER BY Gasha.{start}""".format_map(asdict(local))
     sql_not_up = """SELECT id, {name} AS name, {start} AS start, {over} AS `over`, type AS gasha_type
-                    FROM `Gasha` WHERE ({start} = %s AND NOT type = 5)""".format(**local)
+                    FROM `Gasha` WHERE ({start} = %s AND NOT type = 5)""".format_map(asdict(local))
     pre_sql_event = """SELECT `{event}`.id AS id, {event}.{name} AS name, {event}.{start} AS start, {event}.{over} AS `over`{other_params}
                    FROM `{event_to_card}` INNER JOIN `{event}` ON {event_to_card}.EID = {event}.id
                    WHERE ({event_to_card}.CID = %s AND {event}.{start} IS NOT NULL)
                    ORDER BY {event}.{start}"""
     
-    tz_info = timezone(timedelta(hours=local['ver_time']))
-    card['aquire'] = {'type': aquire_types[aquire_id][local['ver']]} if aquire_id is not None else None
+    tz_info = timezone(timedelta(hours=local.ver_time))
+    card['aquire'] = {'type': aquire_types[aquire_id][local.ver]} if aquire_id is not None else None
 
     guest_commu = {'jp': 'ゲストコミュ', 'as':'ゲストコミュ'}
     if card_id == 1455: # 世界に冠たる絶対女王　玲音
         card['from'] = 'Else'
-        card['aquire']['title'] = guest_commu[local['ver']]
+        card['aquire']['title'] = guest_commu[local.ver]
         return
 
     if aquire_id == 0:
@@ -538,7 +540,7 @@ def get_card_aquire_local(card, card_id, aquire_id, local, cursor):
             gasha['url'] = '/gasha/%d' % gasha['id']
             gasha['start'] = to_timestamp(gasha['start'], tz_info)
             gasha['over'] = to_timestamp(gasha['over'], tz_info)
-            gasha['gasha_type'] = gasha_types[gasha['gasha_type']][local['ver']]
+            gasha['gasha_type'] = gasha_types[gasha['gasha_type']][local.ver]
         card['gashas'] = gashas
         card['aquire']['title'] = gashas[0]['name'] if gashas else None
         card['from_url'] = '/gasha/%d' % gashas[0]['id'] if gashas else None
@@ -549,7 +551,7 @@ def get_card_aquire_local(card, card_id, aquire_id, local, cursor):
         card['aquire']['title'] = '--'
     else:
         card['from'] = 'Event'
-        e_local = loads(dumps(local))
+        e_local = asdict(local)
         if aquire_id == 1:
             e_local['event'] = 'PSTEvent'
             e_local['event_to_card'] = 'PSTEventToCard'
@@ -581,12 +583,12 @@ def get_card_aquire_local(card, card_id, aquire_id, local, cursor):
             card['from_url'] = card['event']['url']
             card['event']['start'] = to_timestamp(card['event']['start'], tz_info)
             card['event']['over'] = to_timestamp(card['event']['over'], tz_info)
-            card['event']['event_type'] = pst_types[event['event_type']][local['ver']] if aquire_id == 1 else aquire_types[aquire_id][local['ver']]
+            card['event']['event_type'] = pst_types[event['event_type']][local.ver] if aquire_id == 1 else aquire_types[aquire_id][local.ver]
 
 
-def get_card_l_skill_local(card, card_id, rare_id, local, cursor):
+def get_card_l_skill_local(card, card_id: int, rare_id: int, local: Local, cursor):
     sql_l_skill = """SELECT id, {name} AS name, {description} AS description, ssr, sr, r
-                FROM `LeaderSkill` WHERE (id = %s)""".format(**local)
+                FROM `LeaderSkill` WHERE (id = %s)""".format_map(asdict(local))
 
     l_skill_id = card.pop('leader_skill', None)
     if rare_id >= 2 and l_skill_id is not None:
@@ -607,11 +609,11 @@ def get_card_l_skill_local(card, card_id, rare_id, local, cursor):
 
             card['leader_skill']['description'] = l_skill['description'].format(**ls_val) if l_skill['description'] is not None and ls_val is not None else ''
 
-def get_card_skill_local(card, card_id, rare_id, local, cursor):
+def get_card_skill_local(card, card_id: int, rare_id: int, local: Local, cursor):
     sql_skill = """SELECT SkillType.id AS id, SkillType.{name} AS name,
                    SkillSubType.{description} AS description FROM `SkillSubType`
                    INNER JOIN `SkillType` ON SkillSubType.SID = SkillType.id
-                   WHERE (SkillSubType.id = %s)""".format(**local)
+                   WHERE (SkillSubType.id = %s)""".format_map(asdict(local))
 
     skill_type_id = card.pop('skill_type', None)
     if rare_id >= 2 and skill_type_id is not None:
@@ -625,15 +627,15 @@ def get_card_skill_local(card, card_id, rare_id, local, cursor):
             skill_val = loads(skill_val) if skill_val is not None else None
             card['skill']['description'] = skill['description'].format(**skill_val) if skill['description'] is not None and skill_val is not None else ''
 
-def get_card_info_local(card_id, local):
+def get_card_info_local(card_id: int, local: Local):
     sql_card = """SELECT id, {name} AS name, IID, rare, {time} AS time, aquire, gasha_type, in_gasha,
                   {master_rank} AS master_rank, visual_max, vocal_max, dance_max,
                   visual_bonus, vocal_bonus, dance_bonus, leader_skill,
                   skill_type, {skill_name} AS skill_name, skill_val,
                   {flavor} AS flavor, awaken
-                  FROM `Card` WHERE (id = %s)""".format(**local)
-    sql_idol = "SELECT {name} AS name, color, type AS idol_type FROM `Idol` WHERE (id = %s)".format(**local)
-    sql_awaken = "SELECT id, {name} AS name FROM `Card` WHERE (id = %s)".format(**local)
+                  FROM `Card` WHERE (id = %s)""".format_map(asdict(local))
+    sql_idol = "SELECT {name} AS name, color, type AS idol_type FROM `Idol` WHERE (id = %s)".format_map(asdict(local))
+    sql_awaken = "SELECT id, {name} AS name FROM `Card` WHERE (id = %s)".format_map(asdict(local))
 
     connection = connect()
     with connection.cursor() as cursor:
@@ -643,7 +645,7 @@ def get_card_info_local(card_id, local):
             raise NotFoundError
 
         card = card[0]
-        card['is_jp'] = local['ver'] == 'jp'
+        card['is_jp'] = local.ver == 'jp'
 
         # 這張卡在這一版不存在或還沒實裝
         if card['time'] is None:
@@ -693,7 +695,7 @@ def get_card_info_local(card_id, local):
         card['vocal_bonus'] = loads(card['vocal_bonus']) if card['vocal_bonus'] is not None else None
         card['dance_bonus'] = loads(card['dance_bonus']) if card['dance_bonus'] is not None else None
 
-        tz_info = timezone(timedelta(hours=local['ver_time']))
+        tz_info = timezone(timedelta(hours=local.ver_time))
         card['time'] = to_timestamp(card['time'], tz_info)
         card['img_url'] = image_path('images/card_images', '%d.png' % card['id'])
         if rare_id >= 6:
@@ -702,14 +704,14 @@ def get_card_info_local(card_id, local):
     connection.close()
     return card
 
-def get_card_info(card_id):
+def get_card_info(card_id: int):
     card = []
     card.append(get_card_info_local(card_id, jp_local))
     card.append(get_card_info_local(card_id, as_local))
     return card
 
-def get_card_title_local(card_id, local):
-    sql_get_card_title = "SELECT {name} AS name, rare FROM `Card` WHERE (id = %s AND {name} IS NOT NULL)".format(**local)
+def get_card_title_local(card_id: int, local: Local):
+    sql_get_card_title = "SELECT {name} AS name, rare FROM `Card` WHERE (id = %s AND {name} IS NOT NULL)".format_map(asdict(local))
 
     connection = connect()
     with connection.cursor() as cursor:
@@ -722,12 +724,12 @@ def get_card_title_local(card_id, local):
     card = card[0]
     return rarity[card['rare']] + ' ' + card['name']
 
-def get_card_title(card_id):
+def get_card_title(card_id: int):
     jp_title = get_card_title_local(card_id, jp_local)
     as_title = get_card_title_local(card_id, as_local)
     return jp_title if jp_title is not None else as_title 
 
-def get_event_info_local(event_type, event_id, local):
+def get_event_info_local(event_type: int, event_id: int, local: Local):
     pre_sql_event_info = """SELECT id, {name} AS name, 
                             {start} AS start, {over} AS `over`, comment{other_params}
                             FROM {event} WHERE (id = %s)"""
@@ -758,33 +760,33 @@ def get_event_info_local(event_type, event_id, local):
                                 INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
                                 WHERE (`OtherEventToCard`.EID = %s)"""
     
-    tz_info = timezone(timedelta(hours=local['ver_time']))
+    tz_info = timezone(timedelta(hours=local.ver_time))
     
     if event_type == 0:
-        local['event'] = 'PSTEvent'
-        local['other_params'] = ', type AS pst_type'
+        local.event = 'PSTEvent'
+        local.other_params = ', type AS pst_type'
     elif event_type == 1:
-        local['event'] = 'CollectEvent'
-        local['other_params'] = ''
+        local.event = 'CollectEvent'
+        local.other_params = ''
     elif event_type == 2:
-        local['event'] = 'Anniversary'
-        local['other_params'] = ''
+        local.event = 'Anniversary'
+        local.other_params = ''
     elif event_type == 3:
-        local['event'] = 'WorkingEvent'
-        local['other_params'] = ''
+        local.event = 'WorkingEvent'
+        local.other_params = ''
     elif event_type == 4:
-        local['event'] = 'ShowTimeEvent'
-        local['other_params'] = ''
+        local.event = 'ShowTimeEvent'
+        local.other_params = ''
     elif event_type == 5:
-        local['event'] = 'OtherEvent'
-        local['other_params'] = ''
+        local.event = 'OtherEvent'
+        local.other_params = ''
     elif event_type == 6:
-        local['event'] = 'TalkPartyEvent'
-        local['other_params'] = ''
+        local.event = 'TalkPartyEvent'
+        local.other_params = ''
     else:
         raise NotFoundError
     
-    sql_event_info = pre_sql_event_info.format(**local)
+    sql_event_info = pre_sql_event_info.format_map(asdict(local))
     connection = connect()
     with connection.cursor() as cursor:
         cursor.execute(sql_event_info, (event_id))
@@ -798,28 +800,28 @@ def get_event_info_local(event_type, event_id, local):
         if event['start'] is None:
             return None
         
-        event['is_jp'] = local['ver'] == 'jp'
+        event['is_jp'] = local.ver == 'jp'
         event['img_url'] = image_path('images/event_banner', '%d_%d.jpg' % (event_type, event_id))
         event['start'] = to_timestamp(event['start'], tz_info)
         event['over'] = to_timestamp(event['over'], tz_info)
-        event['event_type'] = event_types[event_type][local['ver']]
+        event['event_type'] = event_types[event_type][local.ver]
         event['event_abbr'] = event_types[event_type]['abbr']
-        event['pst_type'] = pst_types[event['pst_type']][local['ver']] if 'pst_type' in event and event['pst_type'] is not None else None
+        event['pst_type'] = pst_types[event['pst_type']][local.ver] if 'pst_type' in event and event['pst_type'] is not None else None
         
         if event_type == 0:
             card_types = [0, 1, 2]
-            sql_event_card_pst = pre_sql_event_card_pst.format(**local)
+            sql_event_card_pst = pre_sql_event_card_pst.format_map(asdict(local))
             event['cards'] = {}
             for card_type in card_types:
                 cursor.execute(sql_event_card_pst, (event_id, card_type))
                 event['cards'][str(card_type)] = cursor.fetchall()
         elif event_type == 1:
-            sql_event_card_col = pre_sql_event_card_col.format(**local)
+            sql_event_card_col = pre_sql_event_card_col.format_map(asdict(local))
             cursor.execute(sql_event_card_col, (event_id))
             event['cards'] = cursor.fetchall()
         elif event_type == 2:
             card_types = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-            sql_event_card_ann = pre_sql_event_card_ann.format(**local)
+            sql_event_card_ann = pre_sql_event_card_ann.format_map(asdict(local))
             event['cards'] = {}
             for card_type in card_types:
                 event['cards'][str(card_type)] = {'mission_date': event['start'] + timedelta(days=card_type).total_seconds() if event['start'] else None}
@@ -829,7 +831,7 @@ def get_event_info_local(event_type, event_id, local):
                     if card['idol_name'] == 'エミリー スチュアート':
                         card['idol_name'] = 'エミリー'
         elif event_type == 5:
-            sql_event_card_oth = pre_sql_event_card_oth.format(**local)
+            sql_event_card_oth = pre_sql_event_card_oth.format_map(asdict(local))
             cursor.execute(sql_event_card_oth, (event_id))
             event['cards'] = cursor.fetchall()
         else:
@@ -857,21 +859,21 @@ def get_event_info_local(event_type, event_id, local):
     return event
     
 
-def get_event_info(event_type, event_id):
+def get_event_info(event_type: int, event_id: int):
     event = []
     event.append(get_event_info_local(event_type, event_id, jp_local))
     event.append(get_event_info_local(event_type, event_id, as_local))
     return event
 
-def get_gasha_info_local(gasha_id, local):
+def get_gasha_info_local(gasha_id: int, local: Local):
     sql_gasha_info = """SELECT id, {name} AS name, 
                         {start} AS start, {over} AS `over`, type AS gasha_type, comment
-                        FROM `Gasha` WHERE (id = %s)""".format(**local)
+                        FROM `Gasha` WHERE (id = %s)""".format_map(asdict(local))
     sql_general_pick_up = """SELECT `Card`.id AS id, `Card`.{name} AS name, `GashaToCard`.comment AS comment,
                             `Card`.rare AS rare, `Idol`.type AS idol_type FROM `GashaToCard`
                              INNER JOIN `Card` ON `GashaToCard`.CID = `Card`.id
                              INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
-                             WHERE (`GashaToCard`.GID = %s)""".format(**local)
+                             WHERE (`GashaToCard`.GID = %s)""".format_map(asdict(local))
     pre_sql_general_others = """SELECT `Card`.id, `Card`.{name} AS name, `Card`.rare AS rare, `Idol`.type AS idol_type
                                 FROM `Card` INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
                                 WHERE ({time} = %s AND aquire = 0 AND `Card`.id NOT IN ({id_values}))"""
@@ -879,14 +881,14 @@ def get_gasha_info_local(gasha_id, local):
                           `GashaToCard`.comment AS comment, `Card`.rare AS rare, `Idol`.type AS idol_type
                           FROM `GashaToCard` INNER JOIN `Card` ON `GashaToCard`.CID = `Card`.id
                           INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
-                          WHERE (`GashaToCard`.GID = %s AND NOT `Card`.in_gasha = 2)""".format(**local)
+                          WHERE (`GashaToCard`.GID = %s AND NOT `Card`.in_gasha = 2)""".format_map(asdict(local))
     sql_special_others = """SELECT `Card`.id, `Card`.{name} AS name, 
                             `Card`.rare AS rare, `Idol`.type AS idol_type
                             FROM `GashaToCard` INNER JOIN `Card` ON `GashaToCard`.CID = `Card`.id
                             INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
-                            WHERE (`GashaToCard`.GID = %s AND `Card`.in_gasha = 2)""".format(**local)
+                            WHERE (`GashaToCard`.GID = %s AND `Card`.in_gasha = 2)""".format_map(asdict(local))
     
-    tz_info = timezone(timedelta(hours=local['ver_time']))
+    tz_info = timezone(timedelta(hours=local.ver_time))
     
     connection = connect()
     with connection.cursor() as cursor:
@@ -913,7 +915,7 @@ def get_gasha_info_local(gasha_id, local):
             cursor.execute(sql_general_pick_up, (gasha['id']))
             gasha['pick_up'] = cursor.fetchall()
             pick_up_ids = [card['id'] for card in gasha['pick_up']]
-            g_local = loads(dumps(local))
+            g_local = asdict(local)
             g_local['id_values'] = ', '.join(['%s'] * len(pick_up_ids))
             sql_general_others = pre_sql_general_others.format(**g_local)
             tuple_val = (gasha['start'],) + tuple(pick_up_ids)
@@ -929,7 +931,7 @@ def get_gasha_info_local(gasha_id, local):
             card['url'] = '/card/%d' % card['id']
             card['idol_type'] = idol_types[card['idol_type']]
         
-        gasha['gasha_type'] = gasha_types[gasha['gasha_type']][local['ver']]
+        gasha['gasha_type'] = gasha_types[gasha['gasha_type']][local.ver]
         gasha['start'] = to_timestamp(gasha['start'], tz_info)
         gasha['over'] = to_timestamp(gasha['over'], tz_info)
         
@@ -937,27 +939,27 @@ def get_gasha_info_local(gasha_id, local):
     
     return gasha    
 
-def get_gasha_info(gasha_id):
+def get_gasha_info(gasha_id: int):
     gasha = []
     gasha.append(get_gasha_info_local(gasha_id, jp_local))
     gasha.append(get_gasha_info_local(gasha_id, as_local))
     return gasha
 
-def get_song_info_local(song_id, local):
+def get_song_info_local(song_id: int, local: Local):
     sql_song_info = """SELECT id, {name} AS name, `type` AS idol_type, resource AS img_url
-                       FROM `Song` WHERE (id = %s)""".format(**local)
+                       FROM `Song` WHERE (id = %s)""".format_map(asdict(local))
     sql_song_sound = """SELECT `GameSound`.id AS id, `GameSound`.{time} AS time,
                         `Sound`.GID AS group_id, `IdolGroup`.{name} AS group_name
                         FROM `GameSound` LEFT JOIN `Sound`
                         ON `GameSound`.`SID` = `Sound`.id
                         LEFT JOIN `IdolGroup` ON `Sound`.GID = `IdolGroup`.id
                         WHERE (`Sound`.SID = %s AND `GameSound`.{time} IS NOT NULL)
-                        ORDER BY `GameSound`.{time}""".format(**local)
+                        ORDER BY `GameSound`.{time}""".format_map(asdict(local))
     sql_song_group_members = """SELECT `Idol`.{name} AS name FROM `GroupToIdol`
                            LEFT JOIN `Idol` ON `GroupToIdol`.IID = `Idol`.id
-                           WHERE `GroupToIdol`.GID = %s""".format(**local)
+                           WHERE `GroupToIdol`.GID = %s""".format_map(asdict(local))
 
-    tz_info = timezone(timedelta(hours=local['ver_time']))
+    tz_info = timezone(timedelta(hours=local.ver_time))
     
     connection = connect()
     with connection.cursor() as cursor:
@@ -987,7 +989,7 @@ def get_song_info_local(song_id, local):
 
     return song
 
-def get_song_info(song_id):
+def get_song_info(song_id: int):
     song = []
     song.append(get_song_info_local(song_id, jp_local))
     song.append(get_song_info_local(song_id, as_local))
@@ -1045,7 +1047,7 @@ def songs_api():
     return dumps(songs, ensure_ascii=False)
 
 @app.route("/api/idol/<int:idol_id>")
-def idol_api(idol_id):
+def idol_api(idol_id: int):
     try:
         idol = get_idol_data(idol_id)
     except NotFoundError:
@@ -1054,7 +1056,7 @@ def idol_api(idol_id):
     return dumps(idol, ensure_ascii=False)
 
 @app.route("/api/card/<int:card_id>")
-def card_api(card_id):
+def card_api(card_id: int):
     try:
         card = get_card_info(card_id)
     except NotFoundError:
@@ -1062,11 +1064,11 @@ def card_api(card_id):
     return dumps(card, ensure_ascii=False)
 
 @app.route("/api/card/title/<int:card_id>")
-def card_title_api(card_id):
+def card_title_api(card_id: int):
     return get_card_title(card_id)
 
 @app.route("/api/event/<int:event_type>/<int:event_id>")
-def event_api(event_type, event_id):
+def event_api(event_type: int, event_id: int):
     try:
         event = get_event_info(event_type, event_id)
     except NotFoundError:
@@ -1074,7 +1076,7 @@ def event_api(event_type, event_id):
     return dumps(event, ensure_ascii=False)
 
 @app.route("/api/gasha/<int:gasha_id>")
-def gasha_api(gasha_id):
+def gasha_api(gasha_id: int):
     try:
         gasha = get_gasha_info(gasha_id)
     except NotFoundError:
@@ -1082,7 +1084,7 @@ def gasha_api(gasha_id):
     return dumps(gasha, ensure_ascii=False)
 
 @app.route("/api/song/<int:song_id>")
-def song_api(song_id):
+def song_api(song_id: int):
     try:
         song = get_song_info(song_id)
     except NotFoundError:
