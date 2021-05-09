@@ -26,9 +26,7 @@
     <table class="table align-middle"><tbody>
       <tr v-for="card in shown.pick_up" :key="card.name">
         <td><router-link :to="card.url">
-          <div class="card_icon me-2" :class="cardClass(card)">
-            <img :src="card.img_url"/>
-          </div>{{ card.name }}
+          <CardIcon class="me-2" :card="card" />{{ card.name }}
         </router-link></td>
         <td>{{ card.comment }}</td>
       </tr>
@@ -39,9 +37,7 @@
     <div class="row">
       <div class="col-lg-4 mb-2" v-for="card in shown.others" :key="card.name">
         <router-link :to="card.url">
-          <div class="card_icon me-2" :class="cardClass(card)">
-            <img :src="card.img_url"/>
-          </div>{{ card.name }}
+          <CardIcon class="me-2" :card="card" />{{ card.name }}
         </router-link>
       </div>
     </div>
@@ -51,9 +47,7 @@
     <div class="row">
       <div class="col-lg-4 mb-2" v-for="card in shown.others" :key="card.name">
         <router-link :to="card.url">
-          <div class="card_icon me-2" :class="cardClass(card)">
-            <img :src="card.img_url"/>
-          </div>{{ card.name }}
+          <CardIcon class="me-2" :card="card" />{{ card.name }}
         </router-link>
       </div>
     </div>
@@ -62,6 +56,7 @@
 </template>
 
 <script>
+import CardIcon from './CardIcon.vue'
 import MainPage from './MainPage.vue'
 import { toDate, toDateTimeString } from '../general'
 
@@ -96,6 +91,7 @@ function fixData(gasha, ver) {
 export default {
     name: 'GashaPage',
     components: {
+        CardIcon,
         MainPage,
     },
     inject: ['$api', '$setTitle'],
@@ -131,28 +127,6 @@ export default {
         },
         changeLanguage: function() {
             this.japanese = !this.japanese;
-        },
-        cardClass(card) {
-            var rare = parseInt(card.rare / 2);
-            switch (rare) {
-                case 3:
-                    return 'card_ssr';
-                case 2:
-                    return 'card_sr';
-                case 1:
-                    return 'card_r';
-            }
-            if (rare == 0) {
-                switch (card.idol_type) {
-                    case 'Princess':
-                        return 'card_n_pr';
-                    case 'Fairy':
-                        return 'card_n_fa';
-                    case 'Angel':
-                        return 'card_n_an';
-                }
-            }
-            return '';
         },
         replaceByDefault(e) {
           e.target.src = '/static/images/default/no_gasha_banner.png';

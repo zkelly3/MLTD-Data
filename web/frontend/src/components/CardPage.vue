@@ -21,9 +21,7 @@
       <MyTr><MyTh :style="styleList">所屬偶像</MyTh><MyTd><router-link :to="shown.idol.url"> {{ shown.idol.name }}</router-link></MyTd></MyTr>
       <MyTr><MyTh :style="styleList">取得方式</MyTh><MyTd><b>{{ shown.aquire.type }}</b><br><router-link :to="shown.from_url" v-if="shown.has_from_url">{{ shown.aquire.title }}</router-link><span v-else>{{ shown.aquire.title }}</span></MyTd></MyTr>
       <MyTr><MyTh :style="styleList">{{ shown.awakenWord }}</MyTh><MyTd v-if="shown.awaken !== null"><router-link :to="shown.awaken.url">
-      <div class="card_icon me-2" :class="cardClass(shown.rare)">
-        <img :src="shown.awaken.img_url"/>
-      </div>{{ shown.awakenName }}</router-link>
+      <CardIcon class="me-2" :card="awakenCard" />{{ shown.awakenName }}</router-link>
       </MyTd><MyTd v-else>尚未更新</MyTd></MyTr>
       <MyTr><MyTh :style="styleList">實裝時間</MyTh><MyTd>{{ shown.time }}</MyTd></MyTr>
     </div></div>
@@ -84,6 +82,7 @@
 
 <script>
 import { h } from 'vue'
+import CardIcon from './CardIcon.vue'
 import MainPage from './MainPage.vue'
 import { deleteNull, toDate, toDateTimeString } from '../general'
 
@@ -193,6 +192,7 @@ const MyTd = {
 export default {
     name: 'CardPage',
     components: {
+        CardIcon,
         MainPage,
         MyTr,
         MyTh,
@@ -233,28 +233,6 @@ export default {
         changeLanguage: function() {
             this.japanese = !this.japanese;
         },
-        cardClass(rare) {
-            rare = parseInt(rare / 2);
-            switch (rare) {
-                case 3:
-                    return 'card_ssr';
-                case 2:
-                    return 'card_sr';
-                case 1:
-                    return 'card_r';
-            }
-            if (rare == 0) {
-                switch (this.shown.idol.idol_type) {
-                    case 'Princess':
-                        return 'card_n_pr';
-                    case 'Fairy':
-                        return 'card_n_fa';
-                    case 'Angel':
-                        return 'card_n_an';
-                }
-            }
-            return '';
-        },
     },
     computed: {
         shown: function() {
@@ -267,7 +245,14 @@ export default {
             return  {
               'background': this.shown.idol.color + '33'
             };
-        }
+        },
+        awakenCard: function() {
+          return {
+            rare: this.shown.rare,  // not accurate
+            img_url: this.shown.awaken.img_url,
+            idol_type: this.shown.idol.idol_type,
+          };
+        },
     },
     watch: {
         card_id: function() { this.updatePage(); },

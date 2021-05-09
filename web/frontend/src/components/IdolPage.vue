@@ -45,9 +45,7 @@
     <tbody>
       <tr v-for="card in shown.cards" :key="card.name">
         <td><router-link :to="card.url">
-            <div class="card_icon me-2" :class="cardClass(card.rare)">
-              <img :src="card.img_url" />
-            </div>{{ card.name }}
+            <CardIcon class="me-2" :card="fixCard(card)" />{{ card.name }}
           </router-link></td>
         <td>{{ card.time }}</td>
       </tr>
@@ -57,6 +55,7 @@
 </template>
 
 <script>
+import CardIcon from './CardIcon.vue'
 import MainPage from './MainPage.vue'
 import { deleteNull, toDate, toDateString } from '../general'
 
@@ -103,6 +102,7 @@ function fixData(idol, ver) {
 export default {
     name: 'IdolPage',
     components: {
+        CardIcon,
         MainPage,
     },
     inject: ['$api', '$setTitle'],
@@ -141,27 +141,8 @@ export default {
                 backgroundImage: 'url(' + img_url + ')',
             };
         },
-        cardClass(rare) {
-            rare = parseInt(rare / 2);
-            switch (rare) {
-                case 3:
-                    return 'card_ssr';
-                case 2:
-                    return 'card_sr';
-                case 1:
-                    return 'card_r';
-            }
-            if (rare == 0) {
-                switch (this.shown.info.idol_type) {
-                    case 'Princess':
-                        return 'card_n_pr';
-                    case 'Fairy':
-                        return 'card_n_fa';
-                    case 'Angel':
-                        return 'card_n_an';
-                }
-            }
-            return '';
+        fixCard: function(card) {
+            return {...card, idol_type: this.shown.info.idol_type};
         },
     },
     computed: {

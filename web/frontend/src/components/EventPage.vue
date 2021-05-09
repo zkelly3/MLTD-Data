@@ -22,9 +22,7 @@
         <div class="row gy-2 row-cols-1">
           <div class="col" v-for="card in shown.cards['0']" :key="card.name">
             <router-link :to="card.url">
-              <div class="card_icon me-2" :class="cardClass(card)">
-                <img :src="card.img_url"/>
-              </div>{{ card.name }}
+              <CardIcon class="me-2" :card="card" />{{ card.name }}
             </router-link>
           </div>
         </div>
@@ -33,9 +31,7 @@
         <div class="row gy-2 row-cols-1">
           <div class="col" v-for="card in shown.cards['1']" :key="card.name">
             <router-link :to="card.url">
-              <div class="card_icon me-2" :class="cardClass(card)">
-                <img :src="card.img_url"/>
-              </div>{{ card.name }}
+              <CardIcon class="me-2" :card="card" />{{ card.name }}
             </router-link>
           </div>
         </div>
@@ -44,9 +40,7 @@
         <div class="row gy-2 row-cols-1">
           <div class="col" v-for="card in shown.cards['2']" :key="card.name">
             <router-link :to="card.url">
-              <div class="card_icon me-2" :class="cardClass(card)">
-                <img :src="card.img_url"/>
-              </div>{{ card.name }}
+              <CardIcon class="me-2" :card="card" />{{ card.name }}
             </router-link>
           </div>
         </div>
@@ -55,9 +49,7 @@
         <div class="row gy-2 row-cols-1">
           <div class="col" v-for="card in shown.cards" :key="card.name">
             <router-link :to="card.url">
-              <div class="card_icon me-2" :class="cardClass(card)">
-                <img :src="card.img_url"/>
-              </div>{{ card.name }}
+              <CardIcon class="me-2" :card="card" />{{ card.name }}
             </router-link>
           </div>
         </div>
@@ -66,9 +58,7 @@
         <div class="row gy-2 row-cols-1">
           <div class="col" v-for="card in shown.cards" :key="card.name">
             <router-link :to="card.url">
-              <div class="card_icon me-2" :class="cardClass(card)">
-                <img :src="card.img_url"/>
-              </div>{{ card.name }}
+              <CardIcon class="me-2" :card="card" />{{ card.name }}
             </router-link>
           </div>
         </div>
@@ -81,9 +71,7 @@
         <tr v-for="(val, key) in shown.cards" :key="key">
           <th>{{ val.mission_date }}</th><td v-for="card in val.data" :key="card.name">
           <router-link :to="card.url" :title="card.name">
-            <div class="card_icon me-2" :class="cardClass(card)">
-              <img :src="card.img_url"/>
-            </div>{{ card.idol_name }}
+            <CardIcon class="me-2" :card="card" />{{ card.name }}
           </router-link>
           </td>
         </tr>
@@ -94,6 +82,7 @@
 </template>
 
 <script>
+import CardIcon from './CardIcon.vue'
 import MainPage from './MainPage.vue'
 import { toDate, toDateString, toDateTimeString } from '../general'
 
@@ -146,6 +135,7 @@ function fixData(gameEvent, ver) {
 export default {
     name: 'EventPage',
     components: {
+        CardIcon,
         MainPage,
     },
     inject: ['$api', '$setTitle'],
@@ -179,28 +169,6 @@ export default {
         },
         changeLanguage: function() {
             this.japanese = !this.japanese;
-        },
-        cardClass(card) {
-            var rare = parseInt(card.rare / 2);
-            switch (rare) {
-                case 3:
-                    return 'card_ssr';
-                case 2:
-                    return 'card_sr';
-                case 1:
-                    return 'card_r';
-            }
-            if (rare == 0) {
-                switch (card.idol_type) {
-                    case 'Princess':
-                        return 'card_n_pr';
-                    case 'Fairy':
-                        return 'card_n_fa';
-                    case 'Angel':
-                        return 'card_n_an';
-                }
-            }
-            return '';
         },
         replaceByDefault(e) {
           e.target.src = '/static/images/default/no_event_banner.jpg';

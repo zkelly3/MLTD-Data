@@ -23,9 +23,8 @@
 <table class="table mt-3 align-middle">
   <tbody><tr v-for="card in pageFltCards" :key="card.name">
     <td><router-link :to="card.url">
-    <div class="card_icon me-2" :class="cardClass(card)">
-      <img :src="card.img_url"/>
-    </div>{{ card.name }}</router-link></td>
+      <CardIcon class="me-2" :card="fixCard(card)"/>{{ card.name }}
+    </router-link></td>
     <td>{{ showTime(card.time) }}</td>
   </tr></tbody>
 </table>
@@ -123,6 +122,7 @@
 </template>
 
 <script>
+import CardIcon from './CardIcon'
 import MainPage from './MainPage.vue'
 import Pagination from './Pagination'
 import { toDate, toDateString } from '../general'
@@ -152,6 +152,7 @@ function fixData(cards) {
 export default {
     name: 'CardsPage',
     components: {
+        CardIcon,
         MainPage,
         Pagination,
     },
@@ -205,28 +206,6 @@ export default {
         shownOptions: function(options) {
             return this.japanese ? options[0] : options[1];
         },
-        cardClass(card) {
-            var rare = card.rare;
-            switch (rare) {
-                case 3:
-                    return 'card_ssr';
-                case 2:
-                    return 'card_sr';
-                case 1:
-                    return 'card_r';
-            }
-            if (rare == 0) {
-                switch (card.idol_type) {
-                    case 'Princess':
-                        return 'card_n_pr';
-                    case 'Fairy':
-                        return 'card_n_fa';
-                    case 'Angel':
-                        return 'card_n_an';
-                }
-            }
-            return '';
-        },
         idolClass(idol) {
             switch (idol.idol_type) {
                 case 'Princess':
@@ -262,7 +241,10 @@ export default {
         },
         showTime(time) {
             return this.japanese ? toDateString(toDate(time), 0) : toDateString(toDate(time), 1);
-        }
+        },
+        fixCard: function(card) {
+            return {...card, rare: parseInt(card.rare * 2 + (card.is_awaken ? 1 : 0))};
+        },
     },
     computed: {
         shown() {
