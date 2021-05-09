@@ -971,7 +971,9 @@ def get_song_info_local(song_id, local):
         cursor.execute(sql_song_sound, (song_id))
         song['sound'] = cursor.fetchall()
         song['time'] = song['sound'][0]['time'] if song['sound'] else None
-        
+        if song['time'] is None:
+            return None
+
         song['time'] = to_timestamp(song['time'], tz_info)
         for sound in song['sound']:
             group_id = sound.pop('group_id', 0)
