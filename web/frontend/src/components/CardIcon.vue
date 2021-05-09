@@ -27,6 +27,8 @@ export default {
                         return 'card_n_fa';
                     case 'Angel':
                         return 'card_n_an';
+                    case 'Guest':
+                        return 'card_n_gu';
                 }
             }
             return '';
@@ -77,6 +79,10 @@ export default {
 }
 .card_n_an:after {
   border: 2px $angel-color solid;
+  border-radius: 5px;
+}
+.card_n_gu:after {
+  border: 2px $guest-color solid;
   border-radius: 5px;
 }
 </style>

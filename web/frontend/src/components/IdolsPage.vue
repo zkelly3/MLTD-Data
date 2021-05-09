@@ -33,7 +33,7 @@
             <tr v-for="idol in sortedIdols" :key="idol.name">
                 <td>
                     <router-link class="d-block" :to="idol.url">
-                        <img class="idol_icon me-2" :src="idol.img_url" />{{ idol.name }}
+                        <CardIcon class="me-2" :card="{...idol, rare: 0}" />{{ idol.name }}
                     </router-link>
                 </td>
                 <td>{{ idol.idol_type }}</td>
@@ -62,6 +62,7 @@
 </template>
 
 <script>
+import CardIcon from './CardIcon.vue'
 import MainPage from './MainPage.vue'
 import ListFilter from './ListFilter.vue'
 import { deleteNull } from '../general'
@@ -83,7 +84,7 @@ function fixData(idols) {
 export default {
         name: 'IdolsPage',
     components: {
-        MainPage, ListFilter,
+        CardIcon, MainPage, ListFilter,
     },
     inject: ['$api'],
     props: [],
@@ -175,6 +176,6 @@ export default {
 
 <style>
 .idol_icon {
-  height: 40px;
+  height: 50px;
 }
 </style>
