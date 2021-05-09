@@ -1,0 +1,9 @@
+@import "bootstrap/scss/functions.scss";
+@import "bootstrap/scss/variables.scss";
+
+$link-color: $body-color;
+$link-decoration: none;
+$link-hover-color: $gray-600;
+$link-hover-decoration: underline;
+
+@import "bootstrap/scss/bootstrap.scss";
