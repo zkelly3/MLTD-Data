@@ -761,32 +761,33 @@ def get_event_info_local(event_type: int, event_id: int, local: Local):
                                 WHERE (`OtherEventToCard`.EID = %s)"""
     
     tz_info = timezone(timedelta(hours=local.ver_time))
-    
+
+    params = asdict(local)
     if event_type == 0:
-        local.event = 'PSTEvent'
-        local.other_params = ', type AS pst_type'
+        params['event'] = 'PSTEvent'
+        params['other_params'] = ', type AS pst_type'
     elif event_type == 1:
-        local.event = 'CollectEvent'
-        local.other_params = ''
+        params['event'] = 'CollectEvent'
+        params['other_params'] = ''
     elif event_type == 2:
-        local.event = 'Anniversary'
-        local.other_params = ''
+        params['event'] = 'Anniversary'
+        params['other_params'] = ''
     elif event_type == 3:
-        local.event = 'WorkingEvent'
-        local.other_params = ''
+        params['event'] = 'WorkingEvent'
+        params['other_params'] = ''
     elif event_type == 4:
-        local.event = 'ShowTimeEvent'
-        local.other_params = ''
+        params['event'] = 'ShowTimeEvent'
+        params['other_params'] = ''
     elif event_type == 5:
-        local.event = 'OtherEvent'
-        local.other_params = ''
+        params['event'] = 'OtherEvent'
+        params['other_params'] = ''
     elif event_type == 6:
-        local.event = 'TalkPartyEvent'
-        local.other_params = ''
+        params['event'] = 'TalkPartyEvent'
+        params['other_params'] = ''
     else:
         raise NotFoundError
     
-    sql_event_info = pre_sql_event_info.format_map(asdict(local))
+    sql_event_info = pre_sql_event_info.format_map(params)
     connection = connect()
     with connection.cursor() as cursor:
         cursor.execute(sql_event_info, (event_id))
