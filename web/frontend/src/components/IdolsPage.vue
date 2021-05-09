@@ -25,13 +25,19 @@
         <thead class="table-light">
             <tr>
                 <th v-for="info in idolinfo" :key="info.val">
-                    <a href="#" v-on:click="sortKey(info.val)" :class="{ active: sorts.key === info.val }">{{ info.text }}</a>
+                  <div class="position-relative">
+                    <a href="#" v-on:click="sortKey(info.val)" class="stretched-link" :class="{ active: sorts.key === info.val }">{{ info.text }}</a>
+                  </div>
                 </th>
             </tr>
         </thead>
         <tbody>
             <tr v-for="idol in sortedIdols" :key="idol.name">
-                <td><router-link :to="idol.url"><img class="idol_icon me-2" :src="idol.img_url" />{{ idol.name }}</router-link></td>
+                <td><div class="position-relative">
+                    <router-link class="stretched-link" :to="idol.url">
+                        <img class="idol_icon me-2" :src="idol.img_url" />{{ idol.name }}
+                    </router-link>
+                </div></td>
                 <td>{{ idol.idol_type }}</td>
                 <td>{{ idol.age }}</td>
                 <td>{{ idol.height }}</td>
