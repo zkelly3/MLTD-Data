@@ -42,8 +42,8 @@ export class AjaxAPI {
     getCardTitle(cardId) {
         return axios.get(`/api/card/title/${cardId}`);
     }
-    getEvent(eventType, eventId) {
-        return axios.get(`/api/event/${eventType}/${eventId}`);
+    getEvent(eventId) {
+        return axios.get(`/api/event/${eventId}`);
     }
     getGasha(gashaId) {
         return axios.get(`/api/gasha/${gashaId}`);

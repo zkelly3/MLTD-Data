@@ -26,7 +26,7 @@ const routes = [
     { path: '/songs', component: SongsPage, meta: {title: '曲目列表'} },
     { path: '/idol/:idol_id', component: IdolPage, props: true },
     { path: '/card/:card_id', component: CardPage, props: true },
-    { path: '/event/:event_type/:event_id', component: EventPage, props: true },
+    { path: '/event/:event_id', component: EventPage, props: true },
     { path: '/gasha/:gasha_id', component: GashaPage, props: true },
     { path: '/song/:song_id', component: SongPage, props: true},
     { path: '/:pathMatch(.*)*', component: NotFoundPage },

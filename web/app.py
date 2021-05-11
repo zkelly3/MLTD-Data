@@ -112,7 +112,7 @@ def get_idols_info():
     return idols
 
 def get_events_info_local(local: Local):
-    sql_all_events = """SELECT {name} AS name, event_type AS type_id, fake_id AS event_id,
+    sql_all_events = """SELECT id, {name} AS name, event_type,
                         {start} AS start, {over} AS `over` FROM `Event`
                         WHERE {start} IS NOT NULL ORDER BY {start} DESC""".format_map(asdict(local))
     
@@ -125,11 +125,11 @@ def get_events_info_local(local: Local):
     connection.close()
     
     for event in events:
-        type_id = int(event.pop('type_id', len(event_types)))
-        event_id = int(event.pop('event_id', 0))
+        type_id = int(event.pop('event_type', len(event_types)))
+        event_id = int(event.pop('id', 0))
 
         event['event_abbr'] = event_types[type_id]['abbr']
-        event['url'] = '/event/%d/%d' % (type_id, event_id)
+        event['url'] = '/event/%d' % event_id
         event['start'] = to_timestamp(event['start'], tz_info)
         event['over'] = to_timestamp(event['over'], tz_info)
     
@@ -516,7 +516,6 @@ def get_card_aquire_local(card, card_id: int, aquire_id: int, local: Local, curs
                     FROM `Gasha` WHERE ({start} = %s AND NOT type = 5)""".format_map(asdict(local))
     sql_event = """SELECT `Event`.id AS id, `Event`.{name} AS name,
                    `Event`.{start} AS start, `Event`.{over} AS `over`,
-                   `Event`.event_type AS event_type, `Event`.fake_id AS fake_id, 
                    `Event`.event_subtype aS event_subtype
                    FROM `EventToCard` INNER JOIN `Event` ON `EventToCard`.EID = `Event`.id
                    WHERE (`EventToCard`.CID = %s AND `Event`.{start} IS NOT NULL)
@@ -561,7 +560,7 @@ def get_card_aquire_local(card, card_id: int, aquire_id: int, local: Local, curs
         
         if card['event'] is not None:
             card['has_from_url'] = True
-            card['event']['url'] = '/event/%d/%d' % (event['event_type'], event['fake_id'])
+            card['event']['url'] = '/event/%d' % event['id']
             card['from_url'] = card['event']['url']
             card['event']['start'] = to_timestamp(card['event']['start'], tz_info)
             card['event']['over'] = to_timestamp(card['event']['over'], tz_info)
@@ -710,17 +709,7 @@ def get_card_title(card_id: int):
     as_title = get_card_title_local(card_id, as_local)
     return jp_title if jp_title is not None else as_title 
 
-"""This is for migration only."""
-def get_event_id(event_type: int, fake_id: int) -> int:
-    connection = connect()
-    with connection.cursor() as cursor:
-        cursor.execute('SELECT id FROM Event WHERE (event_type = %s AND fake_id = %s)', (event_type, fake_id))
-        event = cursor.fetchall()
-        if not event:
-            raise NotFoundError
-        return event[0]['id']
-
-def new_get_event_info_local(event_type: int, fake_id: int, local: Local):
+def get_event_info_local(event_id: int, local: Local):
     sql_event_info = """SELECT id, {name} AS name, 
                         {start} AS start, {over} AS `over`, event_type, fake_id, event_subtype, comment
                         FROM `Event` WHERE (id = %s)""".format_map(asdict(local))
@@ -740,7 +729,6 @@ def new_get_event_info_local(event_type: int, fake_id: int, local: Local):
 
     tz_info = timezone(timedelta(hours=local.ver_time))
     card_types = [[0, 1, 2], [], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], None, None, [], None]
-    event_id = get_event_id(event_type, fake_id)
     
     connection = connect()
     with connection.cursor() as cursor:
@@ -802,10 +790,10 @@ def new_get_event_info_local(event_type: int, fake_id: int, local: Local):
     connection.close()
     return event
 
-def get_event_info(event_type: int, event_id: int):
+def get_event_info(event_id: int):
     event = []
-    event.append(new_get_event_info_local(event_type, event_id, jp_local))
-    event.append(new_get_event_info_local(event_type, event_id, as_local))
+    event.append(get_event_info_local(event_id, jp_local))
+    event.append(get_event_info_local(event_id, as_local))
     return event
 
 def get_gasha_info_local(gasha_id: int, local: Local):
@@ -1010,10 +998,10 @@ def card_api(card_id: int):
 def card_title_api(card_id: int):
     return get_card_title(card_id)
 
-@app.route("/api/event/<int:event_type>/<int:event_id>")
-def event_api(event_type: int, event_id: int):
+@app.route("/api/event/<int:event_id>")
+def event_api(event_id: int):
     try:
-        event = get_event_info(event_type, event_id)
+        event = get_event_info(event_id)
     except NotFoundError:
         abort(404)
     return dumps(event, ensure_ascii=False)
