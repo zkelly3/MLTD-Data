@@ -1,5 +1,5 @@
 <template>
-<MainPage>
+<MainPage :pageNotFound="pageNotFound">
   <template v-slot:navbar>
   <button class="btn btn-outline-light ms-auto" v-on:click="changeLanguage()" :disabled="notBoth">{{ panelWord }}</button>
   </template>
@@ -101,7 +101,8 @@ export default {
             gasha: [getDefaultGasha(), getDefaultGasha()],
             japanese: true,
             notBoth: false,
-            defaultGasha: '/static/images/default/no_gasha_banner.png'
+            defaultGasha: '/static/images/default/no_gasha_banner.png',
+            pageNotFound: false,
         };
     },
     mounted() {
@@ -117,6 +118,10 @@ export default {
                 this.gasha = tmpGasha;
                 this.initialize();
                 this.$setTitle(this.shown.name);
+            }).catch((err) => {
+                if (err.response && err.response.status === 404) {
+                    this.pageNotFound = true;
+                }
             });
         },
         initialize: function() {

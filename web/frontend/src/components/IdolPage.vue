@@ -1,5 +1,5 @@
 <template>
-<MainPage>
+<MainPage :pageNotFound="pageNotFound">
   <template v-slot:navbar>
     <button class="btn btn-outline-light ms-auto" v-on:click="changeLanguage()" :disabled="notBoth">{{ panelWord }}</button>
   </template>
@@ -112,6 +112,7 @@ export default {
             idol: [getDefaultIdol(), getDefaultIdol()],
             japanese: true,
             notBoth: false,
+            pageNotFound: false,
         };
     },
     mounted() {
@@ -127,6 +128,10 @@ export default {
                 this.idol = tmpIdol;
                 this.initialize();
                 this.$setTitle(this.shown.info.name);
+            }).catch((err) => {
+                if (err.response && err.response.status === 404) {
+                    this.pageNotFound = true;
+                }
             });
         },
         initialize: function () {

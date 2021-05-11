@@ -21,12 +21,14 @@
       </ul>
       <slot name="navbar"></slot>
     </nav></div>
-    <slot></slot>
+    <slot v-if="!pageNotFound"></slot>
+    <span v-else>尼是不是跑到奇怪的地方了 (´・ω・`)</span>
   </div>
 </template>
 
 <script>
 export default {
   name: 'MainPage',
+  props: ['pageNotFound'],
 }
 </script>

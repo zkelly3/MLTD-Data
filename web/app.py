@@ -4,7 +4,7 @@ from json import loads
 import os.path
 
 from flask import Flask
-from flask import render_template, url_for, redirect, abort
+from flask import make_response, url_for, redirect, abort
 from flask.json import dumps
 
 from config import connect
@@ -1102,7 +1102,7 @@ def song_api(song_id: int):
 
 @app.errorhandler(404)
 def page_not_found(unused_error):
-    return render_template('page_not_found.html'), 404
+    return make_response(dumps({}), 404)
 
 
 #app.run(host="0.0.0.0", port=5000)

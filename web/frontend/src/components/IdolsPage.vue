@@ -1,5 +1,5 @@
 <template>
-<MainPage>
+<MainPage :pageNotFound="pageNotFound">
     <template v-slot:navbar>
         <button class="btn btn-outline-light ms-auto" v-on:click="changeView()" :disabled="notBoth">
             <i :class="[viewMode == 'table_view' ? 'bi-grid' : 'bi-list']"></i>
@@ -103,7 +103,8 @@ export default {
                 },
                 japanese: true,
                 notBoth: false,
-                viewMode: 'table_view'
+                viewMode: 'table_view',
+                pageNotFound: false,
             };
         },
         mounted() {

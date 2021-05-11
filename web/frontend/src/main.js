@@ -15,6 +15,7 @@ import CardPage from './components/CardPage.vue'
 import EventPage from './components/EventPage.vue'
 import GashaPage from './components/GashaPage.vue'
 import SongPage from './components/SongPage.vue'
+import NotFoundPage from './components/NotFoundPage.vue'
 
 const routes = [
     { path: '/', redirect: '/idols' },
@@ -28,6 +29,7 @@ const routes = [
     { path: '/event/:event_type/:event_id', component: EventPage, props: true },
     { path: '/gasha/:gasha_id', component: GashaPage, props: true },
     { path: '/song/:song_id', component: SongPage, props: true},
+    { path: '/:pathMatch(.*)*', component: NotFoundPage },
 ];
 
 const router = createRouter({

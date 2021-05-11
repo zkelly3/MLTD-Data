@@ -1,5 +1,5 @@
 <template>
-<MainPage>
+<MainPage :pageNotFound="pageNotFound">
   <template v-slot:navbar>
   <button class="btn btn-outline-light ms-auto" v-on:click="changeLanguage()" :disabled="notBoth">{{ panelWord }}</button>
   </template>
@@ -171,6 +171,7 @@ export default {
             },
             idols: [getDefaultIdols(), getDefaultIdols()],
             pageFltCards: [],
+            pageNotFound: false,
         };
     },
     mounted() {
