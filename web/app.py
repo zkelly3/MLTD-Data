@@ -31,20 +31,13 @@ gasha_types = [{'jp': 'タイプ限定', 'as': '屬性限定', 'abbr': 'TYP'},
     {'jp': 'フェス限定', 'as': 'FES限定', 'abbr': 'FES'},
     {'jp': '限定復刻', 'as': '限定復刻', 'abbr': 'RET'},
     {'jp': '特殊', 'as': '特殊', 'abbr': 'SPC'}]
-event_types = [{'jp': 'PSTイベント', 'as': 'PST活動', 
-     'abbr': 'PST', 'table': 'PSTEvent', 'to_card_table': 'PSTEventToCard'},
-    {'jp': 'ミリコレ', 'as': '百萬收藏', 
-     'abbr': 'COL', 'table': 'CollectEvent', 'to_card_table': 'CollectEventToCard'},
-    {'jp': '周年イベント', 'as': '週年活動', 
-     'abbr': 'ANN', 'table': 'Anniversary', 'to_card_table': 'AnniversaryToCard'},
-    {'jp': 'MILLION LIVE WORKING☆', 'as': 'MILLION LIVE WORKING☆', 
-     'abbr': 'WRK', 'table': 'WorkingEvent'},
-    {'jp': 'THEATER SHOW TIME☆', 'as': 'THEATER SHOW TIME☆', 
-     'abbr': 'SHT', 'table': 'ShowTimeEvent'},
-    {'jp': 'その他', 'as': '其他', 
-     'abbr': 'OTH', 'table': 'OtherEvent', 'to_card_table': 'OtherEventToCard'},
-    {'jp': 'THEATER TALK PARTY☆', 'as': 'THEATER TALK PARTY☆', 
-     'abbr': 'TKP', 'table': 'TalkPartyEvent'}]
+event_types = [{'jp': 'PSTイベント', 'as': 'PST活動', 'abbr': 'PST'},
+    {'jp': 'ミリコレ', 'as': '百萬收藏', 'abbr': 'COL'},
+    {'jp': '周年イベント', 'as': '週年活動', 'abbr': 'ANN'},
+    {'jp': 'MILLION LIVE WORKING☆', 'as': 'MILLION LIVE WORKING☆', 'abbr': 'WRK'},
+    {'jp': 'THEATER SHOW TIME☆', 'as': 'THEATER SHOW TIME☆', 'abbr': 'SHT'},
+    {'jp': 'その他', 'as': '其他', 'abbr': 'OTH'},
+    {'jp': 'THEATER TALK PARTY☆', 'as': 'THEATER TALK PARTY☆', 'abbr': 'TKP'}]
 pst_types = [{'jp': 'シアター', 'as': '劇場'},
     {'jp': 'ツアー', 'as': '巡演'},
     {'jp': 'ツインステージ', 'as': 'ツインステージ'},
@@ -74,7 +67,7 @@ song_aquire_types = [{'jp': '初始', 'as': '初始'},
 {'jp': 'PSTイベント', 'as': 'PST活動'},
 {'jp': '周年イベント', 'as': '週年活動'},
 {'jp': 'メインコミュ', 'as': '主線劇情'},
-{'jp': '楽曲購入', 'as': '樂曲購買'},
+{'jp': '楽曲購入', 'as': '購買樂曲'},
 {'jp': 'スペシャルコミュ', 'as': '特殊劇情'},
 {'jp': 'その他', 'as': '其他'},
 ]
@@ -125,8 +118,8 @@ def get_events_info_local(local: Local):
     connection.close()
     
     for event in events:
-        type_id = int(event.pop('event_type', len(event_types)))
-        event_id = int(event.pop('id', 0))
+        type_id = event.pop('event_type', len(event_types))
+        event_id = event.pop('id', 0)
 
         event['event_abbr'] = event_types[type_id]['abbr']
         event['url'] = '/event/%d' % event_id
@@ -170,7 +163,7 @@ def get_gashas_info_local(local: Local):
     connection.close()
     
     for gasha in gashas:
-        type_id = int(gasha.pop('type_id', len(gasha_types)))
+        type_id = gasha.pop('type_id', len(gasha_types))
         gasha['gasha_abbr'] = gasha_types[type_id]['abbr']
         gasha['url'] = '/gasha/%d' % gasha['id']
         gasha['start'] = to_timestamp(gasha['start'], tz_info)
