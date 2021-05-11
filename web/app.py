@@ -134,41 +134,7 @@ def get_events_info_local(local: Local):
         event['over'] = to_timestamp(event['over'], tz_info)
     
     return events
-'''
-def get_events_info_local(local: Local):
-    pre_sql_all_events_columns = """SELECT id, {name} AS name,
-                                    '{type_id}' AS type_id, '{event_abbr}' AS event_abbr,
-                                    {start} AS start, {over} AS `over` FROM `{event}`
-                                    WHERE {start} IS NOT NULL"""
-    
-    tz_info = timezone(timedelta(hours=local.ver_time))
-    
-    sql_list = []
-    for i in range(len(event_types)):
-        event = event_types[i]
-        e_local = asdict(local)
-        e_local['event'] = event['table']
-        e_local['event_abbr'] = event['abbr']
-        e_local['type_id'] = i
-        sql_list.append(pre_sql_all_events_columns.format(**e_local))
-    
-    sql_all_events = " UNION ALL ".join(sql_list) + " ORDER BY start DESC"
-    
-    connection = connect()
-    with connection.cursor() as cursor:
-        cursor.execute(sql_all_events)
-        events = cursor.fetchall()
-    connection.close()
-    
-    for event in events:
-        type_id = int(event.pop('type_id', len(event_types)))
-        id = int(event.pop('id', 0))
-        event['url'] = '/event/%d/%d' % (type_id, id)
-        event['start'] = to_timestamp(event['start'], tz_info)
-        event['over'] = to_timestamp(event['over'], tz_info)
-    
-    return events
-'''
+
 def get_event_types_local(local: Local):
     types = []
     for event_type in event_types:
@@ -246,7 +212,8 @@ def get_cards_info_local(local: Local):
                        LEFT JOIN `LeaderSkill` ON `Card`.leader_skill = `LeaderSkill`.id
                        WHERE `Card`.{time} IS NOT NULL
                        ORDER BY `Card`.{time} , `Card`.card_id""".format_map(asdict(local))
-    sql_card_anniversary = "SELECT EID FROM `AnniversaryToCard` WHERE (CID = %s)"
+    sql_card_anniversary = """SELECT `Event`.fake_id AS EID FROM `EventToCard`
+                              INNER JOIN `Event` ON `EventToCard`.EID = `Event`.id WHERE (CID = %s)"""
     
     tz_info = timezone(timedelta(hours=local.ver_time))
     
