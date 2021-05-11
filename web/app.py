@@ -761,65 +761,38 @@ def get_card_title(card_id: int):
     as_title = get_card_title_local(card_id, as_local)
     return jp_title if jp_title is not None else as_title 
 
-def get_event_info_local(event_type: int, event_id: int, local: Local):
-    pre_sql_event_info = """SELECT id, {name} AS name, 
-                            {start} AS start, {over} AS `over`, comment{other_params}
-                            FROM {event} WHERE (id = %s)"""
-    pre_sql_event_card_pst = """SELECT `Card`.id AS id, `Card`.{name} AS name,
-                                `Card`.rare AS rare, `Idol`.type AS idol_type
-                                FROM `PSTEventToCard` INNER JOIN `Card`
-                                ON `PSTEventToCard`.CID = `Card`.id
-                                INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
-                                WHERE (`PSTEventToCard`.EID = %s AND `PSTEventToCard`.type = %s)"""
-    pre_sql_event_card_col = """SELECT `Card`.id AS id, `Card`.{name} AS name,
-                                `Card`.rare AS rare, `Idol`.type AS idol_type
-                                FROM `CollectEventToCard` INNER JOIN `Card`
-                                ON `CollectEventToCard`.CID = `Card`.id
-                                INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
-                                WHERE (`CollectEventToCard`.EID = %s)
-                                ORDER BY `CollectEventToCard`.type"""
-    pre_sql_event_card_ann = """SELECT `Card`.id AS id, `Card`.{name} AS name,
-                                `Idol`.{name} As idol_name, 
-                                `Card`.rare AS rare, `Idol`.type AS idol_type
-                                FROM `AnniversaryToCard` INNER JOIN `Card`
-                                ON `AnniversaryToCard`.CID = `Card`.id
-                                INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
-                                WHERE (`AnniversaryToCard`.EID = %s AND `AnniversaryToCard`.type = %s)"""
-    pre_sql_event_card_oth = """SELECT Card.id AS id, Card.{name} AS name, 
-                                `Card`.rare AS rare, `Idol`.type AS idol_type
-                                FROM `OtherEventToCard` INNER JOIN `Card`
-                                ON `OtherEventToCard`.CID = `Card`.id
-                                INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
-                                WHERE (`OtherEventToCard`.EID = %s)"""
-    
-    tz_info = timezone(timedelta(hours=local.ver_time))
+"""This is for migration only."""
+def get_event_id(event_type: int, fake_id: int) -> int:
+    connection = connect()
+    with connection.cursor() as cursor:
+        cursor.execute('SELECT id FROM Event WHERE (event_type = %s AND fake_id = %s)', (event_type, fake_id))
+        event = cursor.fetchall()
+        if not event:
+            raise NotFoundError
+        return event[0]['id']
 
-    params = asdict(local)
-    if event_type == 0:
-        params['event'] = 'PSTEvent'
-        params['other_params'] = ', type AS pst_type'
-    elif event_type == 1:
-        params['event'] = 'CollectEvent'
-        params['other_params'] = ''
-    elif event_type == 2:
-        params['event'] = 'Anniversary'
-        params['other_params'] = ''
-    elif event_type == 3:
-        params['event'] = 'WorkingEvent'
-        params['other_params'] = ''
-    elif event_type == 4:
-        params['event'] = 'ShowTimeEvent'
-        params['other_params'] = ''
-    elif event_type == 5:
-        params['event'] = 'OtherEvent'
-        params['other_params'] = ''
-    elif event_type == 6:
-        params['event'] = 'TalkPartyEvent'
-        params['other_params'] = ''
-    else:
-        raise NotFoundError
+def new_get_event_info_local(event_type: int, fake_id: int, local: Local):
+    sql_event_info = """SELECT id, {name} AS name, 
+                        {start} AS start, {over} AS `over`, event_type, fake_id, event_subtype, comment
+                        FROM `Event` WHERE (id = %s)""".format_map(asdict(local))
+    sql_event_cards_type_y = """SELECT `Card`.id AS id, `Card`.{name} AS name,
+                              `Card`.rare AS rare, `Idol`.type AS idol_type, `Idol`.{name} As idol_name
+                              FROM `EventToCard` INNER JOIN `Card`
+                              ON `EventToCard`.CID = `Card`.id
+                              INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
+                              WHERE (`EventToCard`.EID = %s AND `EventToCard`.card_type = %s)""".format_map(asdict(local))
+    sql_event_cards_type_n = """SELECT `Card`.id AS id, `Card`.{name} AS name,
+                              `Card`.rare AS rare, `Idol`.type AS idol_type
+                              FROM `EventToCard` INNER JOIN `Card`
+                              ON `EventToCard`.CID = `Card`.id
+                              INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
+                              WHERE (`EventToCard`.EID = %s) ORDER BY `EventToCard`.card_type""".format_map(asdict(local))
+
+
+    tz_info = timezone(timedelta(hours=local.ver_time))
+    card_types = [[0, 1, 2], [], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], None, None, [], None]
+    event_id = get_event_id(event_type, fake_id)
     
-    sql_event_info = pre_sql_event_info.format_map(params)
     connection = connect()
     with connection.cursor() as cursor:
         cursor.execute(sql_event_info, (event_id))
@@ -827,75 +800,63 @@ def get_event_info_local(event_type: int, event_id: int, local: Local):
         if not event:
             raise NotFoundError
         
-        
         event = event[0]
-        
         if event['start'] is None:
             return None
         
+        event_type = event.pop('event_type', len(event_types))
+        fake_id = event.pop('fake_id', 0)
+        event_subtype = event.pop('event_sub', None)
+
         event['is_jp'] = local.ver == 'jp'
-        event['img_url'] = image_path('images/event_banner', '%d_%d.jpg' % (event_type, event_id))
+        event['img_url'] = image_path('images/event_banner', '%d_%d.jpg' % (event_type, fake_id))
         event['start'] = to_timestamp(event['start'], tz_info)
         event['over'] = to_timestamp(event['over'], tz_info)
         event['event_type'] = event_types[event_type][local.ver]
         event['event_abbr'] = event_types[event_type]['abbr']
-        event['pst_type'] = pst_types[event['pst_type']][local.ver] if 'pst_type' in event and event['pst_type'] is not None else None
-        
-        if event_type == 0:
-            card_types = [0, 1, 2]
-            sql_event_card_pst = pre_sql_event_card_pst.format_map(asdict(local))
-            event['cards'] = {}
-            for card_type in card_types:
-                cursor.execute(sql_event_card_pst, (event_id, card_type))
-                event['cards'][str(card_type)] = cursor.fetchall()
-        elif event_type == 1:
-            sql_event_card_col = pre_sql_event_card_col.format_map(asdict(local))
-            cursor.execute(sql_event_card_col, (event_id))
-            event['cards'] = cursor.fetchall()
-        elif event_type == 2:
-            card_types = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-            sql_event_card_ann = pre_sql_event_card_ann.format_map(asdict(local))
-            event['cards'] = {}
-            for card_type in card_types:
-                event['cards'][str(card_type)] = {'mission_date': event['start'] + timedelta(days=card_type).total_seconds() if event['start'] else None}
-                cursor.execute(sql_event_card_ann, (event_id, card_type))
-                event['cards'][str(card_type)]['data'] = cursor.fetchall()
-                for card in event['cards'][str(card_type)]['data']:
-                    if card['idol_name'] == 'エミリー スチュアート':
-                        card['idol_name'] = 'エミリー'
-        elif event_type == 5:
-            sql_event_card_oth = pre_sql_event_card_oth.format_map(asdict(local))
-            cursor.execute(sql_event_card_oth, (event_id))
-            event['cards'] = cursor.fetchall()
-        else:
-            connection.close()
-            return event
+        event['pst_type'] = pst_types[event_subtype][local.ver] if event_subtype else None
+
+        if card_types[event_type] is not None:
+            if not card_types[event_type]:
+                # 百萬收藏、其他
+                cursor.execute(sql_event_cards_type_n, (event_id))
+                event['cards'] = cursor.fetchall()
+                for card in event['cards']:
+                    card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
+                    card['url'] = '/card/%d' % card['id']
+                    card['idol_type'] = idol_types[card['idol_type']]
+            elif event_type == 2:
+                # 週年
+                event['cards'] = {}
+                for card_type in card_types[event_type]:
+                    event['cards'][str(card_type)] = {'mission_date': event['start'] + timedelta(days=card_type).total_seconds() if event['start'] else None}
+                    cursor.execute(sql_event_cards_type_y, (event_id, card_type))
+                    event['cards'][str(card_type)]['data'] = cursor.fetchall()
+                    for card in event['cards'][str(card_type)]['data']:
+                        if card['idol_name'] == 'エミリー スチュアート':
+                            card['idol_name'] = 'エミリー'
+                        card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
+                        card['url'] = '/card/%d' % card['id']
+                        card['idol_type'] = idol_types[card['idol_type']]
+            else:
+                # PST
+                event['cards'] = {}
+                for card_type in card_types[event_type]:
+                    cursor.execute(sql_event_cards_type_y, (event_id, card_type))
+                    event['cards'][str(card_type)] = cursor.fetchall()
+                    for card in event['cards'][str(card_type)]:
+                        card.pop('idol_name')
+                        card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
+                        card['url'] = '/card/%d' % card['id']
+                        card['idol_type'] = idol_types[card['idol_type']]
         
     connection.close()
-    if type(event['cards']) == list:
-        for card in event['cards']:
-            card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
-            card['url'] = '/card/%d' % card['id']
-            card['idol_type'] = idol_types[card['idol_type']]
-    elif event_type == 2:
-        for key in event['cards']:
-            for card in event['cards'][key]['data']:
-                card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
-                card['url'] = '/card/%d' % card['id']
-                card['idol_type'] = idol_types[card['idol_type']]
-    else:
-        for key in event['cards']:
-            for card in event['cards'][key]:
-                card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
-                card['url'] = '/card/%d' % card['id']
-                card['idol_type'] = idol_types[card['idol_type']]
     return event
-    
 
 def get_event_info(event_type: int, event_id: int):
     event = []
-    event.append(get_event_info_local(event_type, event_id, jp_local))
-    event.append(get_event_info_local(event_type, event_id, as_local))
+    event.append(new_get_event_info_local(event_type, event_id, jp_local))
+    event.append(new_get_event_info_local(event_type, event_id, as_local))
     return event
 
 def get_gasha_info_local(gasha_id: int, local: Local):
