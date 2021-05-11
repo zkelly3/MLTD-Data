@@ -839,12 +839,13 @@ def get_gasha_info_local(gasha_id: int, local: Local):
             cursor.execute(sql_general_pick_up, (gasha['id']))
             gasha['pick_up'] = cursor.fetchall()
             pick_up_ids = [card['id'] for card in gasha['pick_up']]
-            g_local = asdict(local)
-            g_local['id_values'] = ', '.join(['%s'] * len(pick_up_ids))
-            sql_general_others = pre_sql_general_others.format(**g_local)
-            tuple_val = (gasha['start'],) + tuple(pick_up_ids)
-            cursor.execute(sql_general_others, tuple_val)
-            gasha['others'] = cursor.fetchall()
+            if pick_up_ids:
+                g_local = asdict(local)
+                g_local['id_values'] = ', '.join(['%s'] * len(pick_up_ids))
+                sql_general_others = pre_sql_general_others.format(**g_local)
+                tuple_val = (gasha['start'],) + tuple(pick_up_ids)
+                cursor.execute(sql_general_others, tuple_val)
+                gasha['others'] = cursor.fetchall()
         
         for card in gasha['pick_up']:
             card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
