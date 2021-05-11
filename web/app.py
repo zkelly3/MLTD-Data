@@ -112,6 +112,30 @@ def get_idols_info():
     return idols
 
 def get_events_info_local(local: Local):
+    sql_all_events = """SELECT {name} AS name, event_type AS type_id, fake_id AS event_id,
+                        {start} AS start, {over} AS `over` FROM `Event`
+                        WHERE {start} IS NOT NULL ORDER BY {start} DESC""".format_map(asdict(local))
+    
+    tz_info = timezone(timedelta(hours=local.ver_time))
+
+    connection = connect()
+    with connection.cursor() as cursor:
+        cursor.execute(sql_all_events)
+        events = cursor.fetchall()
+    connection.close()
+    
+    for event in events:
+        type_id = int(event.pop('type_id', len(event_types)))
+        event_id = int(event.pop('event_id', 0))
+
+        event['event_abbr'] = event_types[type_id]['abbr']
+        event['url'] = '/event/%d/%d' % (type_id, event_id)
+        event['start'] = to_timestamp(event['start'], tz_info)
+        event['over'] = to_timestamp(event['over'], tz_info)
+    
+    return events
+'''
+def get_events_info_local(local: Local):
     pre_sql_all_events_columns = """SELECT id, {name} AS name,
                                     '{type_id}' AS type_id, '{event_abbr}' AS event_abbr,
                                     {start} AS start, {over} AS `over` FROM `{event}`
@@ -144,7 +168,7 @@ def get_events_info_local(local: Local):
         event['over'] = to_timestamp(event['over'], tz_info)
     
     return events
-
+'''
 def get_event_types_local(local: Local):
     types = []
     for event_type in event_types:
