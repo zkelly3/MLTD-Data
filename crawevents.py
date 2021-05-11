@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from datetime import datetime, timezone, timedelta
 import json
 import re
@@ -5,43 +6,45 @@ import argparse
 
 from config import connect
 from dry_cursor import DryCursor
+from web.local import Local, jp_local
 
-def handle_event(begin, end, name, event_type, local, cursor, connection):
-    pre_sql_get_event = "SELECT id, {start} AS start, {over} AS `over` FROM `{event}` WHERE ({start} = %s)"
-    pre_sql_set_event = "UPDATE `{event}` SET {start} = %s, {over} = %s WHERE (id = %s)"
-    pre_sql_ins_event = "INSERT INTO `{event}`(`{name}`, `{start}`, `{over}`{other_params}) VALUES(%s, %s, %s{other_vals})"
-
-    sql_get_event = pre_sql_get_event.format(**local)
-    sql_set_event = pre_sql_set_event.format(**local)
-    sql_ins_event = pre_sql_ins_event.format(**local)
+def handle_event(begin, end, name, type_id, type_name, local, cursor, connection):
+    sql_get_event = "SELECT id, {start} AS start, {over} AS `over` FROM `Event` WHERE ({start} = %s)".format_map(asdict(local))
+    sql_set_event = "UPDATE `Event` SET {start} = %s, {over} = %s WHERE (id = %s)".format_map(asdict(local))
+    sql_get_fake_id = "SELECT MAX(fake_id) AS fake_id FROM `Event` WHERE (event_type = %s) GROUP BY event_type"
+    sql_ins_event = """INSERT INTO `Event`(`{name}`, `{start}`, `{over}`, 
+                       `event_type`, `fake_id`, `event_subtype`) 
+                       VALUES(%s, %s, %s, %s, %s, %s)""".format_map(asdict(local))
 
     print('Start', name)
     cursor.execute(sql_get_event, (begin))
-    res = cursor.fetchall()
-    if res:
-        row = res[0]
-        event_id = row['id']
-        if row['start'] is None or row['over'] is None:
+    event = cursor.fetchall()
+    if event:
+        event = event[0]
+        event_id = event['id']
+        if event['start'] is None and event['over'] is None:
             print('Edit', name)
             cursor.execute(sql_set_event, (begin, end, event_id))
             connection.commit()
     else:
         print('Insert', name)
-        if event_type == 'PST':
-            t_id = -1
+        subtype = None
+        if type_id == 0:
+            subtype = -1
             if re.search('シアター', name):
-                t_id = 0
+                subtype = 0
             elif re.search('ツアー', name):
-                t_id = 1
+                subtype = 1
             elif re.search('ツインステージ', name):
-                t_id = 2
+                subtype = 2
             elif re.search('チューン', name):
-                t_id = 3
+                subtype = 3
             elif re.search('テール', name):
-                t_id = 4
-            cursor.execute(sql_ins_event, (name, begin, end, t_id))
-        else:
-            cursor.execute(sql_ins_event, (name, begin, end))
+                subtype = 4
+        cursor.execute(sql_get_fake_id, (type_id))
+        fake_id = cursor.fetchall()
+        fake_id = 0 if not fake_id else fake_id[0]['fake_id']
+        cursor.execute(sql_ins_event, (name, begin, end, type_id, fake_id+1, subtype))
         connection.commit()
 
 def main():
@@ -63,13 +66,6 @@ def main():
         for i in range(len(data)-1, -1, -1):
             event = data[i]
 
-            local = {
-                'name': 'jp_name',
-                'start': 'jp_start',
-                'over': 'jp_over',
-                'ver_time': 9
-            }
-
             # 處理活動名稱
             name = event['name'].replace(' ～', '～')
             if name == 'プラチナスターシアタースペシャル～アイドルヒーローズジェネシス～':
@@ -82,47 +78,44 @@ def main():
                     name = 'ミリ女ファイト！'
 
             # 處理活動開始、結束時間
-            begin = datetime.fromtimestamp(event['beginDate'] / 1000, timezone(timedelta(hours=local['ver_time'])))
-            end = datetime.fromtimestamp(event['endDate'] / 1000, timezone(timedelta(hours=local['ver_time'])))
+            begin = datetime.fromtimestamp(event['beginDate'] / 1000, timezone(timedelta(hours=jp_local.ver_time)))
+            end = datetime.fromtimestamp(event['endDate'] / 1000, timezone(timedelta(hours=jp_local.ver_time)))
+
 
 
             event_type = event['type']
-            event_type_name = ''
-            local['other_params'] = ''
-            local['other_vals'] = ''
+            type_name = ''
             if event_type in [3, 4, 10, 11, 12, 13]:
                 # PSTイベント
-                event_type_name = 'PST'
-                local['event'] = 'PSTEvent'
-                local['other_params'] = ', `type`'
-                local['other_vals'] = ', %s'
+                type_name = 'PST'
+                type_id = 0
             elif event_type in [2, 9]:
                 # ミリコレ
-                event_type_name = 'ミリコレ'
-                local['event'] = 'CollectEvent'
-            elif event_type in [6]:
-                # WORKING
-                event_type_name = 'WORKING'
-                local['event'] = 'WorkingEvent'
-            elif event_type in [1]:
-                # THEATER SHOW TIME
-                event_type_name = 'SHOWTIME'
-                local['event'] = 'ShowTimeEvent'
+                type_name = 'ミリコレ'
+                type_id = 1
             elif event_type in [5]:
                 # 周年イベント
-                event_type_name = '周年'
-                local['event'] = 'Anniversary'
+                type_name = '周年'
+                type_id = 2
+            elif event_type in [6]:
+                # WORKING
+                type_name = 'WORKING'
+                type_id = 3
+            elif event_type in [1]:
+                # THEATER SHOW TIME
+                type_name = 'SHOWTIME'
+                type_id = 4
             elif event_type in [7]:
                 # その他
-                event_type_name = 'その他'
-                local['event'] = 'OtherEvent'
+                type_name = 'その他'
+                type_id = 5
             elif event_type in [14]:
                 # TALK PARTY
-                event_type_name = 'TALKPARTY'
-                local['event'] = 'TalkPartyEvent'
+                type_name = 'TALKPARTY'
+                type_id = 6
 
-            if len(event_type_name) > 0:
-                handle_event(begin, end, name, event_type_name, local, cursor, connection)
+            if len(type_name) > 0:
+                handle_event(begin, end, name, type_id, type_name, jp_local, cursor, connection)
             else:
                 print('Event type for', name, 'not found')
 
