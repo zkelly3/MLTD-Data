@@ -71,7 +71,7 @@
         <tr v-for="(val, key) in shown.cards" :key="key">
           <th>{{ val.mission_date }}</th><td v-for="card in val.data" :key="card.name">
           <router-link :to="card.url" :title="card.name">
-            <CardIcon class="me-2" :card="card" />{{ card.name }}
+            <CardIcon class="me-2" :card="card" />{{ card.idol_name }}
           </router-link>
           </td>
         </tr>
