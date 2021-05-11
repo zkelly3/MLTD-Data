@@ -514,10 +514,13 @@ def get_card_aquire_local(card, card_id: int, aquire_id: int, local: Local, curs
                    ORDER BY Gasha.{start}""".format_map(asdict(local))
     sql_not_up = """SELECT id, {name} AS name, {start} AS start, {over} AS `over`, type AS gasha_type
                     FROM `Gasha` WHERE ({start} = %s AND NOT type = 5)""".format_map(asdict(local))
-    pre_sql_event = """SELECT `{event}`.id AS id, {event}.{name} AS name, {event}.{start} AS start, {event}.{over} AS `over`{other_params}
-                   FROM `{event_to_card}` INNER JOIN `{event}` ON {event_to_card}.EID = {event}.id
-                   WHERE ({event_to_card}.CID = %s AND {event}.{start} IS NOT NULL)
-                   ORDER BY {event}.{start}"""
+    sql_event = """SELECT `Event`.id AS id, `Event`.{name} AS name,
+                   `Event`.{start} AS start, `Event`.{over} AS `over`,
+                   `Event`.event_type AS event_type, `Event`.fake_id AS fake_id, 
+                   `Event`.event_subtype aS event_subtype
+                   FROM `EventToCard` INNER JOIN `Event` ON `EventToCard`.EID = `Event`.id
+                   WHERE (`EventToCard`.CID = %s AND `Event`.{start} IS NOT NULL)
+                   ORDER BY `Event`.{start}""".format_map(asdict(local))
     
     tz_info = timezone(timedelta(hours=local.ver_time))
     card['aquire'] = {'type': aquire_types[aquire_id][local.ver]} if aquire_id is not None else None
@@ -550,40 +553,19 @@ def get_card_aquire_local(card, card_id: int, aquire_id: int, local: Local, curs
         card['aquire']['title'] = '--'
     else:
         card['from'] = 'Event'
-        e_local = asdict(local)
-        if aquire_id == 1:
-            e_local['event'] = 'PSTEvent'
-            e_local['event_to_card'] = 'PSTEventToCard'
-            e_local['other_params'] = ', PSTEvent.type AS event_type'
-        elif aquire_id == 2:
-            e_local['event'] = 'CollectEvent'
-            e_local['event_to_card'] = 'CollectEventToCard'
-            e_local['other_params'] = ''
-        elif aquire_id == 4:
-            e_local['event'] = 'Anniversary'
-            e_local['event_to_card'] = 'AnniversaryToCard'
-            e_local['other_params'] = ''
-        else:
-            e_local['event'] = 'OtherEvent'
-            e_local['event_to_card'] = 'OtherEventToCard'
-            e_local['other_params'] = ''
-
-        sql_event = pre_sql_event.format(**e_local)
         cursor.execute(sql_event, (card_id))
         event = cursor.fetchall()
         event = event[0] if event else None
         card['aquire']['title'] = event['name'] if event else None
         card['event'] = event
         
-        aquire_to_event = {1: 0, 2: 1, 4: 2, 6: 5}
-        if card['event']:
+        if card['event'] is not None:
             card['has_from_url'] = True
-            card['event']['url'] = '/event/%d/%d' % (aquire_to_event[aquire_id], event['id'])
+            card['event']['url'] = '/event/%d/%d' % (event['event_type'], event['fake_id'])
             card['from_url'] = card['event']['url']
             card['event']['start'] = to_timestamp(card['event']['start'], tz_info)
             card['event']['over'] = to_timestamp(card['event']['over'], tz_info)
-            card['event']['event_type'] = pst_types[event['event_type']][local.ver] if aquire_id == 1 else aquire_types[aquire_id][local.ver]
-
+            card['event']['event_type'] = pst_types[event['event_subtype']][local.ver] if aquire_id == 1 else aquire_types[aquire_id][local.ver]
 
 def get_card_l_skill_local(card, card_id: int, rare_id: int, local: Local, cursor):
     sql_l_skill = """SELECT id, {name} AS name, {description} AS description, ssr, sr, r
