@@ -204,7 +204,7 @@ def get_cards_info_local(local: Local):
                        LEFT JOIN `SkillSubType` ON `Card`.skill_type = `SkillSubType`.id
                        LEFT JOIN `LeaderSkill` ON `Card`.leader_skill = `LeaderSkill`.id
                        WHERE `Card`.{time} IS NOT NULL
-                       ORDER BY `Card`.{time} , `Card`.card_id""".format_map(asdict(local))
+                       ORDER BY `Card`.{time} , `Card`.card_id, `Card`.id""".format_map(asdict(local))
     sql_card_anniversary = """SELECT `Event`.fake_id AS EID FROM `EventToCard`
                               INNER JOIN `Event` ON `EventToCard`.EID = `Event`.id WHERE (CID = %s)"""
     
@@ -473,7 +473,7 @@ def get_idol_info_local(idol_id: int, local: Local):
 def get_idol_cards_local(idol_id: int, local: Local):
     sql_idol_cards = """SELECT id, {name} AS name, rare, {time} AS time
                         FROM `Card` WHERE (IID = %s AND {time} IS NOT NULL)
-                        ORDER BY {time}, card_id""".format_map(asdict(local))
+                        ORDER BY {time}, card_id, id""".format_map(asdict(local))
     
     tz_info = timezone(timedelta(hours=local.ver_time))
     

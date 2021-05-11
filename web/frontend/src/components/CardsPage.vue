@@ -312,7 +312,7 @@ export default {
                 let ak = a[key];
                 let bk = b[key];
                 let r = reverse ? -1 : 1;
-                return ((ak > bk) ? (1 * r) : (ak < bk) ? (-1 * r) : (a.fake_id > b.fake_id) ? (1 * r) : (a.fake_id < b.fake_id) ? (-1 * r) : 0); 
+                return ((ak > bk) ? (1 * r) : (ak < bk) ? (-1 * r) : (a.fake_id > b.fake_id) ? (1 * r) : (a.fake_id < b.fake_id) ? (-1 * r) : (a.id > b.id) ? (1 * r) : (a.id < b.id) ? (-1 * r) : 0); 
             });
         },
         panelWord() {
