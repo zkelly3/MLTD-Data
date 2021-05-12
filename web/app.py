@@ -221,7 +221,7 @@ def get_cards_info_local(local: Local):
             card['time'] = to_timestamp(card['time'], tz_info)
             card['idol_type'] = idol_types[card['idol_type']]
             card['is_awaken'] = card['rare'] % 2 == 1
-            card['rare'] = card['rare'] // 2;
+            card['rare'] = card['rare'] // 2
             
             aquire_id = card.pop('aquire', None)
             a_aquire_id = card.pop('a_aquire', None)
@@ -718,7 +718,9 @@ def get_event_info_local(event_id: int, local: Local):
                               ON `EventToCard`.CID = `Card`.id
                               INNER JOIN `Idol` ON `Card`.IID = `Idol`.id
                               WHERE (`EventToCard`.EID = %s) ORDER BY `EventToCard`.card_type""".format_map(asdict(local))
-
+    sql_event_songs = """SELECT `Song`.id AS id, `Song`.{name} AS name, `Song`.resource AS resource
+                         FROM `EventToSong` LEFT JOIN `Song` ON `EventToSong`.SID = `Song`.id
+                         WHERE (`EventToSong`.EID = %s)""".format_map(asdict(local))
 
     tz_info = timezone(timedelta(hours=local.ver_time))
     card_types = [[0, 1, 2], [], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], None, None, [], None]
@@ -780,6 +782,16 @@ def get_event_info_local(event_id: int, local: Local):
                         card['url'] = '/card/%d' % card['id']
                         card['idol_type'] = idol_types[card['idol_type']]
         
+        cursor.execute(sql_event_songs, (event_id))
+        event['has_song'] = False
+        event['songs'] = cursor.fetchall()
+        if event['songs']:
+            event['has_song'] = True
+            for song in event['songs']:
+                resource = song.pop('resource', '')
+                song['url'] = '/song/%d' % song['id']
+                song['img_url'] = image_path('images/song_icons', 'jacket_%s.png' % resource)
+
     connection.close()
     return event
 

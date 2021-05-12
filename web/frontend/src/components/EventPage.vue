@@ -63,6 +63,14 @@
           </div>
         </div>
       </td></tr>
+      <tr v-if="shown.has_song"><th>活動相關樂曲</th><td>
+        <div class="row gy-2 row-cols-1">
+          <div class="col" v-for="song in shown.songs" :key="song.name">
+            <router-link :to="song.url">
+            <img class="song_icon me-2" :src="song.img_url"/>{{ song.name }}</router-link>
+          </div>
+        </div>
+      </td></tr>
       <tr><th>備註</th><td>{{ shown.comment }}</td></tr>
     </tbody></table>
     <div v-if="shown.event_abbr == 'ANN'">
@@ -197,5 +205,8 @@ export default {
 <style>
 .event_image {
   max-height: 250px;
+}
+.song_icon {
+  height: 50px;
 }
 </style>
