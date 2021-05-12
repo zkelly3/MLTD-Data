@@ -18,33 +18,60 @@
     </div>
     <div class="col-xl-10 col-lg-9"><div class="container-fluid">
       <MyTr><MyTh :class="songClass(shown.idol_type)">名稱</MyTh><MyTd>{{ shown.name }}</MyTd></MyTr>
-      <MyTr><MyTh :class="songClass(shown.idol_type)">取得方式</MyTh><MyTd>尚未更新</MyTd></MyTr>
+      <MyTr><MyTh :class="songClass(shown.idol_type)">取得方式</MyTh><MyTd><b>{{ shown.aquire.name }}</b><br/>
+      <router-link v-if="shown.aquire.from_url !== null" :to="shown.aquire.from_url">{{shown.aquire.from}}</router-link>
+      <span v-else>{{ shown.aquire.from }}</span>
+      </MyTd></MyTr>
       <MyTr><MyTh :class="songClass(shown.idol_type)">實裝時間</MyTh><MyTd>{{ shown.time }}</MyTd></MyTr>
     </div></div>
   </div>
-  <ul class="nav nav-tabs mt-3">
-    <li class="nav-item"><a class="nav-link active" href="#">遊戲內音源</a></li>
+  <ul class="nav nav-tabs mt-3" id="song_tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="sound-tab" data-bs-toggle="tab" data-bs-target="#sound" type="button" role="tab" aria-controls="sound" aria-selected="true">遊戲內音源</button>
+    </li>
+    <li v-if="shown.events" class="nav-item" role="presentation">
+      <button class="nav-link" id="event-tab" data-bs-toggle="tab" data-bs-target="#gameEvent" type="button" role="tab" aria-controls="gameEvent" aria-selected="false">相關活動</button>
+    </li>
   </ul>
-  <table id="cards" class="table align-middle">
-    <tbody>
-      <tr v-for="sound in shown.sound" :key="sound.id">
-        <td>{{ sound.time }}</td>
-        <td>{{ sound.group_name }}</td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="tab-content" id="song_tab_contents">
+    <div class="tab-pane fade show active" id="sound" role="tabpanel" aria-labelledby="sound-tab">
+      <table class="table align-middle">
+          <tbody>
+          <tr v-for="sound in shown.sound" :key="sound.id">
+              <td>{{ sound.time }}</td>
+              <td>{{ sound.group_name }}</td>
+          </tr>
+          </tbody>
+      </table>
+    </div>
+    <div class="tab-pane fade" id="gameEvent" role="tabpanel" aria-labelledby="event-tab">
+      <table class="table align-middle">
+          <tbody>
+          <tr v-for="event in shown.events" :key="event.id">
+              <td><router-link :to="event.url">{{ event.name }}</router-link></td>
+              <td>{{ showTime(event.start) }}</td>
+          </tr>
+          </tbody>
+      </table>
+    </div>
+  </div>
   </MainPage>
 </template>
 
 <script>
 import { h } from 'vue'
 import MainPage from './MainPage.vue'
-import { toDate, toDateTimeString } from '../general'
+import { toDate, toDateString, toDateTimeString } from '../general'
 
 function getDefaultSong() {
     return {
         id: 0,
         name: '不明',
+        aquire: {
+            'name': null,
+            'from': '--',
+            'from_url': null,
+        },
         time: null,
     };
 }
@@ -53,6 +80,7 @@ function fixData(song, ver) {
     if (!song) return;
     song.name = (!song.name) ? '不明' : song.name;
     song.time = toDateTimeString(toDate(song.time), ver);
+    song.aquire.name = (!song.aquire.name) ? '尚未更新' : song.aquire.name;
     for (let i in song.sound) {
         song.sound[i].time = toDateTimeString(toDate(song.sound[i].time), ver);
     }
@@ -139,7 +167,10 @@ export default {
                 default:
                     return 'song_all';
             }
-        }
+        },
+        showTime(time) {
+            return this.japanese ? toDateString(toDate(time), 0) : toDateString(toDate(time), 1);
+        },
     },
     computed: {
         shown: function() {

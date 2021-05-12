@@ -883,7 +883,7 @@ def get_gasha_info(gasha_id: int):
     return gasha
 
 def get_song_info_local(song_id: int, local: Local):
-    sql_song_info = """SELECT id, {name} AS name, `type` AS idol_type, resource AS img_url
+    sql_song_info = """SELECT id, {name} AS name, `type` AS idol_type, resource AS img_url, aquire
                        FROM `Song` WHERE (id = %s)""".format_map(asdict(local))
     sql_song_sound = """SELECT `GameSound`.id AS id, `GameSound`.{time} AS time,
                         `Sound`.GID AS group_id, `IdolGroup`.{name} AS group_name
@@ -895,6 +895,9 @@ def get_song_info_local(song_id: int, local: Local):
     sql_song_group_members = """SELECT `Idol`.{name} AS name FROM `GroupToIdol`
                            LEFT JOIN `Idol` ON `GroupToIdol`.IID = `Idol`.id
                            WHERE `GroupToIdol`.GID = %s""".format_map(asdict(local))
+    sql_song_event = """SELECT `Event`.id AS id, `Event`.{name} AS name, `Event`.{start} AS start
+                        FROM `EventToSong` LEFT JOIN `Event` ON `EventToSong`.EID = `Event`.id
+                        WHERE (`EventToSong`.SID = %s AND `Event`.{start} IS NOT NULL) ORDER BY `Event`.{start}""".format_map(asdict(local))
 
     tz_info = timezone(timedelta(hours=local.ver_time))
     
@@ -913,6 +916,27 @@ def get_song_info_local(song_id: int, local: Local):
         song['time'] = song['sound'][0]['time'] if song['sound'] else None
         if song['time'] is None:
             return None
+
+        song['aquire'] = {'id': song['aquire']}
+        song['aquire']['name'] = song_aquire_types[song['aquire']['id']][local.ver] if song['aquire']['id'] is not None else None
+        song['aquire']['from'] = '--'
+        song['aquire']['from_url'] = None
+        
+        if song_id == 286:
+            # THE IDOLM@STER
+            from_list = {'jp': 'パネルミッション', 'as': '拼圖任務'}
+            song['aquire']['from'] = from_list[local.ver]
+        elif song['aquire']['id'] in [1, 2, 6]:
+            # event
+            cursor.execute(sql_song_event, (song_id))
+            song['events'] = cursor.fetchall()
+            for event in song['events']:
+                event['url'] = '/event/%d' % event['id']
+                event['start'] = to_timestamp(event['start'], tz_info)
+            if song['events']:
+                song['aquire']['from'] = song['events'][0]['name']
+                song['aquire']['from_url'] = song['events'][0]['url']
+
 
         song['time'] = to_timestamp(song['time'], tz_info)
         for sound in song['sound']:
