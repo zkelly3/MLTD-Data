@@ -898,6 +898,8 @@ def get_song_info_local(song_id: int, local: Local):
     sql_song_event = """SELECT `Event`.id AS id, `Event`.{name} AS name, `Event`.{start} AS start
                         FROM `EventToSong` LEFT JOIN `Event` ON `EventToSong`.EID = `Event`.id
                         WHERE (`EventToSong`.SID = %s AND `Event`.{start} IS NOT NULL) ORDER BY `Event`.{start}""".format_map(asdict(local))
+    sql_song_main_story = """SELECT num, {name} AS name, comment, {time} AS time FROM `MainStory` 
+                             WHERE (song = %s AND {time} IS NOT NULL) ORDER BY {time}""".format_map(asdict(local))
 
     tz_info = timezone(timedelta(hours=local.ver_time))
     
@@ -937,6 +939,12 @@ def get_song_info_local(song_id: int, local: Local):
                 song['aquire']['from'] = song['events'][0]['name']
                 song['aquire']['from_url'] = song['events'][0]['url']
 
+        cursor.execute(sql_song_main_story, (song_id))
+        song['main_story'] = cursor.fetchall()
+        for main_story in song['main_story']:
+            main_story['name'] = '第%d話　%s' % (main_story['num'], main_story['name'])
+        if song['aquire']['id'] in [3] and song['main_story']:
+            song['aquire']['from'] = song['main_story'][0]['name']
 
         song['time'] = to_timestamp(song['time'], tz_info)
         for sound in song['sound']:
@@ -946,6 +954,9 @@ def get_song_info_local(song_id: int, local: Local):
                 members = cursor.fetchall()
                 sound['group_name'] = '、'.join([member['name'] for member in members])
             sound['time'] = to_timestamp(sound['time'], tz_info)
+        for main_story in song['main_story']:
+            main_story['time'] = to_timestamp(main_story['time'], tz_info)
+
     connection.close()
 
     return song

@@ -29,8 +29,11 @@
     <li class="nav-item" role="presentation">
       <button class="nav-link active" id="sound-tab" data-bs-toggle="tab" data-bs-target="#sound" type="button" role="tab" aria-controls="sound" aria-selected="true">遊戲內音源</button>
     </li>
-    <li v-if="shown.events" class="nav-item" role="presentation">
+    <li v-if="shown.events && shown.events.length > 0" class="nav-item" role="presentation">
       <button class="nav-link" id="event-tab" data-bs-toggle="tab" data-bs-target="#gameEvent" type="button" role="tab" aria-controls="gameEvent" aria-selected="false">相關活動</button>
+    </li>
+    <li v-if="shown.main_story && shown.main_story.length > 0" class="nav-item" role="presentation">
+      <button class="nav-link" id="mainStory-tab" data-bs-toggle="tab" data-bs-target="#mainStory" type="button" role="tab" aria-controls="mainStory" aria-selected="false">相關主線劇情</button>
     </li>
   </ul>
   <div class="tab-content" id="song_tab_contents">
@@ -48,8 +51,19 @@
       <table class="table align-middle">
           <tbody>
           <tr v-for="event in shown.events" :key="event.id">
-              <td><router-link :to="event.url">{{ event.name }}</router-link></td>
               <td>{{ showTime(event.start) }}</td>
+              <td><router-link :to="event.url">{{ event.name }}</router-link></td>
+          </tr>
+          </tbody>
+      </table>
+    </div>
+    <div class="tab-pane fade" id="mainStory" role="tabpanel" aria-labelledby="mainStory-tab">
+      <table class="table align-middle">
+          <tbody>
+          <tr v-for="story in shown.main_story" :key="story.num">
+              <td>{{ showTime(story.time) }}</td>
+              <td>{{ story.name }}</td>
+              <td>{{ story.comment }}</td>
           </tr>
           </tbody>
       </table>
