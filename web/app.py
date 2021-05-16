@@ -968,6 +968,41 @@ def get_song_info(song_id: int):
     
     return song
 
+def get_pstcards_local(local: Local):
+    sql_all_idols = """SELECT id, {name} AS name FROM `Idol` WHERE (NOT type = 4)""".format_map(asdict(local))
+    sql_idol_pstcards = """SELECT `Card`.id AS id, `Card`.{time} AS time, `Card`.rare AS rare,
+                          `Card`.{name} AS name, `EventToCard`.card_type AS card_type FROM `EventToCard`
+                          LEFT JOIN `Card` ON `EventToCard`.CID = `Card`.id
+                          LEFT JOIN `Event` ON `EventToCard`.EID = `Event`.id
+                          WHERE (`Card`.IID = %s AND `Event`.event_type = 0 AND `Card`.{time} IS NOT NULL)
+                          ORDER BY `Card`.{time} DESC""".format_map(asdict(local))
+    
+    tz_info = timezone(timedelta(hours=local.ver_time))
+    
+    connection = connect()
+    with connection.cursor() as cursor:
+        cursor.execute(sql_all_idols)
+        idols = cursor.fetchall()
+        for idol in idols:
+            cursor.execute(sql_idol_pstcards, (idol['id']))
+            idol['cards'] = cursor.fetchall()
+            for card in idol['cards']:
+                card['rare'] /= 2
+                card['url'] = '/card/%d' % card['id']
+                card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
+                card['time'] = to_timestamp(card['time'], tz_info)
+    connection.close()
+
+    return idols
+
+def get_pstcards():
+    idols = []
+    idols.append(get_pstcards_local(jp_local))
+    idols.append(get_pstcards_local(as_local))
+
+    return idols
+
+
 @app.route("/api/idols")
 def idols_api():
     idols = get_idols_info()
@@ -1062,6 +1097,14 @@ def song_api(song_id: int):
     except NotFoundError:
         abort(404)
     return dumps(song, ensure_ascii=False)
+
+@app.route("/api/pst")
+def pst_cards_api():
+    try:
+        idols = get_pstcards()
+    except NotFoundError:
+        abort(404)
+    return dumps(idols, ensure_ascii=False)
 
 @app.errorhandler(404)
 def page_not_found(unused_error):

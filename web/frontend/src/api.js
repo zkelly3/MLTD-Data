@@ -51,4 +51,7 @@ export class AjaxAPI {
     getSong(songId) {
         return axios.get(`/api/song/${songId}`);
     }
+    getIdolPSTCards() {
+        return axios.get(`/api/pst`)
+    }
 }
