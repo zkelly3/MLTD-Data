@@ -971,8 +971,8 @@ def get_song_info(song_id: int):
 def get_pstcards_local(local: Local):
     sql_all_idols = """SELECT id, {name} AS name FROM `Idol` WHERE (NOT type = 4)""".format_map(asdict(local))
     sql_idol_pstcards = """SELECT `Card`.id AS id, `Card`.{time} AS time, `Card`.rare AS rare,
-                          `Card`.{name} AS name, `EventToCard`.card_type AS card_type FROM `EventToCard`
-                          LEFT JOIN `Card` ON `EventToCard`.CID = `Card`.id
+                          `Card`.{name} AS name, `EventToCard`.card_type AS card_type, `Event`.{name} AS event_name 
+                          FROM `EventToCard` LEFT JOIN `Card` ON `EventToCard`.CID = `Card`.id
                           LEFT JOIN `Event` ON `EventToCard`.EID = `Event`.id
                           WHERE (`Card`.IID = %s AND `Event`.event_type = 0 AND `Card`.{time} IS NOT NULL)
                           ORDER BY `Card`.{time} DESC""".format_map(asdict(local))

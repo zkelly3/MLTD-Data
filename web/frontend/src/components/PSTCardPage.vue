@@ -42,19 +42,34 @@
   </div>
 
   <table class="table mt-3 align-middle">
-    <tbody><tr v-for="idol in sortCards" :key="idol.id">
-      <td>{{ idol.name }}</td>
+    <tbody><tr v-for="(idol, index) in sortCards" :key="idol.id">
+      <td><a href="#" v-on:click="changeIdol(index)" data-bs-toggle="modal" data-bs-target="#idolModal">{{ idol.name }}</a></td>
       <td>{{idol.cards.length}}張</td>
       <td v-if="idol.cards && idol.cards.length > 0">{{ showTime(idol.cards[0].time) }}</td><td v-else></td>
-      <td v-if="idol.cards && idol.cards.length > 0"><router-link :to="idol.cards[0].url"><CardIcon class="me-2" :card="fixCard(idol.cards[0])"/>{{ idol.cards[0].name }}</router-link></td><td v-else></td>
+      <td v-if="idol.cards && idol.cards.length > 0"><router-link :to="idol.cards[0].url" :title="idol.cards[0].event_name"><CardIcon class="me-2" :card="fixCard(idol.cards[0])"/>{{ idol.cards[0].name }}</router-link></td><td v-else></td>
     </tr></tbody>
   </table>
+
+  <div class="modal fade" id="idolModal" tabindex="-1" aria-labelledby="idolModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">所有上/下位卡片</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <PSTModal :cards="modalCards" :japanese="japanese"/>
+        </div>
+      </div>
+    </div>
+  </div>
   </MainPage>
 </template>
 
 <script>
 import MainPage from './MainPage.vue'
-import CardIcon from './CardIcon'
+import CardIcon from './CardIcon.vue'
+import PSTModal from './PSTModal.vue'
 import { toDate, toDateString } from '../general'
 
 function fixData(idols) {
@@ -72,6 +87,7 @@ export default {
     components: {
         MainPage,
         CardIcon,
+        PSTModal,
     },
     inject: ['$api'],
     props: [],
@@ -97,7 +113,8 @@ export default {
                     {'val': 'time', 'text': '最近實裝時間'},
                     {'val': 'count', 'text': '張數'},
                 ],
-            }
+            },
+            currentIdol: 0,
         };
     },
     mounted() {
@@ -130,6 +147,9 @@ export default {
         sortReverse() {
             this.sorts.reverse = !this.sorts.reverse;
         },
+        changeIdol(index) {
+            this.currentIdol = index;
+        }
     },
     computed: {
         shown() {
@@ -192,6 +212,10 @@ export default {
         sortPanelWord() {
             return this.sorts.reverse && this.japanese ? '昇順' : this.sorts.reverse ? '遞增' : this.japanese ? '降順' : '遞減';
         },
+        modalCards() {
+          if (this.sortCards.length == 0) return [];
+          return this.sortCards[this.currentIdol].cards;
+        }
     },
     watch: {
     }
