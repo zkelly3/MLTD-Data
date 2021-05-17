@@ -5,6 +5,7 @@ import './style.scss'
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { AjaxAPI } from './api'
+import HomePage from './components/HomePage.vue'
 import IdolsPage from './components/IdolsPage.vue'
 import CardsPage from './components/CardsPage.vue'
 import EventsPage from './components/EventsPage.vue'
@@ -19,7 +20,7 @@ import PSTCardPage from './components/PSTCardPage.vue'
 import NotFoundPage from './components/NotFoundPage.vue'
 
 const routes = [
-    { path: '/', redirect: '/idols' },
+    { path: '/', component: HomePage, meta: {title: '首頁'} },
     { path: '/idols', component: IdolsPage, meta: {title: '偶像列表'} },
     { path: '/cards', component: CardsPage, meta: {title: '卡片列表'} },
     { path: '/events', component: EventsPage, meta: {title: '活動列表'} },

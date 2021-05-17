@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="row"><nav class="navbar navbar-expand navbar-dark bg-primary">
-      <a class="navbar-brand">ポンコマス</a>
+      <router-link class="navbar-brand" to="/">ポンコマス</router-link>
       <ul class="navbar-nav">
         <li class="nav-item">
           <router-link class="nav-link" aria-current="page" to="/idols">偶像</router-link>
