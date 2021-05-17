@@ -12,13 +12,13 @@
   </nav>
   </div>
 
-  <div class="row g-1 mb-2">
-    <div class="col-4" v-for="(attr, key) in filters" :key="key"><div class="input-group">
+  <div class="row g-1 mb-2 row-cols-xl-4 row-cols-lg-3 row-cols-md-2 row-cols-1">
+    <div class="col" v-for="(attr, key) in filters" :key="key"><div class="input-group">
       <div class="input-group-text">
         <input class="form-check-input me-1" type="checkbox" :id="'check-'+key" v-model="attr.enabled" />
         <label class="form-check-label" for="'check-'+key">{{ attr.label }}</label>
       </div>
-      <div class="input-group-text" style="backgroundColor: white;" v-if="attr.type === 'check'">
+      <div class="input-group-text form-control" style="backgroundColor: white;" v-if="attr.type === 'check'">
         <div class="form-check me-2" v-for="opt in attr.options" :key="opt.val">
           <input class="form-check-input" type="checkbox" :value="opt.val" :id="'check-'+opt.val" v-model="attr.selected">
           <label class="form-check-label" :for="'check-'+opt.val">
@@ -27,18 +27,15 @@
         </div>
       </div>
     </div></div>
-    <div class="col-2">
-      排序依據
-    </div>
-    <div class="col form-check" v-for="attr in sorts.options" :key="attr.val">
-      <input class="form-check-input" type="radio" v-model="sorts.sortKey" :value="attr.val" :id="'radio-'+attr.val">
-      <label class="form-check-label" :for="'radio-'+attr.val">
-        {{ attr.text }}
-      </label>
-    </div>
-    <div class="col">
+    <div class="col"><div class="input-group h-100">
+      <label class="input-group-text">排序依據</label>
+      <select class="form-select" v-model="sorts.sortKey">
+        <option v-for="attr in sorts.options" :key="attr.val" :value="attr.val">
+          {{ attr.text }}
+        </option>
+      </select>
       <button type="button" class="btn btn-secondary btn-sm" v-on:click="sortReverse()">{{ sortPanelWord }}</button>
-    </div>
+    </div></div>
   </div>
 
   <table class="table mt-3 align-middle">
