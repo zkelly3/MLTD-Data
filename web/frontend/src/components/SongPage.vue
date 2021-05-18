@@ -42,7 +42,7 @@
           <tbody>
           <tr v-for="sound in shown.sound" :key="sound.id">
               <td>{{ sound.time }}</td>
-              <td>{{ sound.group_name }}</td>
+              <td><router-link :to="sound.group_url">{{ sound.group_name }}</router-link></td>
           </tr>
           </tbody>
       </table>

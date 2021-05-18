@@ -949,6 +949,7 @@ def get_song_info_local(song_id: int, local: Local):
         song['time'] = to_timestamp(song['time'], tz_info)
         for sound in song['sound']:
             group_id = sound.pop('group_id', 0)
+            sound['group_url'] = '/group/%d' % group_id
             if sound['group_name'] is None:
                 cursor.execute(sql_song_group_members, (group_id))
                 members = cursor.fetchall()
@@ -1002,6 +1003,56 @@ def get_pstcards():
 
     return idols
 
+def get_group_local(group_id: int, local: Local):
+    sql_group_info = "SELECT {name} AS name FROM `IdolGroup` WHERE (id = %s)".format_map(asdict(local))
+    sql_group_songs = """SELECT `GameSound`.{time} AS time, `Song`.{name} AS name, `Song`.id AS id, `Song`.resource AS img_url
+                         FROM `GameSound` LEFT JOIN `Sound` ON `GameSound`.SID = `Sound`.id
+                         LEFT JOIN `Song` ON `Sound`.SID = `Song`.id
+                         WHERE (`Sound`.GID = %s AND `GameSound`.{time} IS NOT NULL)
+                         ORDER BY `GameSound`.{time}""".format_map(asdict(local))
+    sql_group_members = """SELECT `Idol`.id AS id, `Idol`.{name} AS name
+                           FROM `GroupToIdol` LEFT JOIN `Idol` ON `GroupToIdol`.IID = `Idol`.id
+                           WHERE (`GroupToIdol`.GID = %s)""".format_map(asdict(local))
+    
+    tz_info = timezone(timedelta(hours=local.ver_time))
+    
+    connection = connect()
+    with connection.cursor() as cursor:
+        cursor.execute(sql_group_info, (group_id))
+        group = cursor.fetchall()
+        if not group:
+            raise NotFoundError
+        
+        group = group[0]
+        cursor.execute(sql_group_songs, (group_id))
+        group['songs'] = cursor.fetchall()
+        if not group['songs']:
+            return None
+        
+        for song in group['songs']:
+            song['time'] = to_timestamp(song['time'], tz_info)
+            song['url'] = '/song/%d' % song['id']
+            song['img_url'] = image_path('images/song_icons', 'jacket_%s.png' % song['img_url'])
+
+        cursor.execute(sql_group_members, (group_id))
+        group['members'] = cursor.fetchall()
+        if not group['name']:
+            group['name'] = '、'.join([idol['name'] for idol in group['members']])
+        
+        for idol in group['members']:
+            idol['url'] = '/idol/%d' % idol['id']
+            idol['img_url'] = image_path('images/idol_icons', '%d.png' % idol['id'])
+
+    connection.close()
+
+    return group
+
+def get_group(group_id):
+    group = []
+    group.append(get_group_local(group_id, jp_local))
+    group.append(get_group_local(group_id, as_local))
+
+    return group
 
 @app.route("/api/idols")
 def idols_api():
@@ -1105,6 +1156,14 @@ def pst_cards_api():
     except NotFoundError:
         abort(404)
     return dumps(idols, ensure_ascii=False)
+
+@app.route("/api/group/<int:group_id>")
+def group_api(group_id):
+    try:
+        group = get_group(group_id)
+    except NotFoundError:
+        abort(404)
+    return dumps(group, ensure_ascii=False)
 
 @app.errorhandler(404)
 def page_not_found(unused_error):

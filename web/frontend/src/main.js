@@ -16,6 +16,7 @@ import CardPage from './components/CardPage.vue'
 import EventPage from './components/EventPage.vue'
 import GashaPage from './components/GashaPage.vue'
 import SongPage from './components/SongPage.vue'
+import GroupPage from './components/GroupPage.vue'
 import PSTCardPage from './components/PSTCardPage.vue'
 import NotFoundPage from './components/NotFoundPage.vue'
 
@@ -31,6 +32,7 @@ const routes = [
     { path: '/event/:event_id', component: EventPage, props: true },
     { path: '/gasha/:gasha_id', component: GashaPage, props: true },
     { path: '/song/:song_id', component: SongPage, props: true},
+    { path: '/group/:group_id', component: GroupPage, props: true},
     { path: '/pst', component: PSTCardPage, meta: {title: '上下位卡片整理'} },
     { path: '/:pathMatch(.*)*', component: NotFoundPage },
 ];
