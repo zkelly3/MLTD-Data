@@ -18,6 +18,7 @@ import GashaPage from './components/GashaPage.vue'
 import SongPage from './components/SongPage.vue'
 import GroupPage from './components/GroupPage.vue'
 import PSTCardPage from './components/PSTCardPage.vue'
+import SSRCardPage from './components/SSRCardPage.vue'
 import NotFoundPage from './components/NotFoundPage.vue'
 
 const routes = [
@@ -34,6 +35,7 @@ const routes = [
     { path: '/song/:song_id', component: SongPage, props: true},
     { path: '/group/:group_id', component: GroupPage, props: true},
     { path: '/pst', component: PSTCardPage, meta: {title: '上下位卡片整理'} },
+    { path: '/ssr', component: SSRCardPage, meta: {title: 'SSR 卡片整理'} },
     { path: '/:pathMatch(.*)*', component: NotFoundPage },
 ];
 

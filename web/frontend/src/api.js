@@ -54,6 +54,9 @@ export class AjaxAPI {
     getIdolPSTCards() {
         return axios.get(`/api/pst`);
     }
+    getIdolSSRCards() {
+        return axios.get(`/api/ssr`);
+    }
     getGroup(groupId) {
         return axios.get(`/api/group/${groupId}`);
     }

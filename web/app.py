@@ -1003,6 +1003,37 @@ def get_pstcards():
 
     return idols
 
+def get_ssrcards_local(local: Local):
+    sql_all_idols = """SELECT id, {name} AS name FROM `Idol` WHERE (NOT type = 4)""".format_map(asdict(local))
+    sql_idol_ssrcards = """SELECT id, {time} AS time, rare, {name} AS name, gasha_type AS card_type 
+                          FROM `Card` WHERE (`Card`.IID = %s AND rare = 6 AND {time} IS NOT NULL)
+                          ORDER BY `Card`.{time} DESC""".format_map(asdict(local))
+    
+    tz_info = timezone(timedelta(hours=local.ver_time))
+    
+    connection = connect()
+    with connection.cursor() as cursor:
+        cursor.execute(sql_all_idols)
+        idols = cursor.fetchall()
+        for idol in idols:
+            cursor.execute(sql_idol_ssrcards, (idol['id']))
+            idol['cards'] = cursor.fetchall()
+            for card in idol['cards']:
+                card['rare'] /= 2
+                card['url'] = '/card/%d' % card['id']
+                card['img_url'] = image_path('images/card_icons', '%d.png' % card['id'])
+                card['time'] = to_timestamp(card['time'], tz_info)
+    connection.close()
+
+    return idols
+
+def get_ssrcards():
+    idols = []
+    idols.append(get_ssrcards_local(jp_local))
+    idols.append(get_ssrcards_local(as_local))
+
+    return idols
+
 def get_group_local(group_id: int, local: Local):
     sql_group_info = "SELECT {name} AS name FROM `IdolGroup` WHERE (id = %s)".format_map(asdict(local))
     sql_group_songs = """SELECT `GameSound`.{time} AS time, `Song`.{name} AS name, `Song`.id AS id, `Song`.resource AS img_url
@@ -1153,6 +1184,14 @@ def song_api(song_id: int):
 def pst_cards_api():
     try:
         idols = get_pstcards()
+    except NotFoundError:
+        abort(404)
+    return dumps(idols, ensure_ascii=False)
+
+@app.route("/api/ssr")
+def ssr_cards_api():
+    try:
+        idols = get_ssrcards()
     except NotFoundError:
         abort(404)
     return dumps(idols, ensure_ascii=False)

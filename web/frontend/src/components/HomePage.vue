@@ -27,6 +27,7 @@
       <h5>其他頁面</h5>
       <ul>
         <li><router-link to="/pst">上下位整理</router-link></li>
+        <li><router-link to="/ssr">SSR 整理</router-link></li>
       </ul>
     </div>
   </div>
