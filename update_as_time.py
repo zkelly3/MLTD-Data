@@ -9,13 +9,7 @@ def main():
     pre_set_as_time = "UPDATE `{target}` SET as_start = %s, as_over = %s WHERE (id = %s)"
 
     todos = [{'name': '白金轉蛋', 'target': 'Gasha'},
-        {'name': '百萬收藏', 'target': 'CollectEvent'},
-        {'name': 'PST活動', 'target': 'PSTEvent'},
-        {'name': 'WORKING', 'target': 'WorkingEvent'},
-        {'name': 'THEATER SHOW TIME', 'target': 'ShowTimeEvent'},
-        {'name': '週年活動', 'target': 'Anniversary'},
-        {'name': '其他', 'target': 'OtherEvent'},
-        {'name': 'TALK PARTY', 'target': 'TalkPartyEvent'}]
+        {'name': '活動', 'target': 'Event'}]
 
     connection = connect()
     with connection.cursor() as cursor:
