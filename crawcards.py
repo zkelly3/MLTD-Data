@@ -72,6 +72,10 @@ def craw_aquire(url):
             # FES
             gashatype = 2
             ingasha = 1
+        elif re.search('ピックアップ SR ', words):
+            # 特殊 SR 卡池
+            gashatype = 1
+            ingasha = 1
         else:
             # 暫定只有特殊抽卡券會進
             gashatype = 0
